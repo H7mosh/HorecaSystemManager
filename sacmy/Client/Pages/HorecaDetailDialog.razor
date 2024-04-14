@@ -1,0 +1,84 @@
+﻿@page "/horeca-details/{selectedItemId}"
+@inject HttpClient httpClient
+@using System.Net.Http.Json
+
+@using sacmy.Shared.ViewModel.HorecaViewModel
+
+<MudContainer MaxWidth=MaxWidth.Medium>
+    @if (SelectedItem != null)
+    {
+        <div>
+            <h4>Name: @SelectedItem.Name</h4>
+            <p>Governorate: @SelectedItem.Governorate</p>
+            <p>Owner: @SelectedItem.OwnerName - @SelectedItem.OwnerPhone</p>
+            <p>Purchasing Manager: @SelectedItem.PurcasingManagerName - @SelectedItem.PurchasingManagerPhone</p>
+
+            <h5>Statistics:</h5>
+            <div class="mud-grid">
+                <div class="mud-col">
+                    <p class="my-header-class">Rating</p>
+                    @foreach (var item in SelectedItem.getHorecaStatictsInformationViewModels)
+                    {
+                        <p>@item.Rating</p>
+                    }
+                </div>
+                <div class="mud-col">
+                    <p class="my-header-class">Tables Count</p>
+                    @foreach (var item in SelectedItem.getHorecaStatictsInformationViewModels)
+                    {
+                        <p>@item.TablesCount</p>
+                    }
+                </div>
+                <div class="mud-col">
+                    <p class="my-header-class">Chairs Count</p>
+                    @foreach (var item in SelectedItem.getHorecaStatictsInformationViewModels)
+                    {
+                        <p>@item.ChairsCount</p>
+                    }
+                </div>
+                
+            </div>
+
+            <h5>Images:</h5>
+            <MudCarousel Class="mud-width-full" Style="height:200px;" ShowArrows="true" ShowBullets="true" EnableSwipeGesture="true" AutoCycle="true" TData="object">
+                @foreach (var image in SelectedItem.HorecaImage)
+                {
+                    <MudCarouselItem Transition="Transition.Fade">
+                        <img src="@image" alt="Horeca Image" style="max-width: 100%; max-height: 100%;" />
+                    </MudCarouselItem>
+                }
+            </MudCarousel>
+        </div>
+    }
+    else{
+        <div>
+            <p>Cannot Find The Seleted Item</p>
+        </div>
+    }
+    
+</MudContainer>
+
+@code {
+    [Parameter] public string SelectedItemId { get; set; }
+    private GetHorecaInformationsViewModel SelectedItem;
+
+    protected override void OnParametersSet()
+    {
+        //the param will be set now
+         var electedItemId = SelectedItemId;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(SelectedItemId))
+        {
+            // Retrieve the selected item based on the ID
+            SelectedItem = await httpClient.GetFromJsonAsync<GetHorecaInformationsViewModel>($"api/horeca/{Guid.Parse(SelectedItemId)}");
+        }
+    }
+}
+
+
+
+
+
