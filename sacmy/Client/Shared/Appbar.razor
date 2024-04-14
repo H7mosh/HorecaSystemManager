@@ -1,0 +1,19 @@
+﻿@inject NavigationManager NavigationManager
+
+
+<MudAppBar Color="Color.Primary" Fixed="false" Elevation="0">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
+    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" OnClick="@(() => NavigateToPage("/"))">Home</MudButton>
+    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" OnClick="@(() => NavigateToPage("/Horeca"))">Horeca</MudButton>
+    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" OnClick="@(() => NavigateToPage("/PurchaseManager"))">Purchase Manager</MudButton>
+    <MudSpacer />
+    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" />
+</MudAppBar>
+
+
+@code {
+    void NavigateToPage(string page)
+    {
+        NavigationManager.NavigateTo(page);
+    }
+}

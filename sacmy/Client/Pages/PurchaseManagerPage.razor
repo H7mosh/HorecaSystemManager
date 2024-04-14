@@ -1,0 +1,44 @@
+﻿@page "/PurchaseManager"
+@using System.Net.Http.Json
+@inject HttpClient httpClient
+@using sacmy.Shared.ViewModel.HorecaViewModel
+@using System.Linq
+@using sacmy.Shared.ViewModels.PurchaseViewModel
+
+<h1>Purchase Manager</h1>
+
+<table>
+    <thead>
+        <tr>
+            <th>Code</th>
+            <th>Sku</th>
+            <th>Name</th>
+            <th>CartoonCost</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach(var itm in itemsList){
+                <tr>
+                    <td>@itm.Code</td>
+                    <td>@itm.Sku</td>
+                    <td>@itm.Name</td>
+                    <td>@itm.CartonCost</td>
+                </tr>
+        }
+    </tbody>
+</table>
+
+<button class="btn btn-primary"  @onclick="ReadExcel">
+    Read Excel
+</button>
+
+@code{
+    ReadExcelPurchaseViewModel readExcelPurchaseViewModel  = new ReadExcelPurchaseViewModel();
+    List<ReadExcelPurchaseViewModel> itemsList = new List<ReadExcelPurchaseViewModel>();
+
+    private void ReadExcel(){
+        itemsList = readExcelPurchaseViewModel.ReadExcel();
+    }
+}
+
+
