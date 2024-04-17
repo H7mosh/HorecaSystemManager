@@ -1,6 +1,7 @@
 ﻿@page "/Horeca"
 @using sacmy.Shared.ViewModel.HorecaViewModel
 @inject NavigationManager NavigationManager;
+@inject IJSRuntime JSRuntime;
 @inject HttpClient httpClient
 @inject IDialogService DialogService
 
@@ -12,8 +13,10 @@
 </style>
 
 
-<MudDataGrid Items="@HorecaInformations" Filterable="true" Virtualize="true" Striped="true" FixedHeader="true" Height="600px"
-             QuickFilter="@_quickFilter" ColumnResizeMode="ResizeMode.None" Bordered="false" Outlined="true">
+ 
+<MudDataGrid Items="@HorecaInformations" Filterable="true" Virtualize="true" Striped="true" FixedHeader="true" Height="400px"
+             QuickFilter="@_quickFilter" ColumnResizeMode="ResizeMode.None" Bordered="false" Outlined="true" SortMode="SortMode.Single" FilterMode="DataGridFilterMode.Simple" >
+
     <ToolBarContent>
         
         <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
@@ -21,6 +24,7 @@
     </ToolBarContent>
     <Columns>
         <HierarchyColumn T="GetHorecaInformationsViewModel"  />
+        <PropertyColumn Property="x => x.Id" Title="Id"  Hidden="true"/>
         <PropertyColumn Property="x => x.Name" Title="Name" />
         <PropertyColumn Property="x => x.Governorate" Title="Governorate" />
         <PropertyColumn Property="x => x.OwnerName" Title="Owner Name" />
@@ -29,12 +33,13 @@
         <PropertyColumn Property="x => x.PurchasingManagerPhone" Title="Purchase Manager Phone" />
         <PropertyColumn Property="x => x.Concept" Title="Concept" />
         <PropertyColumn Property="x => x.CreatedBy" Title="Created By" />
-        <PropertyColumn Property="x => x.OwnerName" Title="Owner Name" />
+        <PropertyColumn Property="x => x.CreatedDate" Title="Created Date" Hideable="true"/>
         <TemplateColumn CellClass="d-flex justify-end" Filterable="false">
             <CellTemplate>
                 <MudStack Row>
                     <MudIcon Icon="@Icons.Material.Rounded.RemoveRedEye" Color="Color.Primary" @onclick="() => ShowDetails(context.Item)" />
-                    <MudIcon Icon="@Icons.Material.Rounded.Delete" Color="Color.Error" />
+                    <MudIcon Icon="@Icons.Material.Rounded.Delete" Color="Color.Error" @onclick="() => OnShowButtonClicked(context.Item)" />
+                    <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Color="Color.Surface" @onclick="() => OnLocationButtonClicked(context.Item)" />
                 </MudStack>
             </CellTemplate>
         </TemplateColumn>
@@ -63,13 +68,25 @@
                 </MudCardContent>
             </MudCard>
         </ChildRowContent>
-
 </MudDataGrid>
+    
 
+<MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can <b>not</b> be undone!
+    </MessageContent>
+    <YesButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever" @onclick="()=>RemoveHoreca()">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>
 
-@code {
+    @code {
+    private Guid selectedItemsId;
     private List<GetHorecaInformationsViewModel> HorecaInformations = new List<GetHorecaInformationsViewModel>();
     private string _searchString;
+    MudMessageBox mbox { get; set; }
+    string state = "Message box hasn't been opened yet";
+
     protected override async Task OnInitializedAsync()
     {
         HorecaInformations = await httpClient.GetFromJsonAsync<List<GetHorecaInformationsViewModel>>("api/horeca");
@@ -96,4 +113,23 @@
     {
         NavigationManager.NavigateTo($"/horeca-details/{row.Id.ToString()}");
     }
+
+    private async void RemoveHoreca()
+    {
+        var result = await httpClient.DeleteAsync($"api/horeca/{selectedItemsId}");
+        Console.WriteLine(result);
+    }
+
+    private async void OnShowButtonClicked(GetHorecaInformationsViewModel row)
+    {
+        selectedItemsId = row.Id;
+        bool? result = await mbox.Show();
+    }
+
+
+    private async Task OnLocationButtonClicked(GetHorecaInformationsViewModel row)
+    {
+        await JSRuntime.InvokeAsync<object>("open", row.Location, "_blank");
+    }
+
 }

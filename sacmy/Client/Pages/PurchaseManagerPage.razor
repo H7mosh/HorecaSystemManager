@@ -1,43 +1,58 @@
 ﻿@page "/PurchaseManager"
 @using System.Net.Http.Json
 @inject HttpClient httpClient
+@inject PurchaseService PurchaseService
+@using sacmy.Client.Services
 @using sacmy.Shared.ViewModel.HorecaViewModel
 @using System.Linq
 @using sacmy.Shared.ViewModels.PurchaseViewModel
 
 <h1>Purchase Manager</h1>
-
-<table>
-    <thead>
-        <tr>
-            <th>Code</th>
-            <th>Sku</th>
-            <th>Name</th>
-            <th>CartoonCost</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach(var itm in itemsList){
+@if (purchaseList == null)
+{
+    <p>Loading ...</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>SKU</th>
+                <th>CODE</th>
+                <th>NAME</th>
+                <th>COST</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var pur in purchaseList)
+            {
                 <tr>
-                    <td>@itm.Code</td>
-                    <td>@itm.Sku</td>
-                    <td>@itm.Name</td>
-                    <td>@itm.CartonCost</td>
+                    <td>@pur.Sku</td>
+                    <td>@pur.Code</td>
+                    <td>@pur.Name</td>
+                    <td>@pur.CartonCost</td>
                 </tr>
-        }
-    </tbody>
-</table>
+            }
+        </tbody>
+    </table>
+}
 
-<button class="btn btn-primary"  @onclick="ReadExcel">
-    Read Excel
-</button>
 
-@code{
-    ReadExcelPurchaseViewModel readExcelPurchaseViewModel  = new ReadExcelPurchaseViewModel();
-    List<ReadExcelPurchaseViewModel> itemsList = new List<ReadExcelPurchaseViewModel>();
 
-    private void ReadExcel(){
-        itemsList = readExcelPurchaseViewModel.ReadExcel();
+
+@code {
+    public List<PurchaseViewModel> purchaseList = new List<PurchaseViewModel>();
+
+
+    protected override void OnInitialized()
+    {
+        ReadExcel();
+    }
+
+    private List<PurchaseViewModel> ReadExcel()
+    {
+        purchaseList = PurchaseService.GetPurchaseFromoExcel();
+        return purchaseList;
     }
 }
 

@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
+using sacmy.Server.Models;
 using sacmy.Shared.ViewModel.HorecaViewModel;
 
 
@@ -20,7 +21,7 @@ namespace sacmy.Server.Controller
         [HttpGet]
         public async Task<ActionResult<List<GetHorecaInformationsViewModel>>> GetHoreca()
         {
-            var list = await _context.HorecaInformations.Select(
+            var list = await _context.HorecaInformations.Where(e => e.IsDeleted == false).Select(
                     e => new GetHorecaInformationsViewModel
                     {
                         Id = e.Id,
@@ -113,6 +114,21 @@ namespace sacmy.Server.Controller
             }
 
             return horecaInfo;
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> RemoveHoreca(Guid Id) {
+            HorecaInformation horecaInformation = await _context.HorecaInformations.FindAsync(Id);
+            if (horecaInformation == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                horecaInformation.IsDeleted = true;
+                await _context.SaveChangesAsync();
+                return Ok();
+            }
         }
 
     }
