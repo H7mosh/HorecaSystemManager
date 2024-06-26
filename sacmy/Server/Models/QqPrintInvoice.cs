@@ -9,7 +9,7 @@ public partial class QqPrintInvoice
 
     public int? Idd { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public string? Customer { get; set; }
 

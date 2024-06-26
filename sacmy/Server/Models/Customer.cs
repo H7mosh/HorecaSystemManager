@@ -54,4 +54,6 @@ public partial class Customer
     public virtual ICollection<CostumerLocation> CostumerLocations { get; set; } = new List<CostumerLocation>();
 
     public virtual ICollection<CustomerBillPoint> CustomerBillPoints { get; set; } = new List<CustomerBillPoint>();
+
+    public virtual ICollection<Track> Tracks { get; set; } = new List<Track>();
 }

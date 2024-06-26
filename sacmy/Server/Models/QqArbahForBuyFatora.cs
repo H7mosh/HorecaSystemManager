@@ -29,7 +29,7 @@ public partial class QqArbahForBuyFatora
 
     public int? Idd { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public string? QiyasUnit { get; set; }
 

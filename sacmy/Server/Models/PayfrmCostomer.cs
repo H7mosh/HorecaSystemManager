@@ -29,7 +29,7 @@ public partial class PayfrmCostomer
 
     public bool? Runn { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public string? ToOffice { get; set; }
 

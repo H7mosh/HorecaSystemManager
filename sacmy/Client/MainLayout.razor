@@ -1,15 +1,56 @@
 ﻿@using MudBlazor
+@using sacmy.Client.Pages
 @using sacmy.Client.Shared
+@using sacmy.Shared.Core
 @using sacmy.Shared.ViewModel.HorecaViewModel
+@using sacmy.Shared.ViewModels.UserViewModel
+@inject UserGlobalClass UserGlobal
+
 
 @inherits LayoutComponentBase
 
 <MudThemeProvider />
-<MudDialogProvider/>
-<MudSnackbarProvider/>
-<Appbar/>
+<MudDialogProvider />
+<MudSnackbarProvider />
+@* <Appbar /> *@
 
-<main>
-    @Body
-</main>
+<MudLayout>
+    <MudAppBar Elevation="1" Dense="@dense" Style="@($"background:{Colors.Blue.Accent3};")">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
+        <MudSpacer />
+        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
+    </MudAppBar>
+
+
+    <MudDrawer @bind-Open="@open" Elevation="9" Variant="@DrawerVariant.Responsive" >
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6">
+                SAFIN AHMED TECH
+            </MudText>
+        </MudDrawerHeader>
+        <MudDrawerContainer>
+
+        </MudDrawerContainer>
+        <NavMenu/>
+    </MudDrawer>
+    <MudMainContent Class="pt-16 px-16">
+        <main>
+            @Body
+        </main>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    bool open = false;
+    bool dense = false;
+    bool preserveOpenState = false;
+    Breakpoint breakpoint = Breakpoint.None;
+    DrawerClipMode clipMode = DrawerClipMode.Never;
+    private UserViewModel CurrentUser => UserGlobal.User;
+    void ToggleDrawer()
+    {
+        open = !open;
+    }
+}
+
 

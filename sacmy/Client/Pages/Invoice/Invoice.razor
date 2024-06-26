@@ -1,0 +1,173 @@
+﻿@page "/Invoice"
+@using Newtonsoft.Json
+@using System.Text
+@using sacmy.Client.Configuraion
+@using sacmy.Shared.ViewModels.InvoiceViewModel
+@using static MudBlazor.CategoryTypes
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+@inject HttpClient httpClient
+@inject IDialogService DialogService
+@inject AppConfig appConfig
+
+<style>
+    :root {
+        --mud-palette-table-hover: #ECEAFB;
+    }
+
+
+    .my-custom-class {
+        backdrop-filter: blur(0.2px);
+    }
+
+</style>
+
+
+<h3>Invoice</h3>
+<MudButton Variant="Variant.Outlined" @onclick="() => GetInvoicesMadeBefore25Days()">Expierd Invoice</MudButton>
+
+@if (isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <MudProgressCircular Color="MudBlazor.Color.Primary" Indeterminate="true" />
+    </div>
+}
+
+
+else{
+    <MudDataGrid T="InvoiceViewModel" Items="@InvoiceList" Filterable="true" Virtualize="true" Striped="true" FixedHeader="true" Height="60VH"
+             ColumnResizeMode="ResizeMode.None" Bordered="false" Outlined="true" SortMode="SortMode.Single" FilterMode="DataGridFilterMode.Simple"
+             Hover="true" RowClick="@RowClicked">
+
+   
+<Columns>
+        
+        <MudBlazor.PropertyColumn Property="x => x.Id" Title="Id" />
+        <MudBlazor.PropertyColumn Property="x => x.CustomerName" Title="Customer" />
+        <MudBlazor.PropertyColumn Property="x => x.CustomerType" Title="Type" />
+        <MudBlazor.PropertyColumn Property="x => x.Address" Title="Address" />
+        <MudBlazor.PropertyColumn Property="x => x.Total" Title="Total" />
+        <MudBlazor.PropertyColumn Property="x => x.InvoiceBranch" Title="Branch" />
+        <MudBlazor.PropertyColumn Property="x => x.DateTime" Title="DateTime" />
+        <TemplateColumn CellClass="d-flex justify-end" Filterable="false">
+            <CellTemplate>
+                <MudStack Row>
+                     <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Autorenew" Size="MudBlazor.Size.Small" @onclick="() => OpenTransformDialog(context.Item.Id)" />
+                     <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Comment" Size="MudBlazor.Size.Small" />
+                     <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Info" Size="MudBlazor.Size.Small" @onclick="() => OpenInvoiceItemsDialog(context.Item.Id)" />
+                    @if (selectedId == context.Item.Id && isDeleteLoading)
+                    {
+                            <MudProgressCircular Color="MudBlazor.Color.Error" Indeterminate="true" />
+                    }
+                    else
+                    {
+                            <MudFab Color="MudBlazor.Color.Error" StartIcon="@Icons.Material.Filled.Delete" Size="MudBlazor.Size.Small" @onclick="() => RemoveInvoice(context.Item.Id)" />
+                    }
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+
+</MudDataGrid>
+}
+
+
+@code {
+    int selectedId = -1;
+    private bool isLoading = false;
+    private bool isDeleteLoading = false;
+    private List<InvoiceViewModel> InvoiceList = new List<InvoiceViewModel>();
+    private List<InvoiceViewModel> ExpierdInvoiceList = new List<InvoiceViewModel>();
+
+
+    protected override async Task OnInitializedAsync(){
+        isLoading = true;
+        InvoiceList = await httpClient.GetFromJsonAsync<List<InvoiceViewModel>>("api/Invoice");
+        isLoading = false;
+    }
+
+    private void OpenTransformDialog(int Id)
+    {
+        // Pass the invoice parameter to the dialog
+        MudBlazor.DialogOptions closeOnEscapeKey = new MudBlazor.DialogOptions() { CloseOnEscapeKey = true, ClassBackground = "my-custom-class" };
+
+        // Pass the invoice parameter to the dialog component
+        var dialogResult = DialogService.Show<TransformInvoiceDialog>("Transform Invoice Dialog", parameters: new DialogParameters { ["Id"] = Id }, options: closeOnEscapeKey );
+    }
+
+    private async Task OpenInvoiceItemsDialog(int invoiceId)
+    {
+        MudBlazor.DialogOptions MudBlazor = new MudBlazor.DialogOptions() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
+        var invoiceItems = await GetInvoiceItems(invoiceId);
+
+        var dialogResult = DialogService.Show<InvoiceItemsDialog>("Invoice Items Dialog", parameters: new DialogParameters { ["InvoiceItems"] = invoiceItems }, MudBlazor);
+    }
+
+    private async Task<List<InvoiceItemsViewModel>> GetInvoiceItems(int invoiceId)
+    {
+        try
+        {
+            var response = await httpClient.GetFromJsonAsync<List<InvoiceItemsViewModel>>($"api/Invoice/GetInvoiceItems?InvoiceId={invoiceId}");
+
+            return response;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching invoice items: {ex.Message}");
+            return new List<InvoiceItemsViewModel>(); 
+        }
+    }
+
+    private List<InvoiceViewModel> GetInvoicesMadeBefore25Days()
+    {
+        // Get the current date
+        DateTime currentDate = DateTime.Now;
+
+        // Calculate the date 25 days ago
+        DateTime twentyFiveDaysAgo = currentDate.AddDays(-25);
+
+        // Filter the InvoiceList to get the invoices made before 25 days
+        InvoiceList = InvoiceList.Where(invoice => invoice.DateTime < twentyFiveDaysAgo).ToList();
+
+        return InvoiceList;
+    }
+
+    private async Task RemoveInvoice(int Id)
+    {
+        selectedId = Id;
+        isDeleteLoading = true;
+        try
+        {
+
+            // Make the HTTP POST request to remove the invoice
+            var response = await httpClient.PostAsJsonAsync("https://localhost:7281/api/Invoice/RemoveInvoice", Id);
+
+            // Check if the request was successful
+            if (response.IsSuccessStatusCode)
+            {
+                // Remove the invoice from the list
+                InvoiceList.RemoveAll(invoice => invoice.Id == Id);
+                SnackbarService.Add("Invoice Removed Successfully", Severity.Success);
+            }
+            else
+            {
+                // Handle unsuccessful request
+                // For example, show an error message to the user
+                // You can use JSInterop to show a toast or alert
+                await JS.InvokeVoidAsync("alert", "Failed to remove the invoice. Please try again.");
+            }
+        }
+        catch (Exception ex)
+        {
+            // Handle any exceptions
+            // For example, log the exception or show an error message to the user
+            await JS.InvokeVoidAsync("alert", "An error occurred while removing the invoice. Please try again later.");
+        }
+        isDeleteLoading = false;
+    }
+
+    void RowClicked(DataGridRowClickEventArgs<InvoiceViewModel> args)
+    {
+        selectedId = args.Item.Id;
+    }
+}

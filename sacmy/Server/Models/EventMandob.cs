@@ -15,11 +15,11 @@ public partial class EventMandob
 
     public decimal? Ttttotal { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public string? Notess { get; set; }
 
-    public DateTime? MtabqaDate { get; set; }
+    public DateOnly? MtabqaDate { get; set; }
 
     public string? Typeevent { get; set; }
 

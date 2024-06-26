@@ -1,0 +1,293 @@
+﻿@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.Notification
+@using sacmy.Shared.ViewModels.TrackViewModel
+@using sacmy.Shared.ViewModels.UserViewModel
+@using sacmy.Shared.ViewModels.EmployeeViewModel
+@using static MudBlazor.CategoryTypes
+@inject UserGlobalClass UserGlobal
+@inject HttpClient Http
+@inject IDialogService DialogService
+@inject NotificationClientService notificationClientService
+
+
+<style>
+    .track-dialog {
+        display: flex;
+        flex-direction: column;
+        min-height: 50vh;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .dialog-content {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .custom-select,
+    .custom-textarea,
+    .custom-input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+
+    .btn-save {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        background-color: #6200ea;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1.2em;
+    }
+
+    .btn-save:hover {
+        background-color: #3700b3;
+    }
+
+    .form-group {
+        margin-top: 10px;
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .error-message {
+        color: red;
+        margin-top: 10px;
+    }
+
+    .loading-overlay {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        z-index: 1000;
+    }
+</style>
+
+<div class="track-dialog">
+    <div class="dialog-content">
+        <div class="form-container">
+            <label for="trackState">نوع التتبع</label>
+            <select id="trackState" class="custom-select" @bind="selectedCommentStateId">
+                <option value="">-- اختر نوع التتبع --</option>
+                @if (commentState != null)
+                {
+                    @foreach (var state in commentState)
+                    {
+                        <option value="@state.Id">@state.StateAr</option>
+                    }
+                }
+            </select>
+
+            <label for="comment">التعليق</label>
+            <textarea id="comment" class="custom-textarea" @bind="stateDescription" rows="3"></textarea>
+
+            @if (showError)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="my-2">يجب كتابة تعليقك قبل الحفظ</MudAlert>
+            }
+
+            @if (showStateError)
+            {
+                <MudAlert Severity="Severity.Error" Dense="true" Class="my-2">يجب اختيار نوع التتبع</MudAlert>
+            }
+
+            <div class="checkbox-container">
+                <input type="checkbox" id="assignToNextEmployee" @bind="assignToNextEmployee" />
+                <label for="assignToNextEmployee">أسناد إلى موظف ثاني</label>
+            </div>
+
+            @if (assignToNextEmployee)
+            {
+                <label for="employee">اختر الموظف</label>
+                <select id="employee" class="custom-select" @bind="selectedEmployeeId">
+                    @if (employees != null)
+                    {
+                        @foreach (var employee in employees)
+                        {
+                            <option value="@employee.Id">@employee.FirstName @employee.LastName</option>
+                        }
+                    }
+                </select>
+            }
+
+            @if (!assignToNextEmployee)
+            {
+                <div class="checkbox-container">
+                    <input type="checkbox" id="isDelayed" @bind="isDelayed" />
+                    <label for="isDelayed">تأجيل</label>
+                </div>
+
+                @if (isDelayed)
+                {
+                    <label for="delayDate">تاريخ التأجيل</label>
+                    <input type="datetime-local" id="delayDate" class="custom-input" @bind="delayDate" />
+                }
+            }
+
+            <button class="btn-save" @onclick="Save">SAVE</button>
+        </div>
+    </div>
+</div>
+
+@if (isLoading)
+{
+    <div class="loading-overlay">
+        <MudProgressCircular Color="MudBlazor.Color.Primary" Indeterminate="true" />
+    </div>
+}
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Inject] private ISnackbar Snackbar { get; set; }
+    [Parameter]
+    public TrackViewModel trackViewModel { get; set; }
+    [Parameter]
+    public Main MainScreen { get; set; }
+    private UserViewModel CurrentUser => UserGlobal.User;
+    private List<CommentTrackStateViewModel> commentState;
+    private List<GetEmployeeViewModel> employees;
+    private Guid selectedCommentStateId = Guid.Empty;
+    private Guid? selectedEmployeeId;
+    private string stateDescription;
+    private bool assignToNextEmployee = false;
+    private bool isDelayed = false;
+    private DateTime? delayDate;
+    private bool showError = false;
+    private bool showStateError = false;
+    private bool isLoading = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEmployees();
+        await LoadTrackState();
+    }
+
+    private async Task LoadEmployees()
+    {
+        var response = await Http.GetAsync("api/Employee");
+        if (response.IsSuccessStatusCode)
+        {
+            employees = await response.Content.ReadFromJsonAsync<List<GetEmployeeViewModel>>();
+        }
+        else
+        {
+            // Handle error response
+        }
+    }
+
+    private async Task LoadTrackState()
+    {
+        var response = await Http.GetAsync("api/CustomerTracker/GetTrackState");
+        if (response.IsSuccessStatusCode)
+        {
+            commentState = await response.Content.ReadFromJsonAsync<List<CommentTrackStateViewModel>>();
+        }
+        else
+        {
+            // Handle error response
+        }
+    }
+
+    private async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(stateDescription))
+        {
+            showError = true;
+        }
+        else
+        {
+            showError = false;
+        }
+
+        if (selectedCommentStateId == Guid.Empty)
+        {
+            showStateError = true;
+        }
+        else
+        {
+            showStateError = false;
+        }
+
+        if (!showError && !showStateError)
+        {
+            isLoading = true;
+
+            var addTrackViewModel = new AddTrackViewModel
+                {
+                    CustomerId = trackViewModel.CustomerId,
+                    InvoiceId = trackViewModel.InvoiceId,
+                    TypeId = trackViewModel.TypeId,
+                    Note = stateDescription,
+                    EmplyeeId = CurrentUser.Id,
+                    Comment = stateDescription,
+                    AssignTo = assignToNextEmployee ? selectedEmployeeId : (Guid?)null,
+                    ReOpenAt = isDelayed ? delayDate : (DateTime?)null,
+                    StateId = selectedCommentStateId
+                };
+            var response = await Http.PostAsJsonAsync("api/CustomerTracker/AddTrack", addTrackViewModel);
+
+
+            if (assignToNextEmployee)
+            {
+
+
+                var request = new NotificationRequestViewModel
+                    {
+                        Title = "مهمه جديده",
+                        Body = CurrentUser.FirstName + " " + CurrentUser.LastName + "أضافة مهمه على أسمك يرجى متابعتها",
+                        FirebaseTokens = employees.Where(e => e.Id == selectedEmployeeId).Select(e => e.FirebaseToken.ToString()).ToList(),
+                        ImageBase64 = null,
+                        employeeNotification = true
+                    };
+
+                await notificationClientService.SendNotificationAsync(request);
+            }
+
+            MudDialog.Close(DialogResult.Ok(true));
+
+
+            isLoading = false;
+
+            if (response.IsSuccessStatusCode)
+            {
+                MudDialog.Close(DialogResult.Ok(true));
+                Snackbar.Add("تم الحفظ بنجاح", Severity.Success);
+             }
+            else
+            {
+                Snackbar.Add("حدث خطأ أثناء الحفظ", Severity.Error);
+            }
+        }
+    }
+}
+
+
+
+
+
+

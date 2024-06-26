@@ -29,7 +29,7 @@ public partial class PurchaseMasarif
 
     public string? EventId { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public bool? Runn { get; set; }
 }

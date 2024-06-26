@@ -9,7 +9,7 @@ public partial class QqqOrderItemManager
 
     public int Id { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public string? Customer { get; set; }
 

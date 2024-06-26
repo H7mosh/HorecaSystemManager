@@ -70,4 +70,6 @@ public partial class BuyFatora
     public int? TotalPoints { get; set; }
 
     public bool? IsDeleted { get; set; }
+
+    public virtual ICollection<Track> Tracks { get; set; } = new List<Track>();
 }

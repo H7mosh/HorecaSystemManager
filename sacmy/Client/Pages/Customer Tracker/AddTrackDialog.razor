@@ -1,0 +1,102 @@
+﻿@page "/add-track-dialog"
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.CustomerViewModel
+@using sacmy.Shared.ViewModels.TrackViewModel
+@using sacmy.Shared.ViewModels.UserViewModel
+@inject IDialogService DialogService
+@inject UserGlobalClass UserGlobal
+@inject HttpClient Http
+
+<MudDialog Title="Add Track Dialog" TitleClass="BackgroundGrey" ClassContent="White">
+    <DialogContent>
+        <MudTextField Disabled="true" Label="User Name" @bind-Value="CurrentUser.FirstName" Variant="Variant.Outlined" ReadOnly="true" Class="my-2"></MudTextField>
+        <MudTextField Disabled="true" Label="Customer Id" @bind-Value="trackViewModel.CustomerId" Variant="Variant.Outlined" Class="my-2"></MudTextField>
+        <MudTextField Disabled="true" Label="Invoice Id" @bind-Value="trackViewModel.InvoiceId" Variant="Variant.Outlined" Class="my-2"></MudTextField>
+        <MudSelect Margin="Margin.Dense" T="TrackTypeViewModel" Label="نوع ألتتبع" Variant="Variant.Outlined" @bind-Value="selectedTrackType" Class="my-2">
+            @if (trackTypes != null)
+            {
+                @foreach (var trackType in trackTypes)
+                {
+                    <MudSelectItem Value=@trackType>@trackType.TypeAr</MudSelectItem>
+                }
+            }
+        </MudSelect>
+
+        <MudTextField T="string" Label="ملاحظه" Variant="Variant.Outlined" Text="@Note" Lines="5" Class="my-2" />
+
+        @if (showError)
+        {
+            <MudAlert Severity="Severity.Error" Square="true" Class="my-2">يرجى اختيار نوع التتبع</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Variant="Variant.Outlined" Color="Color.Primary" OnClick="Submit" Class="px-10 my-2">NEXT</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter]
+    public TrackViewModel trackViewModel { get; set; }
+
+
+    private UserViewModel CurrentUser => UserGlobal.User;
+
+    string Note;
+    TrackTypeViewModel selectedTrackType;
+    List<TrackTypeViewModel> trackTypes;
+    bool showError = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await Http.GetAsync("api/CustomerTracker/GetTrackType");
+        if (response.IsSuccessStatusCode)
+        {
+            trackTypes = await response.Content.ReadFromJsonAsync<List<TrackTypeViewModel>>();
+        }
+        else
+        {
+            // Handle error response
+        }
+    }
+
+    private void Submit()
+    {
+        if (selectedTrackType == null)
+        {
+            showError = true;
+            StateHasChanged();
+        }
+        else
+        {
+            showError = false;
+            MudDialog.Close(DialogResult.Ok(true));
+            OpenDialog();
+        }
+    }
+
+    private void OpenDialog()
+    {
+        trackViewModel.CreatedBy = CurrentUser.Id;
+        trackViewModel.Note = Note;
+        trackViewModel.TypeId = selectedTrackType.Id;
+        var parameters = new DialogParameters
+            {
+                ["trackViewModel"] = trackViewModel,
+            };
+
+        var options = new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true, CloseOnEscapeKey = true };
+
+        var dialogResult = DialogService.Show<AddTrackerState>(
+            "Add Comment",
+            parameters,
+            options
+        );
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+}
+
+
+

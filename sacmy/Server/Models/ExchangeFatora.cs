@@ -11,7 +11,7 @@ public partial class ExchangeFatora
 
     public int IdPurch { get; set; }
 
-    public DateTime? Date { get; set; }
+    public DateOnly? Date { get; set; }
 
     public string? Customer { get; set; }
 
@@ -29,7 +29,7 @@ public partial class ExchangeFatora
 
     public string? SalEventId { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public bool? Checkeed { get; set; }
 
