@@ -39,7 +39,7 @@ public partial class SendMoney
 
     public string? EventId { get; set; }
 
-    public DateTime? Date { get; set; }
+    public DateOnly? Date { get; set; }
 
     public string? Symbol { get; set; }
 }

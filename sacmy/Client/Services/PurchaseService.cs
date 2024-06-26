@@ -31,8 +31,8 @@ namespace sacmy.Client.Services
                     for(int col = 1; col <= totalColumn; col++) {
                         if (col == 1) purchaseViewModel.Sku = worksheet.Cells[row, col].ToString();
                         if (col == 2) purchaseViewModel.Code = worksheet.Cells[row, col].ToString();
-                        if (col == 2) purchaseViewModel.Name = worksheet.Cells[row, col].ToString();
-                        if (col == 1) purchaseViewModel.CartonCost = worksheet.Cells[row, col].ToString();
+                        if (col == 2) purchaseViewModel.Sku = worksheet.Cells[row, col].ToString();
+                        if (col == 1) purchaseViewModel.Code= worksheet.Cells[row, col].ToString();
                     }
                     purchaseViewModels.Add(purchaseViewModel);
                 }

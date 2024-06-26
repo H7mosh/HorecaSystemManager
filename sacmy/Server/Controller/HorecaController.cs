@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using ClosedXML.Excel;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Shared.ViewModel.HorecaViewModel;
+using System.Data;
 
 
 namespace sacmy.Server.Controller
@@ -21,7 +23,7 @@ namespace sacmy.Server.Controller
         [HttpGet]
         public async Task<ActionResult<List<GetHorecaInformationsViewModel>>> GetHoreca()
         {
-            var list = await _context.HorecaInformations.Where(e => e.IsDeleted == false).Select(
+            var list = await _context.HorecaInformations.Where(e => e.IsDeleted != true).Select(
                     e => new GetHorecaInformationsViewModel
                     {
                         Id = e.Id,
@@ -35,7 +37,7 @@ namespace sacmy.Server.Controller
                         PurchasingManagerPhone = e.PurchasingManagerPhone,
                         Location = $"https://www.google.com/maps?q={e.Location}",
                         LocationDescription = e.LocationDescription,
-                        CreatedBy = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
+                        //CreatedBy = e.CreatedBy.FirstName + e.CreatedByNavigation.LastName,
                         CreatedDate = e.CreatedDate,
                         getHorecaStatictsInformationViewModels = e.HorecaStatictsInformations.Select( x => new GetHorecaStatictsInformationViewModel {
                                                                     HorecaId = x.HorecaInfoId,
@@ -82,7 +84,7 @@ namespace sacmy.Server.Controller
                     PurchasingManagerPhone = e.PurchasingManagerPhone,
                     Location = $"https://www.google.com/maps?q={e.Location}",
                     LocationDescription = e.LocationDescription,
-                    CreatedBy = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
+                    //CreatedBy = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
                     CreatedDate = e.CreatedDate,
                     getHorecaStatictsInformationViewModels = e.HorecaStatictsInformations.Select(x => new GetHorecaStatictsInformationViewModel
                     {
@@ -130,6 +132,6 @@ namespace sacmy.Server.Controller
                 return Ok();
             }
         }
-
+         
     }
 }

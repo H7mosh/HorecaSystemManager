@@ -23,27 +23,27 @@
                 <BulletTemplate Context="selected">
                     <div Class="mud-button-root mud-icon-button mud-icon-button-color-inherit mud-ripple mud-ripple-icon">
                         <span class="mud-icon-button-label">
-                            <MudIcon Icon="@(selected ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Circle)" Color="@Color.Inherit" />
+                            <MudIcon Icon="@(selected ? Icons.Material.Filled.CheckCircle : Icons.Material.Filled.Circle)" Color="@MudBlazor.Color.Inherit" />
                         </span>
                     </div>
                 </BulletTemplate>
                 <PreviousButtonTemplate>
                     <div Class="mud-button-root mud-icon-button mud-icon-button-color-inherit mud-ripple mud-ripple-icon">
                         <span class="mud-icon-button-label">
-                            <MudIcon Class="mud-ripple mud-ripple-icon mud-icon-button-size-medium" Icon="@Icons.Material.Filled.SkipPrevious" Color="@Color.Inherit" />
+                            <MudIcon Class="mud-ripple mud-ripple-icon mud-icon-button-size-medium" Icon="@Icons.Material.Filled.SkipPrevious" Color="@MudBlazor.Color.Inherit" />
                         </span>
                     </div>
                 </PreviousButtonTemplate>
                 <NextButtonTemplate>
                     <div Class="mud-button-root mud-icon-button mud-icon-button-color-inherit mud-ripple mud-ripple-icon">
                         <span class="mud-icon-button-label">
-                            <MudIcon Class="mud-ripple mud-ripple-icon mud-icon-button-size-medium" Icon="@Icons.Material.Filled.SkipNext" Color="@Color.Inherit" />
+                            <MudIcon Class="mud-ripple mud-ripple-icon mud-icon-button-size-medium" Icon="@Icons.Material.Filled.SkipNext" Color="@MudBlazor.Color.Inherit" />
                         </span>
                     </div>
                 </NextButtonTemplate>
                 <ChildContent>
                     @foreach(var image in SelectedItem.HorecaImage){
-                    <MudCarouselItem Color="@Color.Primary">
+                        <MudCarouselItem Color="@MudBlazor.Color.Primary">
                         <div class="d-flex" style="height:100%">
                                 <MudImage Class="mx-auto my-auto" Src="@image" />
                         </div>
@@ -77,9 +77,9 @@
                     <h5>Statistics:</h5>
                     <MudDataGrid Items="@SelectedItem.getHorecaStatictsInformationViewModels" Filterable="false" Virtualize="true" Striped="true" Height="300px">
                         <Columns>
-                            <PropertyColumn Property="x => x.Rating" Title="Rating" />
-                            <PropertyColumn Property="x => x.TablesCount" Title="Tables Count" />
-                            <PropertyColumn Property="x => x.ChairsCount" Title="Chairs Count" />
+                            <MudBlazor.PropertyColumn Property="x => x.Rating" Title="Rating" />
+                            <MudBlazor.PropertyColumn Property="x => x.TablesCount" Title="Tables Count" />
+                            <MudBlazor.PropertyColumn Property="x => x.ChairsCount" Title="Chairs Count" />
                         </Columns>
                     </MudDataGrid>
                 </div>

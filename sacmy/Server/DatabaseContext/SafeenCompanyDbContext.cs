@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.Models;
-
 namespace sacmy.Server.DatabaseContext;
 
 public partial class SafeenCompanyDbContext : DbContext
@@ -40,11 +39,17 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<BonnaCollection> BonnaCollections { get; set; }
 
+    public virtual DbSet<Brand> Brands { get; set; }
+
     public virtual DbSet<BuyFatora> BuyFatoras { get; set; }
 
     public virtual DbSet<BuyFatoraItem> BuyFatoraItems { get; set; }
 
+    public virtual DbSet<Catalog> Catalogs { get; set; }
+
     public virtual DbSet<Category> Categories { get; set; }
+
+    public virtual DbSet<CommentTrackState> CommentTrackStates { get; set; }
 
     public virtual DbSet<Company> Companies { get; set; }
 
@@ -197,6 +202,12 @@ public partial class SafeenCompanyDbContext : DbContext
     public virtual DbSet<Person> Persons { get; set; }
 
     public virtual DbSet<PointsReward> PointsRewards { get; set; }
+
+    public virtual DbSet<Product> Products { get; set; }
+
+    public virtual DbSet<ProductImage> ProductImages { get; set; }
+
+    public virtual DbSet<ProductSpecification> ProductSpecifications { get; set; }
 
     public virtual DbSet<PurchaseInvoice> PurchaseInvoices { get; set; }
 
@@ -384,13 +395,31 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<SendMoney> SendMoneys { get; set; }
 
+    public virtual DbSet<SeriesOrCollectionOrCategory> SeriesOrCollectionOrCategories { get; set; }
+
+    public virtual DbSet<Specification> Specifications { get; set; }
+
+    public virtual DbSet<Status> Statuses { get; set; }
+
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
+
+    public virtual DbSet<sacmy.Server.Models.Task> Tasks { get; set; }
+
+    public virtual DbSet<TaskNote> TaskNotes { get; set; }
 
     public virtual DbSet<TblLevel> TblLevels { get; set; }
 
     public virtual DbSet<TblTutriolVed> TblTutriolVeds { get; set; }
 
     public virtual DbSet<TblUser> TblUsers { get; set; }
+
+    public virtual DbSet<Track> Tracks { get; set; }
+
+    public virtual DbSet<TrackComment> TrackComments { get; set; }
+
+    public virtual DbSet<TrackCommentState> TrackCommentStates { get; set; }
+
+    public virtual DbSet<TrackType> TrackTypes { get; set; }
 
     public virtual DbSet<Typee> Typees { get; set; }
 
@@ -412,8 +441,9 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<ZzOrderOnlinePrint> ZzOrderOnlinePrints { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseSqlServer();
-
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=46.165.247.249;Initial Catalog=Safeen_Company_DB;User Id=sa;Password=password1;TrustServerCertificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -498,7 +528,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .ToTable("Balance");
 
             entity.Property(e => e.Btotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("BTotal");
             entity.Property(e => e.Btype)
@@ -506,10 +536,9 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("BType");
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("date");
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Note)
                 .HasColumnType("ntext")
@@ -523,7 +552,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -602,12 +631,23 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasConstraintName("FK_BonnaCollections_HorecaInformations");
         });
 
+        modelBuilder.Entity<Brand>(entity =>
+        {
+            entity.ToTable("Brand");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.NameAr).HasMaxLength(80);
+            entity.Property(e => e.NameEn).HasMaxLength(80);
+            entity.Property(e => e.NameKr).HasMaxLength(80);
+            entity.Property(e => e.NameTr).HasMaxLength(80);
+        });
+
         modelBuilder.Entity<BuyFatora>(entity =>
         {
             entity.ToTable("BuyFatora");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("ID");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
@@ -626,14 +666,12 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
                 .HasColumnType("datetime")
                 .HasColumnName("DATE");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Discount)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("discount");
-            entity.Property(e => e.Dolar).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Dolar).HasDefaultValue(0.0);
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -642,22 +680,22 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Hamalya)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("hamalya");
             entity.Property(e => e.Idd)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("idd");
             entity.Property(e => e.Ijraaa)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("ijraaa");
             entity.Property(e => e.Ijraaa2)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("ijraaa2");
             entity.Property(e => e.ManCcount)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasColumnName("man_ccount");
             entity.Property(e => e.Mandob).HasMaxLength(50);
             entity.Property(e => e.Mob)
@@ -670,23 +708,23 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
                 .HasColumnName("now");
-            entity.Property(e => e.Nsba).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Nsba).HasDefaultValue(0.0);
             entity.Property(e => e.Payed)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Remaing)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Tootal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.TotalPoints).HasColumnName("Total_Points");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -706,7 +744,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Codd)
                 .HasMaxLength(50)
                 .HasColumnName("codd");
-            entity.Property(e => e.Countt).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Countt).HasDefaultValue(0.0);
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -715,7 +753,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(250)
                 .HasColumnName("itemm");
             entity.Property(e => e.Prise)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("prise");
             entity.Property(e => e.PurchasePrise)
@@ -725,24 +763,24 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("qiyas_unit");
             entity.Property(e => e.QttRemaining)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasColumnName("Qtt_Remaining");
             entity.Property(e => e.Quantity)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining")
                 .HasColumnName("quantity");
             entity.Property(e => e.Rub7Karton)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("Rub7_karton");
             entity.Property(e => e.Secode)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("secode");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Typee)
@@ -751,7 +789,22 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Wajba)
                 .HasMaxLength(255)
                 .HasColumnName("wajba");
-            entity.Property(e => e.Weznn).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Weznn).HasDefaultValue(0f);
+        });
+
+        modelBuilder.Entity<Catalog>(entity =>
+        {
+            entity.ToTable("Catalog");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.NameAr).HasMaxLength(80);
+            entity.Property(e => e.NameEn).HasMaxLength(80);
+            entity.Property(e => e.NameKr).HasMaxLength(80);
+            entity.Property(e => e.NameTr).HasMaxLength(80);
+
+            entity.HasOne(d => d.Brand).WithMany(p => p.Catalogs)
+                .HasForeignKey(d => d.BrandId)
+                .HasConstraintName("FK_Catalog_Brand");
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -771,6 +824,20 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.NameTr)
                 .HasMaxLength(50)
                 .HasColumnName("NameTR");
+        });
+
+        modelBuilder.Entity<CommentTrackState>(entity =>
+        {
+            entity.ToTable("CommentTrackState");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.StateAr).HasMaxLength(50);
+            entity.Property(e => e.StateEn).HasMaxLength(50);
+
+            entity.HasOne(d => d.TrackComment).WithMany(p => p.CommentTrackStates)
+                .HasForeignKey(d => d.TrackCommentId)
+                .HasConstraintName("FK_CommentTrackState_TrackComments");
         });
 
         modelBuilder.Entity<Company>(entity =>
@@ -808,11 +875,9 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToTable("CompanyMassarif");
 
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Masraftype)
                 .HasMaxLength(50)
@@ -829,14 +894,14 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Symbol)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -849,7 +914,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("Company_RemainingOld");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
@@ -857,7 +922,6 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Company).HasMaxLength(50);
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -873,12 +937,12 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Typee)
                 .HasMaxLength(10)
                 .HasColumnName("typee");
@@ -1198,7 +1262,6 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("company");
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([date],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -1206,9 +1269,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.IdEvent)
                 .ValueGeneratedOnAdd()
                 .HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -1224,7 +1285,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Ttttotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("TTTtotal");
             entity.Property(e => e.Typeevent)
@@ -1245,14 +1306,11 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("costumer");
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([date],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -1268,7 +1326,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Ttttotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("TTTtotal");
             entity.Property(e => e.Typeevent)
@@ -1287,7 +1345,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("Deleted_Date");
             entity.Property(e => e.EventTotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("Event_Total");
             entity.Property(e => e.Id)
@@ -1299,9 +1357,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Typeevent)
                 .HasMaxLength(50)
                 .HasColumnName("typeevent");
-            entity.Property(e => e.TypeeventDate)
-                .HasColumnType("date")
-                .HasColumnName("typeevent_Date");
+            entity.Property(e => e.TypeeventDate).HasColumnName("typeevent_Date");
             entity.Property(e => e.TypeeventId)
                 .HasMaxLength(50)
                 .HasColumnName("typeevent_ID");
@@ -1324,7 +1380,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("Deleted_Date");
             entity.Property(e => e.EventTotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("Event_Total");
             entity.Property(e => e.EventTotalNew)
@@ -1339,9 +1395,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Typeevent)
                 .HasMaxLength(50)
                 .HasColumnName("typeevent");
-            entity.Property(e => e.TypeeventDate)
-                .HasColumnType("date")
-                .HasColumnName("typeevent_Date");
+            entity.Property(e => e.TypeeventDate).HasColumnName("typeevent_Date");
             entity.Property(e => e.TypeeventId)
                 .HasMaxLength(50)
                 .HasColumnName("typeevent_ID");
@@ -1361,7 +1415,6 @@ public partial class SafeenCompanyDbContext : DbContext
 
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([date],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -1372,9 +1425,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.IxraciN)
                 .HasMaxLength(50)
                 .HasColumnName("ixraciN");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -1390,7 +1441,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Ttttotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("TTTtotal");
             entity.Property(e => e.Typeevent)
@@ -1407,7 +1458,6 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Checkeed).HasColumnName("checkeed");
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([date],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -1416,9 +1466,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .ValueGeneratedOnAdd()
                 .HasColumnName("id_event");
             entity.Property(e => e.Mandob).HasMaxLength(50);
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -1434,7 +1482,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Ttttotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("TTTtotal");
             entity.Property(e => e.Typeevent)
@@ -1450,7 +1498,6 @@ public partial class SafeenCompanyDbContext : DbContext
 
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([date],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -1458,9 +1505,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.IdEvent)
                 .ValueGeneratedOnAdd()
                 .HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -1480,7 +1525,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Symbol).HasMaxLength(50);
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Ttttotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("TTTtotal");
             entity.Property(e => e.Typeevent)
@@ -1497,14 +1542,11 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([date],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -1523,7 +1565,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Ttttotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("TTTtotal");
             entity.Property(e => e.Typeevent)
@@ -1542,7 +1584,6 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("costumer");
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([date],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -1550,9 +1591,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.IdEvent)
                 .ValueGeneratedOnAdd()
                 .HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -1568,7 +1607,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Ttttotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("TTTtotal");
             entity.Property(e => e.Typeevent)
@@ -1591,16 +1630,13 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("customer");
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("DATE");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.FromStor)
                 .HasMaxLength(50)
                 .HasColumnName("fromStor");
             entity.Property(e => e.IdExcha)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("ID_Excha");
             entity.Property(e => e.IdPurch).HasColumnName("id_Purch");
             entity.Property(e => e.IdSales).HasColumnName("id_sales");
@@ -1624,7 +1660,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Trans).HasColumnName("trans");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -1646,7 +1682,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Codd)
                 .HasMaxLength(50)
                 .HasColumnName("codd");
-            entity.Property(e => e.Countt).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Countt).HasDefaultValue(0.0);
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -1655,7 +1691,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(250)
                 .HasColumnName("itemm");
             entity.Property(e => e.Prise)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("prise");
             entity.Property(e => e.PurchasePrise)
@@ -1665,24 +1701,24 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("qiyas_unit");
             entity.Property(e => e.QttRemaining)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasColumnName("Qtt_Remaining");
             entity.Property(e => e.Quantity)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining")
                 .HasColumnName("quantity");
             entity.Property(e => e.Rub7Karton)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("Rub7_karton");
             entity.Property(e => e.Secode)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("secode");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Typee)
@@ -1691,7 +1727,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Wajba)
                 .HasMaxLength(255)
                 .HasColumnName("wajba");
-            entity.Property(e => e.Weznn).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Weznn).HasDefaultValue(0f);
         });
 
         modelBuilder.Entity<Factory>(entity =>
@@ -1807,7 +1843,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.CodIqd)
                 .HasMaxLength(25)
                 .HasColumnName("codIQD");
-            entity.Property(e => e.Count).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Count).HasDefaultValue(0.0);
             entity.Property(e => e.Factory)
                 .HasMaxLength(50)
                 .HasColumnName("factory");
@@ -1826,20 +1862,20 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("outt");
             entity.Property(e => e.PlusOne).HasColumnName("plusOne");
             entity.Property(e => e.Prise)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasColumnName("prise");
             entity.Property(e => e.QiyasUnit)
                 .HasMaxLength(50)
                 .HasColumnName("qiyas_unit");
             entity.Property(e => e.Secode)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("secode");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Type)
                 .HasMaxLength(50)
                 .HasColumnName("type");
@@ -1856,9 +1892,6 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Base).HasMaxLength(50);
             entity.Property(e => e.Catalog).HasMaxLength(50);
             entity.Property(e => e.Color).HasMaxLength(50);
-            entity.Property(e => e.DateCreated).HasColumnType("date");
-            entity.Property(e => e.DateUpdated).HasColumnType("date");
-            entity.Property(e => e.DeletedDate).HasColumnType("date");
             entity.Property(e => e.Ean).HasMaxLength(50);
             entity.Property(e => e.Function).HasMaxLength(50);
             entity.Property(e => e.GlassType).HasMaxLength(50);
@@ -2048,9 +2081,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.CodIqd)
                 .HasMaxLength(25)
                 .HasColumnName("codIQD");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.Factory)
                 .HasMaxLength(50)
                 .HasColumnName("factory");
@@ -2130,9 +2161,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.CodIqd)
                 .HasMaxLength(25)
                 .HasColumnName("codIQD");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.Factory)
                 .HasMaxLength(50)
                 .HasColumnName("factory");
@@ -2166,9 +2195,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("MM_Maxzan_N");
 
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.QttyPurch).HasColumnName("Qtty_Purch");
             entity.Property(e => e.QttyReturn).HasColumnName("Qtty_Return");
             entity.Property(e => e.QttySales).HasColumnName("Qtty_Sales");
@@ -2433,7 +2460,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.OrderId).HasColumnName("OrderID");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('')")
+                .HasDefaultValue("")
                 .HasColumnName("address");
             entity.Property(e => e.Checked).HasColumnName("checked");
             entity.Property(e => e.CostumerName)
@@ -2447,11 +2474,11 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Sub).HasMaxLength(50);
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('')")
+                .HasDefaultValue("")
                 .HasColumnName("uuser");
         });
 
@@ -2504,16 +2531,15 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Company).HasMaxLength(50);
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("DATE");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("ID");
             entity.Property(e => e.Idd)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("idd");
             entity.Property(e => e.Notes)
                 .HasColumnType("ntext")
@@ -2526,11 +2552,11 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Tootal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -2549,7 +2575,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Codd)
                 .HasMaxLength(50)
                 .HasColumnName("codd");
-            entity.Property(e => e.Countt).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Countt).HasDefaultValue(0.0);
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -2561,24 +2587,24 @@ public partial class SafeenCompanyDbContext : DbContext
                 .ValueGeneratedOnAdd()
                 .HasColumnName("OR_ID");
             entity.Property(e => e.Prise)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("prise");
             entity.Property(e => e.QiyasUnit)
                 .HasMaxLength(50)
                 .HasColumnName("qiyas_unit");
             entity.Property(e => e.Quantity)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining")
                 .HasColumnName("quantity");
             entity.Property(e => e.Secode)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("secode");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Typee)
@@ -2633,23 +2659,22 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("Pay_From_Office");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("date");
             entity.Property(e => e.Dolar)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.IqdTtal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("IQD_Ttal");
             entity.Property(e => e.Note)
@@ -2663,7 +2688,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("offiice");
             entity.Property(e => e.Ptotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
@@ -2671,7 +2696,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Symbol).HasMaxLength(50);
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -2683,14 +2708,12 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToTable("Pay_from_qasa");
 
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Note)
                 .HasColumnType("ntext")
@@ -2706,11 +2729,11 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("subb");
             entity.Property(e => e.Toetal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -2721,7 +2744,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("PayToCustomer");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
@@ -2731,7 +2754,6 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("customer");
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -2752,12 +2774,12 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("To_Office");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Typee)
                 .HasMaxLength(10)
                 .HasColumnName("typee");
@@ -2771,14 +2793,13 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("PayTo_ixraci");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("date");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -2802,12 +2823,12 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Symbol).HasMaxLength(50);
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Typee)
                 .HasMaxLength(10)
                 .HasColumnName("typee");
@@ -2823,14 +2844,12 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("PayToMandob");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("ID");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -2852,12 +2871,12 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("To_Office");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -2870,23 +2889,22 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("PayToOffice");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("date");
             entity.Property(e => e.Dolar)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.IqdTtal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("IQD_Ttal");
             entity.Property(e => e.Note)
@@ -2900,7 +2918,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("offiice");
             entity.Property(e => e.Ptotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
@@ -2908,7 +2926,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Symbol).HasMaxLength(50);
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -2922,13 +2940,12 @@ public partial class SafeenCompanyDbContext : DbContext
 
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("date");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Note)
                 .HasColumnType("ntext")
@@ -2941,14 +2958,14 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(255)
                 .HasColumnName("Re_Name");
             entity.Property(e => e.ReTotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Subb)
                 .HasMaxLength(100)
                 .HasColumnName("subb");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -2961,7 +2978,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("PayfrmCostomer");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("ID");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
@@ -2969,17 +2986,15 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Dolar)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Iqd)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("IQD");
             entity.Property(e => e.Notes)
@@ -2999,7 +3014,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("To_Office");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Treasurer).HasMaxLength(50);
@@ -3059,12 +3074,59 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
         });
 
+        modelBuilder.Entity<Product>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.BaseUnit).HasMaxLength(70);
+            entity.Property(e => e.BoxType).HasMaxLength(50);
+            entity.Property(e => e.Code).HasMaxLength(50);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.HeightUnit).HasMaxLength(70);
+            entity.Property(e => e.LengthUnit).HasMaxLength(70);
+            entity.Property(e => e.PieceType).HasMaxLength(50);
+            entity.Property(e => e.Sku).HasMaxLength(20);
+            entity.Property(e => e.TopUnit).HasMaxLength(70);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+            entity.Property(e => e.WeightUnit).HasMaxLength(70);
+
+            entity.HasOne(d => d.SeriesOrCollection).WithMany(p => p.Products)
+                .HasForeignKey(d => d.SeriesOrCollectionId)
+                .HasConstraintName("FK_Products_SeriesOrCollection");
+        });
+
+        modelBuilder.Entity<ProductImage>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Link)
+                .HasMaxLength(200)
+                .HasColumnName("link");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.ProductImages)
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK_ProductImages_Products");
+        });
+
+        modelBuilder.Entity<ProductSpecification>(entity =>
+        {
+            entity.HasNoKey();
+
+            entity.HasOne(d => d.Product).WithMany()
+                .HasForeignKey(d => d.ProductId)
+                .HasConstraintName("FK_ProductSpecifications_Products");
+
+            entity.HasOne(d => d.Specification).WithMany()
+                .HasForeignKey(d => d.SpecificationId)
+                .HasConstraintName("FK_ProductSpecifications_Specifications");
+        });
+
         modelBuilder.Entity<PurchaseInvoice>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("Purchase_Invoice");
+            entity.ToTable("Purchase_Invoice");
 
+            entity.Property(e => e.Id)
+                .HasDefaultValue(1)
+                .HasColumnName("ID");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
@@ -3074,10 +3136,9 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Company).HasMaxLength(50);
             entity.Property(e => e.Date)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("DATE");
             entity.Property(e => e.Dolar)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
@@ -3086,11 +3147,8 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
-            entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
-                .HasColumnName("ID");
             entity.Property(e => e.Idd)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("idd");
             entity.Property(e => e.Notes)
                 .HasColumnType("ntext")
@@ -3103,11 +3161,11 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Tootal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -3118,10 +3176,11 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<PurchaseInvoiceItem>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("Purchase_Invoice_ITEMS");
+            entity.HasKey(e => e.PuId);
 
+            entity.ToTable("Purchase_Invoice_ITEMS");
+
+            entity.Property(e => e.PuId).HasColumnName("PU_ID");
             entity.Property(e => e.BoxContain).HasMaxLength(25);
             entity.Property(e => e.CodIqd)
                 .HasMaxLength(25)
@@ -3129,12 +3188,12 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Codd)
                 .HasMaxLength(50)
                 .HasColumnName("codd");
-            entity.Property(e => e.Countt).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Countt).HasDefaultValue(0.0);
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
             entity.Property(e => e.FirstQtty)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining");
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Itemm)
@@ -3142,30 +3201,27 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("itemm");
             entity.Property(e => e.Masraf).HasColumnType("money");
             entity.Property(e => e.Naqis)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining");
             entity.Property(e => e.Prise)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("prise");
-            entity.Property(e => e.PuId)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("PU_ID");
             entity.Property(e => e.QiyasUnit)
                 .HasMaxLength(50)
                 .HasColumnName("qiyas_unit");
             entity.Property(e => e.Quantity)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining")
                 .HasColumnName("quantity");
             entity.Property(e => e.Secode)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("secode");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.TotlPrise).HasColumnType("money");
@@ -3175,9 +3231,9 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Wajba)
                 .HasMaxLength(50)
                 .HasColumnName("wajba");
-            entity.Property(e => e.Weznn).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Weznn).HasDefaultValue(0f);
             entity.Property(e => e.Ziyada)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining");
         });
 
@@ -3186,29 +3242,28 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("Purchase_masarif");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("ID");
             entity.Property(e => e.Amola)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("amola");
             entity.Property(e => e.Datee)
                 .HasDefaultValueSql("(CONVERT([datetime],CONVERT([varchar],getdate(),(1)),(1)))")
-                .HasColumnType("date")
                 .HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Gomrk)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("gomrk");
             entity.Property(e => e.Hamalya)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("hamalya");
             entity.Property(e => e.Ijra)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("ijra");
             entity.Property(e => e.IxraciN)
@@ -3218,14 +3273,14 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnType("ntext")
                 .HasColumnName("notes");
             entity.Property(e => e.Oxra)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("oxra");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Tootaal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("tootaal");
             entity.Property(e => e.Uuser)
@@ -3252,9 +3307,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .ToTable("Qasa_ExChange");
 
             entity.Property(e => e.CurrencyPrice).HasColumnType("money");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Note)
                 .HasColumnType("ntext")
@@ -3265,7 +3318,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("now");
             entity.Property(e => e.Qasa)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Qasa_IQD')");
+                .HasDefaultValue("Qasa_IQD");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
@@ -3277,7 +3330,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("totaLLAfter");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -3290,9 +3343,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .ToTable("Qasa_ExChange_Office");
 
             entity.Property(e => e.CurrencyPrice).HasColumnType("money");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -3313,7 +3364,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("Office_Other");
             entity.Property(e => e.Qasa)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Qasa_IQD')");
+                .HasDefaultValue("Qasa_IQD");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
@@ -3325,7 +3376,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("totaLLAfter");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -3360,9 +3411,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Codd)
                 .HasMaxLength(50)
                 .HasColumnName("codd");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -3438,9 +3487,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Date)
                 .HasColumnType("datetime")
                 .HasColumnName("DATE");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Discount).HasColumnName("discount");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
@@ -3520,9 +3567,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -3608,9 +3653,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Costumer)
                 .HasMaxLength(50)
                 .HasColumnName("costumer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -3642,12 +3685,8 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("carNo");
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Date).HasColumnName("DATE");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -3705,12 +3744,8 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("carNo");
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Date).HasColumnName("DATE");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -3826,9 +3861,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnType("money")
                 .HasColumnName("amola");
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -4141,9 +4174,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("codd");
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -4203,9 +4234,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Dolar).HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -4271,9 +4300,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Date)
                 .HasColumnType("datetime")
                 .HasColumnName("DATE");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Description)
                 .HasMaxLength(255)
                 .HasColumnName("description");
@@ -4473,9 +4500,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQ_Purchase_By_Wajba");
 
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.QttyPurch).HasColumnName("Qtty_Purch");
             entity.Property(e => e.Secode).HasColumnName("secode");
             entity.Property(e => e.Smtotal).HasColumnName("SMtotal");
@@ -4507,9 +4532,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("codd");
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -4610,9 +4633,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -4691,9 +4712,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -4804,9 +4823,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("carNo");
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -4856,9 +4873,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -4904,9 +4919,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -4952,9 +4965,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -4987,16 +4998,12 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Company)
                 .HasMaxLength(50)
                 .HasColumnName("company");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5042,9 +5049,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("carNo");
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("DATE");
+            entity.Property(e => e.Date).HasColumnName("DATE");
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -5084,17 +5089,13 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Costumer)
                 .HasMaxLength(50)
                 .HasColumnName("costumer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho).HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5158,17 +5159,13 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Costumer)
                 .HasMaxLength(50)
                 .HasColumnName("costumer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho).HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5213,17 +5210,13 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Costumer)
                 .HasMaxLength(50)
                 .HasColumnName("costumer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho).HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5280,9 +5273,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_ixraci");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -5292,9 +5283,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.IxraciN)
                 .HasMaxLength(50)
                 .HasColumnName("ixraciN");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5323,9 +5312,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho)
                 .HasColumnType("money")
                 .HasColumnName("endaho");
@@ -5336,9 +5323,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Indana)
                 .HasColumnType("money")
                 .HasColumnName("indana");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5389,9 +5374,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_FROM_Currency");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -5416,9 +5399,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_FROM_Currency_Dollar");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -5443,9 +5424,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_FROM_Currency_Dollar_N");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho)
                 .HasColumnType("money")
                 .HasColumnName("endaho");
@@ -5458,9 +5437,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("ExchanTOO_Total");
             entity.Property(e => e.Expr1).HasColumnType("money");
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5511,9 +5488,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_Multi_Currency");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho)
                 .HasColumnType("money")
                 .HasColumnName("endaho");
@@ -5528,9 +5503,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Indana)
                 .HasColumnType("money")
                 .HasColumnName("indana");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5582,9 +5555,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_Multi_Currency_Dollar");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho)
                 .HasColumnType("money")
                 .HasColumnName("endaho");
@@ -5599,9 +5570,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Indana)
                 .HasColumnType("money")
                 .HasColumnName("indana");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5653,9 +5622,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_Multi_Currency_Dollar_NN");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho)
                 .HasColumnType("money")
                 .HasColumnName("endaho");
@@ -5670,9 +5637,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Indana)
                 .HasColumnType("money")
                 .HasColumnName("indana");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5724,9 +5689,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_Multi_Currency_IQD");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho)
                 .HasColumnType("money")
                 .HasColumnName("endaho");
@@ -5741,9 +5704,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Indana)
                 .HasColumnType("money")
                 .HasColumnName("indana");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -5801,9 +5762,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -5847,9 +5806,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -5893,9 +5850,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -5959,9 +5914,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6007,9 +5960,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6052,9 +6003,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6100,9 +6049,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6148,9 +6095,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.Dolar).HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -6191,9 +6136,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.Dolar).HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
@@ -6240,9 +6183,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Company)
                 .HasMaxLength(50)
                 .HasColumnName("company");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6291,9 +6232,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Company)
                 .HasMaxLength(50)
                 .HasColumnName("company");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6333,9 +6272,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_Too_Currency");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventIdOther)
                 .HasMaxLength(100)
                 .HasColumnName("event_id_Other");
@@ -6364,9 +6301,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasNoKey()
                 .ToView("QQQ_Count_Office_Too_Currency_Dollar");
 
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventIdOther)
                 .HasMaxLength(100)
                 .HasColumnName("event_id_Other");
@@ -6398,17 +6333,13 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Costumer)
                 .HasMaxLength(50)
                 .HasColumnName("costumer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Endaho).HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
-            entity.Property(e => e.MtabqaDate)
-                .HasColumnType("date")
-                .HasColumnName("mtabqaDate");
+            entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
                 .HasColumnName("mtabqaDatee");
@@ -6453,9 +6384,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Itemm)
                 .HasMaxLength(250)
@@ -6490,9 +6419,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6620,9 +6547,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .ToView("QQQQ_Count_Company_RemainingOld_Countt");
 
             entity.Property(e => e.Company).HasMaxLength(50);
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
+            entity.Property(e => e.Datee).HasColumnName("datee");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
@@ -6696,7 +6621,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("ReturnFatora");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("ID");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
@@ -6707,10 +6632,8 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Customer)
                 .HasMaxLength(50)
                 .HasColumnName("customer");
-            entity.Property(e => e.Datee)
-                .HasColumnType("date")
-                .HasColumnName("datee");
-            entity.Property(e => e.Dolar).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Datee).HasColumnName("datee");
+            entity.Property(e => e.Dolar).HasDefaultValue(0.0);
             entity.Property(e => e.Driver).HasMaxLength(50);
             entity.Property(e => e.DriverMob)
                 .HasMaxLength(50)
@@ -6719,14 +6642,14 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Hamalya)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("hamalya");
             entity.Property(e => e.Idd)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("idd");
             entity.Property(e => e.ManCcount)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasColumnName("man_ccount");
             entity.Property(e => e.Mandob).HasMaxLength(50);
             entity.Property(e => e.Mob)
@@ -6740,20 +6663,20 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnType("datetime")
                 .HasColumnName("now");
             entity.Property(e => e.RePayed)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Remaing)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Tootal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
@@ -6772,7 +6695,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Codd)
                 .HasMaxLength(50)
                 .HasColumnName("codd");
-            entity.Property(e => e.Countt).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Countt).HasDefaultValue(0.0);
             entity.Property(e => e.Factoryy)
                 .HasMaxLength(50)
                 .HasColumnName("factoryy");
@@ -6781,7 +6704,7 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(250)
                 .HasColumnName("itemm");
             entity.Property(e => e.Prise)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("prise");
             entity.Property(e => e.PurchasePrise)
@@ -6791,27 +6714,27 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("qiyas_unit");
             entity.Property(e => e.QttRemaining)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasColumnName("Qtt_Remaining");
             entity.Property(e => e.Quantity)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0.0)
                 .HasComment("Qtt_Remaining")
                 .HasColumnName("quantity");
             entity.Property(e => e.ReId)
                 .ValueGeneratedOnAdd()
                 .HasColumnName("RE_ID");
             entity.Property(e => e.Rub7Karton)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("Rub7_karton");
             entity.Property(e => e.Secode)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0)
                 .HasColumnName("secode");
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Typee)
@@ -6820,7 +6743,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Wajba)
                 .HasMaxLength(255)
                 .HasColumnName("wajba");
-            entity.Property(e => e.Weznn).HasDefaultValueSql("((0))");
+            entity.Property(e => e.Weznn).HasDefaultValue(0f);
         });
 
         modelBuilder.Entity<RewardCustomerLinker>(entity =>
@@ -6849,32 +6772,30 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.ToTable("sendMoney");
 
             entity.Property(e => e.Id)
-                .HasDefaultValueSql("((1))")
+                .HasDefaultValue(1)
                 .HasColumnName("id");
             entity.Property(e => e.Address)
                 .HasMaxLength(50)
                 .HasColumnName("address");
             entity.Property(e => e.Amola)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("amola");
             entity.Property(e => e.Company)
                 .HasMaxLength(50)
                 .HasColumnName("company");
-            entity.Property(e => e.Date)
-                .HasColumnType("date")
-                .HasColumnName("date");
+            entity.Property(e => e.Date).HasColumnName("date");
             entity.Property(e => e.DecreaseFrom)
                 .HasMaxLength(50)
                 .HasDefaultValueSql("((0))");
             entity.Property(e => e.Dolar)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money");
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
             entity.Property(e => e.Iqd)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("IQD");
             entity.Property(e => e.Notes)
@@ -6888,10 +6809,10 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("offiice");
             entity.Property(e => e.Run)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(false)
                 .HasColumnName("run");
             entity.Property(e => e.SuTotal)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("SU_Total");
             entity.Property(e => e.Subb)
@@ -6899,15 +6820,52 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("subb");
             entity.Property(e => e.Symbol).HasMaxLength(50);
             entity.Property(e => e.Total)
-                .HasDefaultValueSql("((0))")
+                .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("total");
             entity.Property(e => e.Treasurer)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("('Treasurer')");
+                .HasDefaultValue("Treasurer");
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
+        });
+
+        modelBuilder.Entity<SeriesOrCollectionOrCategory>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_SeriesOrCollection");
+
+            entity.ToTable("SeriesOrCollectionOrCategory");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.HasOne(d => d.Catalog).WithMany(p => p.SeriesOrCollectionOrCategories)
+                .HasForeignKey(d => d.CatalogId)
+                .HasConstraintName("FK_SeriesOrCollectionOrCategory_Catalog");
+        });
+
+        modelBuilder.Entity<Specification>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.DescriptionAr).HasMaxLength(80);
+            entity.Property(e => e.DescriptionEn).HasMaxLength(80);
+            entity.Property(e => e.DescriptionKr).HasMaxLength(80);
+            entity.Property(e => e.DescriptionTr).HasMaxLength(80);
+            entity.Property(e => e.TitelAr).HasMaxLength(80);
+            entity.Property(e => e.TitelEn).HasMaxLength(80);
+            entity.Property(e => e.TitleKr).HasMaxLength(80);
+            entity.Property(e => e.TitleTr).HasMaxLength(80);
+        });
+
+        modelBuilder.Entity<Status>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_State");
+
+            entity.ToTable("Status");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.StateAr).HasMaxLength(50);
+            entity.Property(e => e.StateEn).HasMaxLength(50);
         });
 
         modelBuilder.Entity<SystemSetting>(entity =>
@@ -6955,6 +6913,42 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("WEB");
         });
 
+        modelBuilder.Entity<sacmy.Server.Models.Task>(entity =>
+        {
+            entity.ToTable("Task");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Deadline).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.AssignedToEmployeeNavigation).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.AssignedToEmployee)
+                .HasConstraintName("FK_Task_Employee");
+
+            entity.HasOne(d => d.Status).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.StatusId)
+                .HasConstraintName("FK_Task_Status");
+        });
+
+        modelBuilder.Entity<TaskNote>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.TaskNotes)
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TaskNotes_Employee");
+
+            entity.HasOne(d => d.Task).WithMany(p => p.TaskNotes)
+                .HasForeignKey(d => d.TaskId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_TaskNotes_Task");
+        });
+
         modelBuilder.Entity<TblLevel>(entity =>
         {
             entity
@@ -6995,6 +6989,73 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(25)
                 .HasColumnName("subb");
             entity.Property(e => e.Username).HasMaxLength(25);
+        });
+
+        modelBuilder.Entity<Track>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdateDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.Tracks)
+                .HasForeignKey(d => d.CustomerId)
+                .HasConstraintName("FK_Tracks_customer");
+
+            entity.HasOne(d => d.Employe).WithMany(p => p.Tracks)
+                .HasForeignKey(d => d.EmployeId)
+                .HasConstraintName("FK_Tracks_Employee");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.Tracks)
+                .HasForeignKey(d => d.InvoiceId)
+                .HasConstraintName("FK_Tracks_BuyFatora");
+
+            entity.HasOne(d => d.Type).WithMany(p => p.Tracks)
+                .HasForeignKey(d => d.TypeId)
+                .HasConstraintName("FK_Tracks_TrackType");
+        });
+
+        modelBuilder.Entity<TrackComment>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.ReOpenAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.AssignedToNavigation).WithMany(p => p.TrackCommentAssignedToNavigations)
+                .HasForeignKey(d => d.AssignedTo)
+                .HasConstraintName("FK_TrackComments_Employee1");
+
+            entity.HasOne(d => d.Employee).WithMany(p => p.TrackCommentEmployees)
+                .HasForeignKey(d => d.EmployeeId)
+                .HasConstraintName("FK_TrackComments_Employee");
+
+            entity.HasOne(d => d.Track).WithMany(p => p.TrackComments)
+                .HasForeignKey(d => d.TrackId)
+                .HasConstraintName("FK_TrackComments_Tracks");
+        });
+
+        modelBuilder.Entity<TrackCommentState>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.HasOne(d => d.State).WithMany(p => p.TrackCommentStates)
+                .HasForeignKey(d => d.StateId)
+                .HasConstraintName("FK_TrackCommentStates_State");
+
+            entity.HasOne(d => d.TrackComment).WithMany(p => p.TrackCommentStates)
+                .HasForeignKey(d => d.TrackCommentId)
+                .HasConstraintName("FK_TrackCommentStates_TrackComments");
+        });
+
+        modelBuilder.Entity<TrackType>(entity =>
+        {
+            entity.ToTable("TrackType");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.TypeAr).HasMaxLength(50);
+            entity.Property(e => e.TypeEn).HasMaxLength(50);
         });
 
         modelBuilder.Entity<Typee>(entity =>
@@ -7203,7 +7264,6 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.CostumerName)
                 .HasMaxLength(50)
                 .HasColumnName("Costumer_Name");
-            entity.Property(e => e.Date).HasColumnType("date");
             entity.Property(e => e.Item).HasMaxLength(250);
             entity.Property(e => e.MoldNo).HasMaxLength(50);
             entity.Property(e => e.Note).HasMaxLength(350);

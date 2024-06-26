@@ -8,6 +8,7 @@ namespace sacmy.Shared.ViewModel.HorecaViewModel
 {
     public class GetHorecaInformationsViewModel
     {
+        public int Index { get; set; }
         public Guid Id { get; set; }
 
         public string? Governorate { get; set; }

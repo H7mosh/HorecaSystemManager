@@ -1,13 +1,15 @@
 ﻿@inject NavigationManager NavigationManager
 
 
-<MudAppBar Color="Color.Primary" Fixed="false" Elevation="0">
-    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
-    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" OnClick="@(() => NavigateToPage("/"))">Home</MudButton>
-    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" OnClick="@(() => NavigateToPage("/Horeca"))">Horeca</MudButton>
-    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="Color.Primary" OnClick="@(() => NavigateToPage("/PurchaseManager"))">Purchase Manager</MudButton>
+<MudAppBar Color="MudBlazor.Color.Primary" Fixed="false" Elevation="0">
+    @* <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="MudBlazor.Color.Inherit" Edge="Edge.Start" /> *@
+@*     <MudButton Variant="Variant.Filled" DisableElevation="true" Color="MudBlazor.Color.Primary" OnClick="@(() => NavigateToPage("/HomeScreen"))">Home</MudButton>
+    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="MudBlazor.Color.Primary" OnClick="@(() => NavigateToPage("/Horeca"))">Horeca</MudButton>
+    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="MudBlazor.Color.Primary" OnClick="@(() => NavigateToPage("/PurchaseManager"))">Purchase Manager</MudButton>
+    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="MudBlazor.Color.Primary" OnClick="@(() => NavigateToPage("/Invoice"))">Invoice</MudButton>
+    <MudButton Variant="Variant.Filled" DisableElevation="true" Color="MudBlazor.Color.Primary" OnClick="@(() => NavigateToPage("/CustomerTracker"))">Customer Tracker</MudButton>
     <MudSpacer />
-    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" />
+    <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="MudBlazor.Color.Primary" /> *@
 </MudAppBar>
 
 

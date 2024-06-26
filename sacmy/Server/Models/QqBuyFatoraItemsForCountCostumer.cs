@@ -53,7 +53,7 @@ public partial class QqBuyFatoraItemsForCountCostumer
 
     public decimal? Hamalya { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public int BuId { get; set; }
 

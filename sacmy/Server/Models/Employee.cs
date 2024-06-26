@@ -36,4 +36,14 @@ public partial class Employee
     public virtual ICollection<HorecaInformation> HorecaInformations { get; set; } = new List<HorecaInformation>();
 
     public virtual EmpolyeeRole? Role { get; set; }
+
+    public virtual ICollection<TaskNote> TaskNotes { get; set; } = new List<TaskNote>();
+
+    public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
+
+    public virtual ICollection<TrackComment> TrackCommentAssignedToNavigations { get; set; } = new List<TrackComment>();
+
+    public virtual ICollection<TrackComment> TrackCommentEmployees { get; set; } = new List<TrackComment>();
+
+    public virtual ICollection<Track> Tracks { get; set; } = new List<Track>();
 }

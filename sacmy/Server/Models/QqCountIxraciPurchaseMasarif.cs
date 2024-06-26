@@ -9,7 +9,7 @@ public partial class QqCountIxraciPurchaseMasarif
 
     public int? Idd { get; set; }
 
-    public DateTime? Date { get; set; }
+    public DateOnly? Date { get; set; }
 
     public string? Company { get; set; }
 
@@ -45,7 +45,7 @@ public partial class QqCountIxraciPurchaseMasarif
 
     public string? MNote { get; set; }
 
-    public DateTime? Datee { get; set; }
+    public DateOnly? Datee { get; set; }
 
     public bool? Runn { get; set; }
 }

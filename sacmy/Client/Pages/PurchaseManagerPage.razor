@@ -2,57 +2,203 @@
 @using System.Net.Http.Json
 @inject HttpClient httpClient
 @inject PurchaseService PurchaseService
+@using Microsoft.AspNetCore.Components.Forms
 @using sacmy.Client.Services
 @using sacmy.Shared.ViewModel.HorecaViewModel
 @using System.Linq
 @using sacmy.Shared.ViewModels.PurchaseViewModel
+@using System.Data;
+@using System.IO;
+@using NPOI.XSSF.UserModel;
+@using NPOI.SS.UserModel;
+
+<style>
+    
+    .custom-input-file {
+        margin-right: 10px;
+        height: 40px; /* Adjust height as needed */
+    }
+
+    
+</style>
+
 
 <h1>Purchase Manager</h1>
+
+<div class="container text-center" >
+    <div class="row align-items-center" >
+        <div class="col" style="display:inline">
+            <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Style="display:inline">
+                <ButtonTemplate>
+                    <MudFab HtmlTag="label"
+                            Color="MudBlazor.Color.Primary"
+                            Icon="@Icons.Material.Filled.AttachFile"
+                            Label="Load Excel"
+                            Size="MudBlazor.Size.Small"
+                            for="@context.Id" />
+                </ButtonTemplate>
+            </MudFileUpload>
+        </div>
+        <div class="col" style="display:inline">
+            <input type="text" class="form-control" placeholder="SheetNumber" @bind="SheetNumber">
+        </div>
+        <div class="col" style="display:inline">
+            <MudButton Variant="Variant.Filled" Size="MudBlazor.Size.Small" Color="MudBlazor.Color.Primary" OnClick="@LoadData">Load</MudButton>
+        </div>
+        <div class="col" style="display:inline;">
+
+            @if (files != null)
+            {
+                <MudText Style="display:inline" Typo="@Typo.h6">@files.Count() File@(files.Count() == 1 ? "" : "s"):</MudText>
+                <MudList Style="display:inline-block">
+                    @foreach (var file in files)
+                    {
+                        <MudListItem Style="display:inline" @key="@file">
+                            @file.Name - @file.Size bytes
+                        </MudListItem>
+                    }
+                </MudList>
+            }
+
+        </div>
+    </div>
+</div>
+
+
+
+
 @if (purchaseList == null)
 {
     <p>Loading ...</p>
 }
 else
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>SKU</th>
-                <th>CODE</th>
-                <th>NAME</th>
-                <th>COST</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var pur in purchaseList)
-            {
-                <tr>
-                    <td>@pur.Sku</td>
-                    <td>@pur.Code</td>
-                    <td>@pur.Name</td>
-                    <td>@pur.CartonCost</td>
-                </tr>
-            }
-        </tbody>
-    </table>
+    <MudDataGrid Items="@purchaseList" FixedHeader="true" Height="350px">
+        <Columns>
+            <MudBlazor.PropertyColumn Property="x => x.Code" Title="Code" />
+            <MudBlazor.PropertyColumn Property="x => x.Sku" Title="Sku"/>
+            <MudBlazor.PropertyColumn Property="x => x.Description" Title="Description"/>
+            <MudBlazor.PropertyColumn Property="x => x.Weight" Title="Weight"/>
+            <TemplateColumn CellClass="d-flex justify-end">
+                <CellTemplate>
+                    <MudStack Row>
+                     <MudTextField Label="Storage"/>
+                 </MudStack>
+             </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+    </MudDataGrid>
 }
 
 
 
 
 @code {
+    ISheet sheet;
+    String SheetNumber = "0";
     public List<PurchaseViewModel> purchaseList = new List<PurchaseViewModel>();
-
-
-    protected override void OnInitialized()
+    IList<IBrowserFile> files = new List<IBrowserFile>();
+    private async Task UploadFiles(IBrowserFile file)
     {
-        ReadExcel();
+        files.Add(file);
+        purchaseList.Clear();
+        int sheet_number = int.Parse(SheetNumber);
+        var fileStream = file.OpenReadStream();
+        var ms = new MemoryStream();
+        await fileStream.CopyToAsync(ms);
+        fileStream.Close();
+        ms.Position = 0;
+
+
+        var xsswb = new XSSFWorkbook(ms);
+
+        sheet = xsswb.GetSheetAt(0);
+    }
+    async Task ImportExcelFile(InputFileChangeEventArgs inputFileChangeEventArgs)
+    {
+        purchaseList.Clear();
+        int sheet_number = int.Parse(SheetNumber);
+        var fileStream = inputFileChangeEventArgs.File.OpenReadStream();
+        var ms = new MemoryStream();
+        await fileStream.CopyToAsync(ms);
+        fileStream.Close();
+        ms.Position = 0;
+
+
+        var xsswb = new XSSFWorkbook(ms);
+
+        sheet = xsswb.GetSheetAt(0);
+
     }
 
-    private List<PurchaseViewModel> ReadExcel()
+    void LoadData()
     {
-        purchaseList = PurchaseService.GetPurchaseFromoExcel();
-        return purchaseList;
+        Console.WriteLine("Sheet Number :   "+SheetNumber);
+        IRow hr = sheet.GetRow(int.Parse(SheetNumber));
+
+        int cc = hr.LastCellNum;
+
+        int first_data_row = sheet.FirstRowNum + 14;
+
+        // Assuming the columns in the Excel sheet correspond to properties of PurchaseViewModel
+        for (var j = first_data_row; j <= sheet.LastRowNum; j++) // Start from 1 to skip header row
+        {
+            var r = sheet.GetRow(j);
+            if (r != null) // Skip empty rows
+            {
+                var purchase = new PurchaseViewModel();
+                purchase.Code = r.GetCell(0)?.ToString(); // Assuming Code is in the first column
+                purchase.Sku = r.GetCell(1)?.ToString(); // Assuming Sku is in the second column
+                purchase.Description = r.GetCell(2)?.ToString(); // Assuming Description is in the third column
+                purchase.Weight = r.GetCell(3)?.ToString(); // Assuming Weight is in the fourth column
+
+                // Check if any of the cells contain the word "TOTAL"
+                bool containsTotal = false;
+                for (int i = 0; i < r.LastCellNum; i++)
+                {
+                    var cellValue = r.GetCell(i)?.ToString()?.Trim();
+                    if (cellValue != null && cellValue.Equals("TOTAL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        containsTotal = true;
+                        break;
+                    }
+                }
+
+                if (containsTotal)
+                {
+                    break; // Stop reading if "TOTAL" is found in any cell
+                }
+
+                purchaseList.Add(purchase);
+            }
+        }
+    }
+
+    int FindLastDataRowIndex(ISheet sheet)
+    {
+        for (int rowIndex = sheet.LastRowNum; rowIndex >= sheet.FirstRowNum; rowIndex--)
+        {
+            IRow row = sheet.GetRow(rowIndex);
+            if (row != null)
+            {
+                bool isTotalRow = true;
+                // Assuming the first 4 columns are merged and contain the "TOTAL" value
+                for (int cellIndex = 0; cellIndex < 4; cellIndex++)
+                {
+                    ICell cell = row.GetCell(cellIndex);
+                    if (cell == null || !string.Equals(cell.ToString().Trim(), "TOTAL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isTotalRow = false;
+                        break;
+                    }
+                }
+                if (!isTotalRow)
+                {
+                    return rowIndex;
+                }
+            }
+        }
+        return -1; // If no data row is found, return -1 or handle it according to your requirement
     }
 }
 

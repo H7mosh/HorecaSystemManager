@@ -1,0 +1,272 @@
+﻿@page "/Horeca"
+@using ClosedXML.Excel
+@using System.Data
+@using System.Runtime.InteropServices
+@using sacmy.Shared.ViewModel.HorecaViewModel
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JsRuntime
+@inject HttpClient httpClient
+@inject IDialogService DialogService
+@using Microsoft.JSInterop
+
+<style>
+    .my-header-class .mud-table-cell {
+        background-color: #92a8d1;
+        font-size: 1rem;
+    }
+</style>
+
+@if (isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
+        <MudProgressCircular Color="MudBlazor.Color.Primary" Indeterminate="true" />
+    </div>
+}
+else{
+<MudDataGrid Items="@HorecaInformations" Filterable="true" Virtualize="true" Striped="true" FixedHeader="true" Height="60VH"
+             QuickFilter="@_quickFilter" ColumnResizeMode="ResizeMode.None" Bordered="false" Outlined="true" SortMode="SortMode.Single" FilterMode="DataGridFilterMode.Simple" >
+
+    <ToolBarContent>
+        
+        <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                          AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="mt-0"></MudTextField>
+        <button @onclick="ExportToExcel">
+           <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" width="48" height="48" viewBox="0 0 48 48">
+            <path fill="#169154" d="M29,6H15.744C14.781,6,14,6.781,14,7.744v7.259h15V6z"></path>
+            <path fill="#18482a" d="M14,33.054v7.202C14,41.219,14.781,42,15.743,42H29v-8.946H14z"></path>
+            <path fill="#0c8045" d="M14 15.003H29V24.005000000000003H14z"></path>
+            <path fill="#17472a" d="M14 24.005H29V33.055H14z"></path>
+            <g><path fill="#29c27f" d="M42.256,6H29v9.003h15V7.744C44,6.781,43.219,6,42.256,6z"></path><path fill="#27663f" d="M29,33.054V42h13.257C43.219,42,44,41.219,44,40.257v-7.202H29z"></path><path fill="#19ac65" d="M29 15.003H44V24.005000000000003H29z"></path><path fill="#129652" d="M29 24.005H44V33.055H29z"></path></g>
+            <path fill="#0c7238" d="M22.319,34H5.681C4.753,34,4,33.247,4,32.319V15.681C4,14.753,4.753,14,5.681,14h16.638 C23.247,14,24,14.753,24,15.681v16.638C24,33.247,23.247,34,22.319,34z"></path>
+            <path fill="#fff" d="M9.807 19L12.193 19 14.129 22.754 16.175 19 18.404 19 15.333 24 18.474 29 16.123 29 14.013 25.07 11.912 29 9.526 29 12.719 23.982z"></path>
+        </svg> 
+        </button>
+    </ToolBarContent>
+    <Columns>
+        <HierarchyColumn T="GetHorecaInformationsViewModel"  />
+        <MudBlazor.PropertyColumn Property="x => x.Id" Title="Id"  Hidden="true"/>
+        <MudBlazor.PropertyColumn Property="x => x.Name" Title="Name" />
+        <MudBlazor.PropertyColumn Property="x => x.Governorate" Title="Governorate" />
+        <MudBlazor.PropertyColumn Property="x => x.OwnerName" Title="Owner Name" />
+        <MudBlazor.PropertyColumn Property="x => x.OwnerPhone" Title="Owner Phone" />
+        <MudBlazor.PropertyColumn Property="x => x.PurcasingManagerName" Title="Purchase Manager Name" />
+        <MudBlazor.PropertyColumn Property="x => x.PurchasingManagerPhone" Title="Purchase Manager Phone" />
+        <MudBlazor.PropertyColumn Property="x => x.Concept" Title="Concept" />
+        <MudBlazor.PropertyColumn Property="x => x.CreatedBy" Title="Created By" />
+        <MudBlazor.PropertyColumn Property="x => x.CreatedDate" Title="Created Date" Hideable="true"/>
+        <TemplateColumn CellClass="d-flex justify-end" Filterable="false">
+            <CellTemplate>
+                <MudStack Row>
+                     <MudIcon Icon="@Icons.Material.Rounded.RemoveRedEye" Color="MudBlazor.Color.Primary" @onclick="() => ShowDetails(context.Item)" />
+                     <MudIcon Icon="@Icons.Material.Rounded.Delete" Color="MudBlazor.Color.Error" @onclick="() => OnShowButtonClicked(context.Item)" />
+                    <a href="@context.Item.Location" target="_blank" class="btn">
+                         <MudIcon Icon="@Icons.Material.Rounded.LocationOn" Color="MudBlazor.Color.Surface" />
+                    </a>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <ChildRowContent>
+        <MudCard>
+            <MudCardHeader>
+                <CardHeaderContent>
+                    <MudText Typo="Typo.h6">@context.Item.Name</MudText>
+                    </CardHeaderContent>
+                </MudCardHeader>
+                <MudCardContent>
+                    <MudDataGrid Items="@context.Item.getHorecaStatictsInformationViewModels" Filterable="false" Virtualize="true" Striped="true" Height="300px">
+                        <Columns>
+                            <MudBlazor.PropertyColumn Property="x => x.Rating" Title="Rating" />
+                            <MudBlazor.PropertyColumn Property="x => x.TablesCount" Title="Tables Count" />
+                            <MudBlazor.PropertyColumn Property="x => x.ChairsCount" Title="Chairs Count" />
+                            <MudBlazor.PropertyColumn Property="x => x.IsHePasabahceBuyer" Title="Is Pasabahce Buyer" />
+                            <MudBlazor.PropertyColumn Property="x => x.PasabahcePercentage" Title="Pasabahce Percentage" />
+                            <MudBlazor.PropertyColumn Property="x => x.IsHeBonnaBuyer" Title="Is Bonna Buyer" />
+                            <MudBlazor.PropertyColumn Property="x => x.BonnaPercentage" Title="Bonna Percentage" />
+                            <MudBlazor.PropertyColumn Property="x => x.IsHeNudeBuyer" Title="Is Nude Buyer" />
+                            <MudBlazor.PropertyColumn Property="x => x.NudePercentage" Title="Nude Percentage" />
+                        </Columns>
+                    </MudDataGrid>
+                </MudCardContent>
+            </MudCard>
+        </ChildRowContent>
+</MudDataGrid>
+}
+
+
+<MudCard>
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudText Typo="Typo.h6">Total Count</MudText>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudIconButton Icon="@Icons.Material.Filled.Settings" Color="MudBlazor.Color.Default" />
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudText>@HorecaInformations.Count</MudText>
+        <MudText Typo="Typo.body2">The quick, brown fox jumps over a lazy dog.</MudText>
+    </MudCardContent>
+    <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="MudBlazor.Color.Primary">Read More</MudButton>
+    </MudCardActions>
+</MudCard>
+
+
+<MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
+    <MessageContent>
+        Deleting can <b>not</b> be undone!
+    </MessageContent>
+    <YesButton>
+            <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever" @onclick="()=>RemoveHoreca()">Delete!</MudButton>
+    </YesButton>
+</MudMessageBox>
+
+    @code {
+    private Guid selectedItemsId;
+    private List<GetHorecaInformationsViewModel> HorecaInformations = new List<GetHorecaInformationsViewModel>();
+    private string _searchString;
+    MudMessageBox mbox { get; set; }
+    string state = "Message box hasn't been opened yet";
+    bool isLoading = false;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        isLoading = true;
+        HorecaInformations = await httpClient.GetFromJsonAsync<List<GetHorecaInformationsViewModel>>("api/horeca");
+        isLoading = false;
+    }
+
+    private Func<GetHorecaInformationsViewModel, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (x.Governorate.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if ($"{x.Name} {x.OwnerName} {x.OwnerPhone} {x.PurcasingManagerName} {x.PurchasingManagerPhone} {x.Governorate}".Contains(_searchString))
+            return true;
+
+        return false;
+    };
+
+    private void ShowDetails(GetHorecaInformationsViewModel row)
+    {
+        NavigationManager.NavigateTo($"/horeca-details/{row.Id.ToString()}");
+    }
+
+    private async void RemoveHoreca()
+    {
+        var result = await httpClient.DeleteAsync($"api/horeca/{selectedItemsId}");
+        Console.WriteLine(result);
+    }
+
+    private async void OnShowButtonClicked(GetHorecaInformationsViewModel row)
+    {
+        selectedItemsId = row.Id;
+        bool? result = await mbox.Show();
+    }
+
+    private byte[]? ProductsToBytes()
+    {
+        using var workbook = new XLWorkbook();
+        var datatable = new DataTable();
+        datatable.Columns.Add(new DataColumn("Name"));
+        datatable.Columns.Add(new DataColumn("Governorate"));
+        datatable.Columns.Add(new DataColumn("OwnerName"));
+        datatable.Columns.Add(new DataColumn("OwnerPhone"));
+        datatable.Columns.Add(new DataColumn("PurcasingManagerName"));
+        datatable.Columns.Add(new DataColumn("PurchasingManagerPhone"));
+        datatable.Columns.Add(new DataColumn("Concept"));
+        datatable.Columns.Add(new DataColumn("CreatedBy"));
+        datatable.Columns.Add(new DataColumn("Rating"));
+        datatable.Columns.Add(new DataColumn("TablesCount"));
+        datatable.Columns.Add(new DataColumn("ChairsCount"));
+        datatable.Columns.Add(new DataColumn("CreatedDate"));
+
+        HorecaInformations.ForEach(x =>
+        {
+            var newRow = datatable.NewRow();
+            newRow["Name"] = x.Name;
+            newRow["Governorate"] = x.Governorate;
+            newRow["OwnerName"] = x.OwnerName;
+            newRow["OwnerPhone"] = x.OwnerPhone;
+            newRow["PurcasingManagerName"] = x.PurcasingManagerName;
+            newRow["PurchasingManagerPhone"] = x.PurchasingManagerPhone;
+            newRow["Concept"] = x.Concept;
+            newRow["CreatedBy"] = x.CreatedBy;
+            newRow["Rating"] = x.getHorecaStatictsInformationViewModels.FirstOrDefault().Rating;
+            newRow["TablesCount"] = x.getHorecaStatictsInformationViewModels.FirstOrDefault().TablesCount;
+            newRow["ChairsCount"] = x.getHorecaStatictsInformationViewModels.FirstOrDefault().ChairsCount;
+            newRow["CreatedDate"] = x.getHorecaStatictsInformationViewModels.FirstOrDefault().CreatedDate;
+            datatable.Rows.Add(newRow);
+        });
+
+        var workSheet = workbook.Worksheets.Add(datatable,"HorecaData");
+        using (var stream = new MemoryStream())
+        {
+            workbook.SaveAs(stream);
+            var buffer = stream.ToArray();
+            return buffer;
+        }
+    }
+
+    private async Task SaveSpreadSheetBytes(byte[] bytes)
+    {
+        try
+        {
+            // Check if running in a WebAssembly environment
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("WEBASSEMBLY")))
+            {
+                Console.WriteLine("Cannot access file system outside of the sandbox in a WebAssembly environment.");
+                return;
+            }
+
+            // Get the path to wwwroot folder
+            string wwwrootPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot/exports/horeca.xlsx");
+
+            // Construct the file path
+            string filePath = Path.Combine(wwwrootPath, "exports", "horeca.xlsx");
+
+            // Ensure the directory exists
+            Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+
+            // Write bytes to file
+            await File.WriteAllBytesAsync(filePath, bytes);
+
+            Console.WriteLine("Spreadsheet saved successfully.");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Error saving spreadsheet: " + ex.Message);
+        }
+    }
+
+    public async Task ExportToExcel() 
+    {
+        var buffer = ProductsToBytes();
+
+            // Invoke JavaScript to trigger file download
+            await JsRuntime.InvokeVoidAsync("downloadFile", "example.xlsx", buffer);
+        
+    }
+
+    private async Task DownloadFileFromURL()
+    {
+        try
+        {
+            var fileName = "horeca.xlsx";
+            var fileURL = "https://localhost:7281/exports/horeca.xlsx";
+            await JsRuntime.InvokeVoidAsync("triggerFileDownload", fileName, fileURL);
+        }catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+}

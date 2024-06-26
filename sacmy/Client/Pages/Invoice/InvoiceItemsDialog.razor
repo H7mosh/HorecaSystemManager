@@ -1,0 +1,51 @@
+﻿@using sacmy.Shared.ViewModels.InvoiceViewModel
+
+<style>
+    
+</style>
+
+
+
+<div >
+    <MudDataGrid T="InvoiceItemsViewModel" Items="@InvoiceItems" Virtualize="true" Striped="true" FixedHeader="true" Height="100VH"
+             ColumnResizeMode="ResizeMode.Column" Bordered="false" Outlined="true" SortMode="SortMode.Single" FilterMode="DataGridFilterMode.ColumnFilterRow"
+             Hover="true">
+
+
+    <Columns>
+
+        <MudBlazor.PropertyColumn Property="x => x.Id" Title="Id" />
+        <MudBlazor.PropertyColumn Property="x => x.PatternCode" Title="PatternCode" />
+        <MudBlazor.PropertyColumn Property="x => x.Sku" Title="Sku" />
+        <MudBlazor.PropertyColumn Property="x => x.Name" Title="Name" />
+        <MudBlazor.PropertyColumn Property="x => x.Factory" Title="Factory" />
+        <MudBlazor.PropertyColumn Property="x => x.Price" Title="Price" />
+        <MudBlazor.PropertyColumn Property="x => x.Cost" Title="Cost" />
+        <MudBlazor.PropertyColumn Property="x => x.Quantity" Title="Quantity" />
+        <MudBlazor.PropertyColumn Property="x => x.Total" Title="Total" />
+        <MudBlazor.PropertyColumn Property="x => x.Batch" Title="Batch" />
+        @* <TemplateColumn CellClass="d-flex justify-end" Filterable="false">
+            <CellTemplate>
+                <MudStack Row>
+                    <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Autorenew" Size="Size.Small" @onclick="() => OpenTransformDialog(context.Item.Id)" />
+                    <MudFab Color="Color.Inherit" StartIcon="@Icons.Material.Filled.Comment" Size="Size.Small" />
+                    <MudFab Color="Color.Info" StartIcon="@Icons.Material.Filled.Info" Size="Size.Small" />
+                    @if (selectedId == context.Item.Id && isDeleteLoading)
+                    {
+                        <MudProgressCircular Color="Color.Error" Indeterminate="true" />
+                    }
+                    else
+                    {
+                        <MudFab Color="Color.Error" StartIcon="@Icons.Material.Filled.Delete" Size="Size.Small" @onclick="() => RemoveInvoice(context.Item.Id)" />
+                    }
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn> *@
+    </Columns>
+
+</MudDataGrid>
+</div>
+@code {
+    [Parameter]
+    public List<InvoiceItemsViewModel> InvoiceItems { get; set; }
+}
