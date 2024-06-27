@@ -13,6 +13,6 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
         public string? FileLink { get; set; }
         public string EmployeeName { get; set; }
         public string EmployeeImage { get; set; }
-        public DateTime? CreatedDate { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 }

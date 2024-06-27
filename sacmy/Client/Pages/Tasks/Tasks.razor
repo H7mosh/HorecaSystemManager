@@ -1,15 +1,39 @@
 ﻿@page "/Tasks"
 @using sacmy.Client.Services
+@using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.TasksViewModel
 @inject TaskService TaskService
+@using Microsoft.AspNetCore.Components.Forms
+@inject IJSRuntime JSRuntime
+@inject UserGlobalClass UserGlobal
 
-<h3>Tasks (@tasks?.Count)</h3>
+
 
 <style>
+    body, html {
+        height: 100%;
+        margin: 0;
+    }
+
     .tasks-container {
         display: flex;
         gap: 20px;
-        height: 80vh;
+        height: 100vh;
+        margin: 0;
+    }
+
+    .tasks-list-container {
+        display: flex;
+        flex-direction: column;
+        width: 70%;
+        border-right: 2px solid #ccc;
+    }
+
+    .tasks-list-header {
+        padding: 10px;
+        font-size: 24px;
+        font-weight: bold;
+        color: #212529;
     }
 
     .tasks-list {
@@ -25,6 +49,8 @@
         align-items: center;
         padding: 10px;
         background-color: #ffffff;
+        border: 1px solid #ddd;
+        border-radius: 5px;
     }
 
         .task-item input[type="checkbox"] {
@@ -61,19 +87,19 @@
     }
 
         .task-status.closed, .task-status.done {
-            color: #198754; /* Green */
+            color: #198754;
         }
 
         .task-status.pending {
-            color: #ff9800; /* Orange */
+            color: #ff9800;
         }
 
         .task-status.inProgress {
-            color: #555555; /* Dark grey */
+            color: #555555;
         }
 
     .task-deadline {
-        color: red; /* Red for deadline date */
+        color: red;
     }
 
     .task-assigned {
@@ -98,57 +124,103 @@
         }
 
     .task-detail {
-        flex: 0 0 30%; /* Adjust width to be smaller */
-        padding: 20px;
-        background-color: #f9f9f9;
-        border-radius: 10px;
-        overflow-y: auto; /* Add scroll if content overflows */
+        flex: 0 0 30%;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        height: 100%;
     }
 
-        .task-detail h3 {
-            margin-top: 0;
+    .task-detail-content {
+        padding: 20px;
+        background-color: #ffffff;
+        border-radius: 10px;
+    }
+
+    .task-detail-content .description {
+        padding: 5px;
+        margin:5px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        font-size: 14px;
+    }
+
+    .task-comments {
+        flex: 1;
+        overflow-y: auto;
+        height: 40vh;
+        padding: 5px 10px;
+        border-radius: 10px;
+    }
+
+    .comment-container {
+        display: flex;
+        align-items: flex-start;
+        padding: 15px;
+        background-color: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+
+    .comment-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        margin-right: 15px;
+    }
+
+    .comment-content {
+        flex: 1;
+        margin-left: 15px;
+    }
+
+    .comment-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .comment-author {
+        font-weight: bold;
+    }
+
+    .comment-date {
+        color: #888;
+        font-size: 14px;
+    }
+
+    .comment-text {
+        margin: 10px 0;
+        font-size: 14px;
+    }
+
+    .comment-attachment {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+    }
+
+        .comment-attachment button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 5px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
         }
 
-        .task-detail p {
-            margin: 5px 0;
-        }
-
-        .task-detail .comment {
-            display: flex;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-            .task-detail .comment img {
-                width: 32px;
-                height: 32px;
-                border-radius: 50%;
-                margin-right: 10px;
-            }
-
-            .task-detail .comment .comment-text {
-                font-size: 14px;
-                color: #333;
-            }
-
-            .task-detail .comment .comment-date {
-                font-size: 12px;
-                color: #888;
-                margin-left: 10px;
-            }
+    .message-box-container {
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
 
     .message-box {
         display: flex;
         align-items: flex-start;
         gap: 10px;
-        margin-top: 10px;
-        padding: 10px;
-        background-color: #ffffff;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
         .message-box textarea {
@@ -157,24 +229,24 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             resize: none;
-            height: 100px; /* Adjust height as needed */
+            height: 100px;
         }
 
-        .message-box .button-container {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
+    .button-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
 
-        .message-box button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: #fff;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 100px;
-        }
+    .message-box button {
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        width: 100px;
+    }
 
     .attach-button {
         background-color: #ff9800;
@@ -190,38 +262,87 @@
         font-size: 14px;
         margin-top: 20px;
     }
+
+    .file-display {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background-color: #f9f9f9;
+        margin-bottom: 10px;
+    }
+
+    .file-name {
+        font-size: 14px;
+        color: #555;
+    }
+
+    .remove-file {
+        cursor: pointer;
+        font-size: 18px;
+        color: red;
+    }
+
+    .download-button .download-attachment {
+        /* Your styles here */
+        display: inline-block;
+        padding: 6px 20px;
+        background-color: #007bff;
+        color: #fff;
+        text-decoration: none;
+        border-radius: 5px;
+    }
+
+        .download-button .download-attachment:hover {
+            background-color: #0056b3;
+        }
+
+
+
 </style>
 
+<script>
+    window.openFileDialog = function () {
+        document.getElementById('fileInput').click();
+    };
+
+</script>
+
 <div class="tasks-container">
-    <div class="tasks-list">
-        @foreach (var task in tasks)
-        {
-            <div class="task-item">
-                <input type="checkbox" @onchange="(() => OnTaskSelected(task))" />
-                <div class="task-title">
-                    @task.Title
+    <div class="tasks-list-container">
+        <div class="tasks-list-header">Tasks (@tasks?.Count)</div>
+        <div class="tasks-list">
+            @foreach (var task in tasks)
+            {
+                <div class="task-item">
+                    <input type="checkbox" @onchange="(() => OnTaskSelected(task))" />
+                    <div class="task-title">
+                        @task.Title
+                    </div>
+                    <div class="task-meta">
+                        <span>init date: @task.CreatedDate.ToString("MM-dd-yyyy hh:mm tt")</span>
+                        <span class="task-deadline">expire date: @task.DeadlineDate?.ToString("MM-dd-yyyy hh:mm tt")</span>
+                    </div>
+                    <div class="task-status @(task.Status == "Closed" || task.Status == "Done" ? "closed" : task.Status == "Pending" ? "pending" : "inProgress")">
+                        @task.Status
+                    </div>
+                    <div class="task-assigned">
+                        <span>@task.AssignedToEmployee</span>
+                        <img src="@task.EmployeeImage" alt="Employee Avatar" />
+                    </div>
                 </div>
-                <div class="task-meta">
-                    <span>init date: @task.CreatedDate.ToString("MM-dd-yyyy hh:mm tt")</span>
-                    <span class="task-deadline">expire date: @task.DeadlineDate?.ToString("MM-dd-yyyy hh:mm tt")</span>
-                </div>
-                <div class="task-status @(task.Status == "Closed" || task.Status == "Done" ? "closed" : task.Status == "Pending" ? "pending" : "inProgress")">
-                    @task.Status
-                </div>
-                <div class="task-assigned">
-                    <span>@task.AssignedToEmployee</span>
-                    <img src="@task.EmployeeImage" alt="Employee Avatar" />
-                </div>
-            </div>
-        }
+            }
+        </div>
     </div>
 
     @if (selectedTask != null)
     {
         <div class="task-detail">
-            <div>
+            <div class="task-detail-content">
                 <h3>@selectedTask.Title</h3>
-                <p><strong>Description:</strong> @selectedTask.Description</p>
+                <p class="description"><strong>Description:</strong> @selectedTask.Description</p>
                 <p>
                     <strong>Status:</strong>
                     <select>
@@ -229,30 +350,60 @@
                         <option>Completed</option>
                     </select>
                 </p>
+                <div class="comments-header">
+                    <i class="bi bi-chat-left-text"></i> COMMENTS
+                </div>
+                <div class="comments-line"></div>
+            </div>
+            <div class="task-comments">
                 @if (comments.Count == 0)
                 {
                     <div class="no-comments">There No Message Yet</div>
                 }
                 else
                 {
-                    <div class="task-comments">
-                        <strong>Comments:</strong>
-                        @foreach (var comment in comments)
-                        {
-                            <div class="comment">
-                                <img src="@comment.EmployeeImage" alt="Commenter Avatar" />
-                                <div class="comment-text">@comment.EmployeeName commented: @comment.Note</div>
-                                <div class="comment-date">@string.Format("{0:MM-dd-yyyy hh:mm tt}", comment.CreatedDate)</div>
+                    @foreach (var comment in comments)
+                    {
+                        <div class="comment-container">
+                            <img class="comment-avatar" src="@comment.EmployeeImage" alt="Commenter Avatar" />
+                            <div class="comment-content">
+                                <div class="comment-header">
+                                    <span class="comment-author">@comment.EmployeeName</span>
+                                    <span class="comment-date">@Helper.GetRelativeTime(comment.CreatedDate)</span>
+                                </div>
+                                <div class="comment-text">@comment.Note</div>
+                                @if (!string.IsNullOrEmpty(comment.FileLink))
+                                {
+                                    <div class="download-button">
+                                        <a href=@comment.FileLink class="download-attachment" download="filename.ext" target="_blank">
+                                            Get Attachment
+                                        </a>
+                                    </div>
+                                }
                             </div>
-                        }
-                    </div>
+                        </div>
+                    }
                 }
             </div>
-            <div class="message-box">
-                <textarea placeholder="Write Text Here Please To Send"></textarea>
-                <div class="button-container">
-                    <button class="attach-button">ATTACH</button>
-                    <button class="send-button">SEND</button>
+            <div class="message-box-container">
+                @if (!string.IsNullOrEmpty(selectedFileName))
+                {
+                    <div class="file-display">
+                        <div class="file-name">Selected file: @selectedFileName</div>
+                        <button type="button" class="btn btn-secondary" @onclick="RemoveFile">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
+                                <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"></path>
+                            </svg>
+                        </button>
+                    </div>
+                }
+                <div class="message-box">
+                    <textarea @bind="noteText" placeholder="Write Text Here Please To Send"></textarea>
+                    <div class="button-container">
+                        <button class="attach-button" @onclick="OpenFileDialog">ATTACH</button>
+                        <InputFile id="fileInput" style="display: none;" OnChange="OnFileSelected" />
+                        <button class="send-button" @onclick="SendNote">SEND</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -263,6 +414,11 @@
     private List<GetTaskViewModel> tasks;
     private GetTaskViewModel selectedTask;
     private List<GetTaskNotes> comments = new List<GetTaskNotes>();
+    private string selectedFileName;
+    private string noteText;
+
+    private byte[] fileBytes;
+    private string fileContentType;
 
     protected override async Task OnInitializedAsync()
     {
@@ -276,7 +432,70 @@
         StateHasChanged();
     }
 
+    private async Task OpenFileDialog()
+    {
+        await JSRuntime.InvokeVoidAsync("openFileDialog");
+    }
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        selectedFileName = file.Name;
+        fileContentType = file.ContentType;
+
+        using (var stream = file.OpenReadStream())
+        using (var memoryStream = new MemoryStream())
+        {
+            await stream.CopyToAsync(memoryStream);
+            fileBytes = memoryStream.ToArray();
+        }
+
+        StateHasChanged();
+    }
+
+    private void RemoveFile()
+    {
+        selectedFileName = null;
+        fileBytes = null;
+        StateHasChanged();
+    }
+
+    private async Task SendNote()
+    {
+        var model = new PostTaskNoteViewModel
+            {
+                Note = noteText,
+                FileBase64 = fileBytes != null ? Convert.ToBase64String(fileBytes) : null,
+                FileName = selectedFileName,
+                ContentType = fileContentType,
+                EmployeeId = UserGlobal.User.Id,
+                TaskId = selectedTask.Id
+            };
+
+        await TaskService.PostTaskNoteAsync(model, selectedTask.Title);
+        noteText = string.Empty;
+        selectedFileName = null;
+        fileBytes = null;
+        comments = await TaskService.GetTaskNotesAsync(selectedTask.Id.ToString()); // Refresh comments
+        StateHasChanged();
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

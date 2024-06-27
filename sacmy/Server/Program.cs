@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
+using sacmy.Server.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,7 +12,7 @@ builder.Services.AddDbContext<SafeenCompanyDbContext>(
         builder.Configuration.GetConnectionString("onlineConnectionString")
     )
 );
-
+builder.Services.AddScoped<FileService>();
 builder.Services.AddScoped<NotificationService>();
 
 

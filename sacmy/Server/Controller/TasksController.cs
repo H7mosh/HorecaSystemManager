@@ -2,7 +2,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
+using sacmy.Server.Models;
+using sacmy.Server.Service;
 using sacmy.Shared.ViewModels.TasksViewModel;
+using static System.Net.WebRequestMethods;
 
 namespace sacmy.Server.Controller
 {
@@ -10,10 +13,12 @@ namespace sacmy.Server.Controller
     [ApiController]
     public class TasksController : ControllerBase
     {
+        private readonly FileService _fileService;
         private readonly SafeenCompanyDbContext _context;
-        public TasksController(SafeenCompanyDbContext context)
+        public TasksController(SafeenCompanyDbContext context, FileService fileService)
         {
             _context = context;
+            _fileService = fileService;
         }
 
         [HttpGet]
@@ -70,5 +75,60 @@ namespace sacmy.Server.Controller
             return Ok(taskNotes);
 
         }
+
+        [HttpPost("PostTaskNote")]
+        public async Task<IActionResult> PostTaskNote([FromBody] PostTaskNoteViewModel model, [FromQuery] string taskTitle)
+        {
+            Console.WriteLine("Received request to PostTaskNote");
+
+            if (!ModelState.IsValid)
+            {
+                foreach (var key in ModelState.Keys)
+                {
+                    var errors = ModelState[key].Errors;
+                    foreach (var error in errors)
+                    {
+                        Console.WriteLine($"ModelState Error for {key}: {error.ErrorMessage}");
+                    }
+                }
+                return BadRequest(ModelState);
+            }
+
+            Console.WriteLine($"Received Note: {model.Note}");
+            Console.WriteLine($"Received EmployeeId: {model.EmployeeId}");
+            Console.WriteLine($"Received TaskId: {model.TaskId}");
+            Console.WriteLine($"Received FileName: {model.FileName}");
+            Console.WriteLine($"Received ContentType: {model.ContentType}");
+
+            string fileLink = null;
+
+            if (!string.IsNullOrEmpty(model.FileBase64))
+            {
+                Console.WriteLine($"Received File: {model.FileBase64.Length} characters");
+
+                var fileBytes = Convert.FromBase64String(model.FileBase64);
+                var filePath = Path.Combine("C:\\assets\\TaskAttachment", model.FileName);
+                await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
+                fileLink = filePath;
+            }
+
+            var taskNote = new TaskNote
+            {
+                Id = Guid.NewGuid(),
+                Note = model.Note,
+                FileLink = "https://safinahmedcompany.com/assets/TaskAttachment/"+model.FileName,
+                CreatedBy = model.EmployeeId,
+                CreatedDate = DateTime.Now,
+                TaskId = model.TaskId
+            };
+
+            _context.Set<TaskNote>().Add(taskNote);
+            await _context.SaveChangesAsync();
+
+            return Ok(taskNote);
+        }
+
+
+
     }
 }
