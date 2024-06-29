@@ -27,6 +27,7 @@ builder.Services.AddScoped<NotificationClientService>();
 builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<TaskService>();
+builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddMudServices();
 builder.Services.AddSingleton<UserGlobalClass>();
 builder.Services.AddSingleton<AuthService>();

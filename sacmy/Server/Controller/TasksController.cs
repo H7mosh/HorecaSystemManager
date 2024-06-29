@@ -15,37 +15,77 @@ namespace sacmy.Server.Controller
     {
         private readonly FileService _fileService;
         private readonly SafeenCompanyDbContext _context;
-        public TasksController(SafeenCompanyDbContext context, FileService fileService)
+        private readonly NotificationService _notificationService;
+
+        public TasksController(SafeenCompanyDbContext context, FileService fileService, NotificationService notificationService)
         {
             _context = context;
             _fileService = fileService;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetTasks()
+        public async Task<IActionResult> GetTasks([FromQuery] Guid UserId)
         {
-            var tasks = await _context.Tasks.
-                Include(e => e.AssignedToEmployeeNavigation).
-                Include(e => e.Status).
-                Select(e => new GetTaskViewModel {
-                Id = e.Id,
-                Title = e.Title,
-                Description = e.Description,
-                Status = e.Status.StateEn,
-                AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + e.AssignedToEmployeeNavigation.LastName,
-                EmployeeImage = "https://safinahmedcompany.com/assets/EmployeeImages/"+e.AssignedToEmployeeNavigation.Image,
-                CreatedDate = e.CreatedDate,
-                DeadlineDate = e.Deadline
-                }).ToListAsync();
+            Employee employee = await _context.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Id == UserId);
 
+            var tasks = await _context.Tasks
+                .Include(e => e.AssignedToEmployeeNavigation)
+                .Include(e => e.Status)
+                .Select(e => new GetTaskViewModel
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Description = e.Description,
+                    Status = e.Status.StateEn,
+                    StatusId = e.Status.Id,
+                    AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + " " + e.AssignedToEmployeeNavigation.LastName,
+                    AssignedToEmployeeId = e.AssignedToEmployeeNavigation.Id,
+                    EmployeeImage = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.AssignedToEmployeeNavigation.Image,
+                    CreatedDate = e.CreatedDate,
+                    DeadlineDate = e.Deadline
+                }).OrderByDescending(e => e.CreatedDate).ToListAsync();
 
-            if (tasks is null)
+            // Filter tasks based on UserId
+            if (employee.Role.Role != "manager")
+            {
+                tasks = tasks.Where(t => t.AssignedToEmployeeId == UserId).ToList();
+            }
+
+            if (tasks == null || !tasks.Any())
             {
                 return NotFound("There's No Tasks Yet");
             }
 
             return Ok(tasks);
+           
+        }
 
+        [HttpPost]
+        public async Task<IActionResult> PostTask([FromBody] PostTaskViewModel postTaskViewModel)
+        {
+            try
+            {
+                Employee employee = await _context.Employees.FindAsync(postTaskViewModel.AssignedToEmployee);
+                sacmy.Server.Models.Task task = new Models.Task();
+
+                task.Id = postTaskViewModel.Id;
+                task.Title = postTaskViewModel.Title;
+                task.Description = postTaskViewModel.Description;
+                task.AssignedToEmployee = postTaskViewModel?.AssignedToEmployee;
+                task.StatusId = postTaskViewModel.StatusId;
+                task.Deadline = postTaskViewModel.Deadline;
+                task.CreatedDate = DateTime.Now;
+                task.IsDeleted = false;
+
+                await _context.Tasks.AddAsync(task);
+                await _context.SaveChangesAsync();
+                await _notificationService.SendNotificationAsync("New Task Assigned", $"You have been assigned a new task: {task.Title}", [employee.FirebaseToken] , true);
+                return Ok();
+            }
+            catch (Exception ex) { 
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("GetTaskNotes")]
@@ -60,10 +100,13 @@ namespace sacmy.Server.Controller
                                 Id = e.Id,
                                 Note = e.Note,
                                 FileLink = e.FileLink,
+                                CreatedBy = e.CreatedBy,
                                 EmployeeName = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
                                 EmployeeImage = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                                EmpolyeeRole = e.CreatedByNavigation.Role.Role,
                                 CreatedDate = e.CreatedDate,
                             }).
+                            OrderByDescending(e => e.CreatedDate).
                             ToListAsync();
 
 
@@ -79,7 +122,7 @@ namespace sacmy.Server.Controller
         [HttpPost("PostTaskNote")]
         public async Task<IActionResult> PostTaskNote([FromBody] PostTaskNoteViewModel model, [FromQuery] string taskTitle)
         {
-            Console.WriteLine("Received request to PostTaskNote");
+            
 
             if (!ModelState.IsValid)
             {
@@ -93,12 +136,6 @@ namespace sacmy.Server.Controller
                 }
                 return BadRequest(ModelState);
             }
-
-            Console.WriteLine($"Received Note: {model.Note}");
-            Console.WriteLine($"Received EmployeeId: {model.EmployeeId}");
-            Console.WriteLine($"Received TaskId: {model.TaskId}");
-            Console.WriteLine($"Received FileName: {model.FileName}");
-            Console.WriteLine($"Received ContentType: {model.ContentType}");
 
             string fileLink = null;
 
@@ -116,7 +153,7 @@ namespace sacmy.Server.Controller
             {
                 Id = Guid.NewGuid(),
                 Note = model.Note,
-                FileLink = "https://safinahmedcompany.com/assets/TaskAttachment/"+model.FileName,
+                FileLink = string.IsNullOrEmpty(model.FileBase64) ? null : "https://safinahmedcompany.com/assets/TaskAttachment/" +model.FileName  ,
                 CreatedBy = model.EmployeeId,
                 CreatedDate = DateTime.Now,
                 TaskId = model.TaskId
@@ -128,6 +165,44 @@ namespace sacmy.Server.Controller
             return Ok(taskNote);
         }
 
+        [HttpGet("GetTaskStatus")]
+        public async Task<IActionResult> GetTaskStatus()
+        {
+            var status = await _context.Statuses.Select(e => new GetTaskStatus
+                                {
+                                    Id= e.Id,
+                                    StatusAr = e.StateAr,
+                                    StatusEn = e.StateEn,
+                                }).ToListAsync();
+
+            return Ok(status);
+        }
+
+        [HttpPost("UpdateTask")]
+        public async Task<IActionResult> UpdateTask([FromBody]UpdateTaskViewModel taskViewModel)
+        {
+            sacmy.Server.Models.Task task = await _context.Tasks.FindAsync(taskViewModel.Id);
+
+
+            if (task != null)
+            {
+                task.StatusId = taskViewModel.StatusId;
+                task.AssignedToEmployee = taskViewModel.AssignedToEmployeeId;
+                task.Title = taskViewModel.Title;
+                task.Description = taskViewModel.Description;
+                task.DeletedDate = taskViewModel.DeadlineDate;
+                taskViewModel.CreatedDate = taskViewModel.CreatedDate;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(taskViewModel);
+            }
+
+            else
+            {
+                return NotFound("Cannot Find This Task");
+            }
+        }
 
 
     }

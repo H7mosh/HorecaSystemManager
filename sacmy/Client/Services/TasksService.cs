@@ -19,10 +19,12 @@ namespace sacmy.Client.Services
             _httpClientFactory = httpClientFactory;
         }
 
-        public async Task<List<GetTaskViewModel>> GetTasksAsync()
+        public async Task<List<GetTaskViewModel>> GetTasksAsync(Guid userId)
         {
-            return await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskViewModel>>("api/Tasks");
+            var query = $"api/Tasks?UserId={userId}";
+            return await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskViewModel>>(query);
         }
+
 
         public async Task<List<GetTaskNotes>> GetTaskNotesAsync(string taskId)
         {
@@ -40,6 +42,34 @@ namespace sacmy.Client.Services
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadFromJsonAsync<PostTaskNoteViewModel>();
+        }
+
+        public async Task<List<GetTaskStatus>> GetTaskStatusAsync()
+        {
+            var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskStatus>>("api/Tasks/GetTaskStatus");
+            return response ?? new List<GetTaskStatus>();
+        }
+
+        public async Task<UpdateTaskViewModel> UpdateTaskAsync(UpdateTaskViewModel taskViewModel)
+        {
+            var jsonContent = JsonSerializer.Serialize(taskViewModel);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").PostAsync("api/Tasks/UpdateTask", content);
+
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadFromJsonAsync<UpdateTaskViewModel>();
+        }
+
+        public async Task PostTaskAsync(PostTaskViewModel postTaskViewModel)
+        {
+            var jsonContent = JsonSerializer.Serialize(postTaskViewModel);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+            var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").PostAsync("api/Tasks", content);
+
+            response.EnsureSuccessStatusCode();
         }
 
     }
