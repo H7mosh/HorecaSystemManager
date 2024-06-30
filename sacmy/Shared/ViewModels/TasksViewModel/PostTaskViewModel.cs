@@ -15,6 +15,7 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
         public string Description { get; set; } = null!;
 
         public Guid AssignedToEmployee { get; set; }
+        public Guid CreatedBy { get; set; }
 
         public Guid? StatusId { get; set; }
 

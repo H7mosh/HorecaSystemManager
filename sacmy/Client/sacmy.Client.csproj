@@ -36,6 +36,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="wwwroot\css\task_page_style.css" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Content Update="wwwroot\images\website_logo.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
