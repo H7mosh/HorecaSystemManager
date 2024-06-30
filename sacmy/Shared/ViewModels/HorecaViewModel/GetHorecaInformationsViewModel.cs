@@ -38,6 +38,7 @@ namespace sacmy.Shared.ViewModel.HorecaViewModel
         public DateTime? CreatedDate { get; set; }
 
         public List<string> HorecaImage {  get; set; }
+
         public List<GetHorecaStatictsInformationViewModel> getHorecaStatictsInformationViewModels { get; set; }
 
     }

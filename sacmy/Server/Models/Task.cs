@@ -17,6 +17,8 @@ public partial class Task
 
     public DateTime? Deadline { get; set; }
 
+    public Guid? CreatedBy { get; set; }
+
     public DateTime CreatedDate { get; set; }
 
     public DateTime? UpdatedDate { get; set; }
@@ -26,6 +28,8 @@ public partial class Task
     public bool IsDeleted { get; set; }
 
     public virtual Employee? AssignedToEmployeeNavigation { get; set; }
+
+    public virtual Employee? CreatedByNavigation { get; set; }
 
     public virtual Status? Status { get; set; }
 

@@ -42,6 +42,10 @@ namespace sacmy.Server.Controller
                     AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + " " + e.AssignedToEmployeeNavigation.LastName,
                     AssignedToEmployeeId = e.AssignedToEmployeeNavigation.Id,
                     EmployeeImage = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.AssignedToEmployeeNavigation.Image,
+                    EmployeeFirebaseToken = e.AssignedToEmployeeNavigation.FirebaseToken,
+                    CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
+                    CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
+                    CreatedbyImage = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
                     CreatedDate = e.CreatedDate,
                     DeadlineDate = e.Deadline
                 }).OrderByDescending(e => e.CreatedDate).ToListAsync();
@@ -54,7 +58,7 @@ namespace sacmy.Server.Controller
 
             if (tasks == null || !tasks.Any())
             {
-                return NotFound("There's No Tasks Yet");
+                return Ok("There's No Tasks Yet");
             }
 
             return Ok(tasks);
@@ -73,6 +77,7 @@ namespace sacmy.Server.Controller
                 task.Title = postTaskViewModel.Title;
                 task.Description = postTaskViewModel.Description;
                 task.AssignedToEmployee = postTaskViewModel?.AssignedToEmployee;
+                task.CreatedBy = postTaskViewModel?.CreatedBy;
                 task.StatusId = postTaskViewModel.StatusId;
                 task.Deadline = postTaskViewModel.Deadline;
                 task.CreatedDate = DateTime.Now;

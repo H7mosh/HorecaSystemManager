@@ -2,368 +2,16 @@
 @using sacmy.Client.Services
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.EmployeeViewModel
+@using sacmy.Shared.ViewModels.Notification
 @using sacmy.Shared.ViewModels.TasksViewModel
 @inject TaskService TaskService
 @inject EmployeeService EmployeeService
+@inject NotificationClientService NotificationClientService
 @using Microsoft.AspNetCore.Components.Forms
 @inject IJSRuntime JSRuntime
 @inject UserGlobalClass UserGlobal
 @inject ISnackbar Snackbar
 
-<style>
-    body, html {
-        height: 100%;
-        margin: 0;
-    }
-
-    .tasks-container {
-        display: flex;
-        gap: 20px;
-        height: 100vh;
-        margin: 0;
-    }
-
-    .tasks-list-container {
-        display: flex;
-        flex-direction: column;
-        width: 70%;
-        border-right: 2px solid #ccc;
-    }
-
-    .tasks-list-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px;
-        font-size: 24px;
-        font-weight: bold;
-        color: #212529;
-    }
-
-    .tasks-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        padding: 10px;
-        flex: 1;
-    }
-
-    .task-item {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-        background-color: #ffffff;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-    }
-
-    .task-item input[type="checkbox"] {
-        margin-right: 20px;
-    }
-
-    .task-title {
-        font-size: 16px;
-        font-weight: bold;
-        margin-right: 20px;
-        min-width: 150px;
-    }
-
-    .task-meta {
-        display: flex;
-        align-items: center;
-        font-size: 12px;
-        color: #888;
-        margin-right: 20px;
-    }
-
-    .task-meta span {
-        background-color: #f5f5f5;
-        padding: 2px 5px;
-        border-radius: 3px;
-        margin-right: 10px;
-    }
-
-    .task-status {
-        font-size: 14px;
-        font-weight: bold;
-        margin-right: 20px;
-        min-width: 100px;
-    }
-
-    .task-status.closed, .task-status.done {
-        color: #198754;
-    }
-
-    .task-status.pending {
-        color: #ff9800;
-    }
-
-    .task-status.inProgress {
-        color: #555555;
-    }
-
-    .task-deadline {
-        color: red;
-    }
-
-    .task-assigned {
-        display: flex;
-        align-items: center;
-    }
-
-    .task-assigned span {
-        font-size: 14px;
-        color: #333;
-        margin-right: 10px;
-        white-space: nowrap;
-        width: 120px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .task-assigned img {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-    }
-
-    .task-detail {
-        flex: 0 0 30%;
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-    }
-
-    .task-detail-content {
-        padding: 20px;
-        background-color: #ffffff;
-        border-radius: 10px;
-    }
-
-    .task-detail-content .description {
-        padding: 5px;
-        margin: 5px;
-        background-color: #ffffff;
-        border-radius: 10px;
-        font-size: 14px;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        position: relative;
-        max-width: 80%;
-    }
-
-    .view-more-container {
-        display: flex;
-        align-items: center;
-    }
-
-    .view-more-button {
-        margin-left: 10px;
-        background-color: transparent;
-        border: none;
-        color: #007bff;
-        cursor: pointer;
-        font-size: 12px;
-    }
-
-    .add-task-button {
-        background-color: #007bff;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-    }
-
-    .modal-content {
-        padding: 20px;
-    }
-
-    .modal-backdrop {
-        opacity: 0.5 !important;
-    }
-
-    .task-comments {
-        flex: 1;
-        overflow-y: auto;
-        height: 40vh;
-        padding: 5px 10px;
-        border-radius: 10px;
-    }
-
-    .comment-container {
-        display: flex;
-        align-items: flex-start;
-        padding: 15px;
-        background-color: #f9f9f9;
-        border: 1px solid #ddd;
-        border-radius: 10px;
-        margin-bottom: 15px;
-    }
-
-    .comment-avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        margin-right: 15px;
-    }
-
-    .comment-content {
-        flex: 1;
-        margin-left: 15px;
-    }
-
-    .comment-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 10px;
-    }
-
-    .comment-author {
-        font-weight: bold;
-    }
-
-    .comment-date {
-        color: #888;
-        font-size: 14px;
-    }
-
-    .comment-text {
-        margin: 10px 0;
-        font-size: 14px;
-    }
-
-    .comment-attachment {
-        display: flex;
-        align-items: center;
-        margin-top: 10px;
-    }
-
-    .comment-attachment button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 5px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-    }
-
-    .message-box-container {
-        padding: 10px;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    .message-box {
-        display: flex;
-        align-items: flex-start;
-        gap: 10px;
-    }
-
-    .message-box textarea {
-        flex: 1;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        resize: none;
-        height: 100px;
-    }
-
-    .button-container {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    .message-box button {
-        padding: 10px 20px;
-        background-color: #007bff;
-        color: #fff;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        width: 100px;
-    }
-
-    .attach-button {
-        background-color: #ff9800;
-    }
-
-    .send-button {
-        background-color: #007bff;
-    }
-
-    .no-comments {
-        text-align: center;
-        color: #888;
-        font-size: 14px;
-        margin-top: 20px;
-    }
-
-    .file-display {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        background-color: #f9f9f9;
-        margin-bottom: 10px;
-    }
-
-    .file-name {
-        font-size: 14px;
-        color: #555;
-    }
-
-    .remove-file {
-        cursor: pointer;
-        font-size: 18px;
-        color: red;
-    }
-
-    .download-button .download-attachment {
-        display: inline-block;
-        padding: 6px 20px;
-        background-color: #007bff;
-        color: #fff;
-        text-decoration: none;
-        border-radius: 5px;
-    }
-
-    .download-button .download-attachment:hover {
-        background-color: #0056b3;
-    }
-
-    .status-container {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .status-container label {
-        margin-bottom: 0;
-        white-space: nowrap;
-    }
-
-    .status-container select {
-        flex-grow: 1;
-    }
-
-    .comments-header {
-        margin: 10px;
-    }
-
-    .form-group-status-container {
-        margin: 10px;
-    }
-</style>
 
 <script>
     window.openFileDialog = function () {
@@ -383,30 +31,39 @@
     <div class="tasks-list-container">
         <div class="tasks-list-header">
             <span>Tasks (@tasks?.Count)</span>
-            <button class="add-task-button" @onclick="ShowAddTaskModal">Add Task</button>
+            <div>
+                <button class="add-task-button" @onclick="ShowAddTaskModal">Add Task</button>
+                <button class="reminder-button" @onclick="ShowRemindModal">Remind</button>
+            </div>
         </div>
-        <div class="tasks-list">
-            @foreach (var task in tasks)
-            {
-                <div class="task-item">
-                    <input type="checkbox" @onchange="(() => OnTaskSelected(task))" />
-                    <div class="task-title">
-                        @task.Title
+        @if (tasks != null && tasks.Any())
+        {
+            <div class="tasks-list">
+                @foreach (var task in tasks)
+                {
+                    <div class="task-item @(selectedTask?.Id == task.Id ? "selected" : "")" @onclick="(() => OnTaskSelected(task))">
+                        <div class="task-title">
+                            @task.Title
+                        </div>
+                        <div class="task-meta">
+                            <span>init date: @task.CreatedDate.ToString("MM-dd-yyyy hh:mm tt")</span>
+                            <span class="task-deadline">expire date: @task.DeadlineDate?.ToString("MM-dd-yyyy hh:mm tt")</span>
+                        </div>
+                        <div class="task-status @(task.Status == "Closed" || task.Status == "Done" ? "closed" : task.Status == "Pending" ? "pending" : "inProgress")">
+                            @task.Status
+                        </div>
+                        <div class="task-assigned">
+                            <span>@task.AssignedToEmployee</span>
+                            <img src="@task.EmployeeImage" alt="Employee Avatar" />
+                        </div>
                     </div>
-                    <div class="task-meta">
-                        <span>init date: @task.CreatedDate.ToString("MM-dd-yyyy hh:mm tt")</span>
-                        <span class="task-deadline">expire date: @task.DeadlineDate?.ToString("MM-dd-yyyy hh:mm tt")</span>
-                    </div>
-                    <div class="task-status @(task.Status == "Closed" || task.Status == "Done" ? "closed" : task.Status == "Pending" ? "pending" : "inProgress")">
-                        @task.Status
-                    </div>
-                    <div class="task-assigned">
-                        <span>@task.AssignedToEmployee</span>
-                        <img src="@task.EmployeeImage" alt="Employee Avatar" />
-                    </div>
-                </div>
-            }
-        </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p>No tasks available.</p>
+        }
     </div>
 
     @if (selectedTask != null)
@@ -420,21 +77,39 @@
                     </p>
                     <button class="view-more-button" @onclick="ShowFullDescription">View More</button>
                 </div>
+                <div class="created-by">
+                    <span><strong>CREATED BY</strong></span>
+                    <div class="creator-info">
+                        <span>@selectedTask.CreatedbyName</span>
+                        <img src="@selectedTask.CreatedbyImage" alt="Creator Avatar" />
+                    </div>
                 <div class="form-group-status-container">
                     <label for="taskStatus">Status:</label>
-                    <select id="taskStatus" class="form-control" @onchange="async (e) => await OnTaskStatusChanged(e)">
-                        @foreach (var status in taskStatuses)
-                        {
-                            <option value="@status.Id" selected="@(status.Id == selectedTask.StatusId ? "selected" : null)">@status.StatusEn</option>
-                        }
-                    </select>
-                </div>
+                        <select id="taskStatus" class="form-control" @onchange="async (e) => await OnTaskStatusChanged(e)">
+                            @foreach (var status in taskStatuses)
+                            {
+                                var restrictedStatuses = new List<Guid>
+                                    {
+                                    Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
+                                    Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
+                                    Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
+                                    };
 
+                                <option value="@status.Id"
+                                        disabled="@((selectedTask.CreatedBy != UserGlobal.User.Id && restrictedStatuses.Contains(status.Id)) ? "disabled" : null)"
+                                        selected="@(status.Id == selectedTask.StatusId ? "selected" : null)">
+                                    @status.StatusEn
+                                </option>
+                            }
+                        </select>
+
+                </div>
 
                 <div class="comments-header">
                     <i class="bi bi-chat-left-text"></i> COMMENTS
                 </div>
                 <div class="comments-line"></div>
+            </div>
             </div>
             <div class="task-comments">
                 @if (comments.Count == 0)
@@ -487,6 +162,10 @@
                         <button class="send-button" @onclick="SendNote">SEND</button>
                     </div>
                 </div>
+                @if (!string.IsNullOrWhiteSpace(noteErrorMessage))
+                {
+                    <div class="text-danger">@noteErrorMessage</div>
+                }
             </div>
             <div class="modal fade @(showModal ? "show d-block" : "")" id="descriptionModal" tabindex="-1" role="dialog" aria-labelledby="descriptionModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
@@ -501,86 +180,7 @@
                             @selectedTask.Description
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="CloseModal">Close</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal fade @(showAddTaskModal ? "show d-block" : "")" id="addTaskModal" tabindex="-1" role="dialog" aria-labelledby="addTaskModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="addTaskModalLabel">Add Task</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseAddTaskModal">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label for="taskTitle">Title</label>
-                                <input type="text" class="form-control" id="taskTitle" @bind="newTaskTitle" placeholder="Enter task title">
-                                @if (string.IsNullOrWhiteSpace(newTaskTitle))
-                                {
-                                    <div class="text-danger">Title is required</div>
-                                }
-                            </div>
-                            <div class="form-group">
-                                <label for="taskDescription">Description</label>
-                                <textarea class="form-control" id="taskDescription" @bind="newTaskDescription" placeholder="Enter task description"></textarea>
-                                @if (string.IsNullOrWhiteSpace(newTaskDescription))
-                                {
-                                    <div class="text-danger">Description is required</div>
-                                }
-                            </div>
-                            <div class="form-group">
-                                <label for="taskAssignedTo">Assigned To</label>
-                                <select class="form-control" id="taskAssignedTo" @onchange="(e) => newTaskAssignedToEmployeeId = Guid.Parse(e.Value.ToString())">
-                                    <option value="">Select Employee</option>
-                                    @foreach (var employee in employees)
-                                    {
-                                        <option value="@employee.Id">@employee.FirstName @employee.LastName</option>
-                                    }
-                                </select>
-                                @if (newTaskAssignedToEmployeeId == Guid.Empty)
-                                {
-                                    <div class="text-danger">Assigned Employee is required</div>
-                                }
-                            </div>
-                            <div class="form-group">
-                                <label for="taskStatus">Status</label>
-                                <select class="form-control" id="taskStatus" @onchange="(e) => newTaskStatusId = Guid.Parse(e.Value.ToString())">
-                                    <option value="">Select initial status</option>
-                                    @foreach (var status in taskStatuses)
-                                    {
-                                        <option value="@status.Id">@status.StatusEn</option>
-                                    }
-                                </select>
-                                @if (newTaskStatusId == Guid.Empty)
-                                {
-                                    <div class="text-danger">Status is required</div>
-                                }
-                            </div>
-                            <div class="form-group">
-                                <label for="taskDeadline">Deadline</label>
-                                <input type="datetime-local" class="form-control" id="taskDeadline" @bind="newTaskDeadline">
-                                @if (newTaskDeadline == default(DateTime))
-                                {
-                                    <div class="text-danger">Deadline is required</div>
-                                }
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-dismiss="modal" @onclick="CloseAddTaskModal">Close</button>
-                            <button type="button" class="btn btn-primary" @onclick="AddTask" disabled="@isLoading">
-                                @if (isLoading)
-                                {
-                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                                }
-                                else
-                                {
-                                    <span>Save Task</span>
-                                }
-                            </button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModal">Close</button>
                         </div>
                     </div>
                 </div>
@@ -588,13 +188,232 @@
         </div>
     }
 
-</div>
+    <!-- Add Task Modal -->
+    <div class="modal fade @(showAddTaskModal ? "show d-block" : "")" id="addTaskModal" tabindex="-1" role="dialog" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addTaskModalLabel">Add Task</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseAddTaskModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="taskTitle">Title</label>
+                        <input type="text" class="form-control" id="taskTitle" @bind="newTaskTitle" placeholder="Enter task title">
+                        @if (string.IsNullOrWhiteSpace(newTaskTitle))
+                        {
+                            <div class="text-danger">Title is required</div>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDescription">Description</label>
+                        <textarea class="form-control" id="taskDescription" @bind="newTaskDescription" placeholder="Enter task description"></textarea>
+                        @if (string.IsNullOrWhiteSpace(newTaskDescription))
+                        {
+                            <div class="text-danger">Description is required</div>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label for="taskAssignedTo">Assigned To</label>
+                        <select class="form-control" id="taskAssignedTo" @onchange="(e) => newTaskAssignedToEmployeeId = Guid.Parse(e.Value.ToString())">
+                            <option value="">Select Employee</option>
+                            @if (employees != null)
+                            {
+                                @foreach (var employee in employees)
+                                {
+                                    <option value="@employee.Id">@employee.FirstName @employee.LastName</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="">There's No Employee Yet !</option>
+                            }
 
+                        </select>
+                        @if (newTaskAssignedToEmployeeId == Guid.Empty)
+                        {
+                            <div class="text-danger">Assigned Employee is required</div>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label for="taskStatus">Status</label>
+                        <select class="form-control" id="taskStatus" @onchange="(e) => newTaskStatusId = Guid.Parse(e.Value.ToString())">
+                            <option value="">Select initial status</option>
+                            @if(taskStatuses != null){
+                                @foreach (var status in taskStatuses)
+                                {
+                                    <option value="@status.Id">@status.StatusEn</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="">There's No Status Yet !</option>
+                            }
+                        </select>
+                        @if (newTaskStatusId == Guid.Empty)
+                        {
+                            <div class="text-danger">Status is required</div>
+                        }
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDeadline">Deadline</label>
+                        <input type="datetime-local" class="form-control" id="taskDeadline" @bind="newTaskDeadline">
+                        @if (newTaskDeadline == default(DateTime))
+                        {
+                            <div class="text-danger">Deadline is required</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseAddTaskModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="AddTask" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <span>Save Task</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Remind Modal -->
+    <div class="modal fade @(showRemindModal ? "show d-block" : "")" id="remindModal" tabindex="-1" role="dialog" aria-labelledby="remindModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="remindModalLabel">Remind Task</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseRemindModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="remindMessage">Remind Message</label>
+                        <textarea class="form-control" id="remindMessage" @bind="remindMessage" placeholder="Enter remind message"></textarea>
+                        @if (string.IsNullOrWhiteSpace(remindMessage))
+                        {
+                            <div class="text-danger">Message is required</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseRemindModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="() => SendRemind(selectedTask.EmployeeFirebaseToken)" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <span>Send Remind</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Re-Scheduled Modal -->
+    <div class="modal fade @(showRescheduleModal ? "show d-block" : "")" id="rescheduleModal" tabindex="-1" role="dialog" aria-labelledby="rescheduleModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="rescheduleModalLabel">Re-Schedule Task</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseRescheduleModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="newDeadline">New Deadline</label>
+                        <input type="datetime-local" class="form-control" id="newDeadline" @bind="newTaskDeadline">
+                        @if (newTaskDeadline == default(DateTime))
+                        {
+                            <div class="text-danger">New Deadline is required</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseRescheduleModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="RescheduleTask" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <span>Save</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Re-Assigned Modal -->
+    <div class="modal fade @(showReassignModal ? "show d-block" : "")" id="reassignModal" tabindex="-1" role="dialog" aria-labelledby="reassignModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="reassignModalLabel">Re-Assign Task</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseReassignModal">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="reassignEmployee">New Employee</label>
+                        <select class="form-control" id="reassignEmployee" @onchange="(e) => newTaskAssignedToEmployeeId = Guid.Parse(e.Value.ToString())">
+                            <option value="">Select Employee</option>
+                            @if (employees != null)
+                            {
+                                @foreach (var employee in employees)
+                                {
+                                    <option value="@employee.Id">@employee.FirstName @employee.LastName</option>
+                                }
+                            }
+                            else
+                            {
+                                <option value="">There's No Employee Yet !</option>
+                            }
+
+                        </select>
+                        @if (newTaskAssignedToEmployeeId == Guid.Empty)
+                        {
+                            <div class="text-danger">New Employee is required</div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseReassignModal">Close</button>
+                    <button type="button" class="btn btn-primary" @onclick="ReassignTask" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        }
+                        else
+                        {
+                            <span>Save</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
 
 <MudSnackbarProvider />
 
 @code {
-    private List<GetTaskViewModel> tasks;
+    private List<GetTaskViewModel> tasks = null!;
     private List<GetTaskNotes> comments = new List<GetTaskNotes>();
     private List<GetTaskStatus> taskStatuses;
     private List<GetEmployeeViewModel> employees;
@@ -607,18 +426,24 @@
     private bool isLoading = false;
     private bool showSuccessMessage = false;
     private bool showAddTaskModal = false;
-
+    private bool showRemindModal = false;
+    private bool showRescheduleModal = false;
+    private bool showReassignModal = false;
+    private string noteErrorMessage;
     private string newTaskTitle;
     private string newTaskDescription;
     private Guid newTaskAssignedToEmployeeId = Guid.Empty;
     private Guid newTaskStatusId = Guid.Empty;
     private DateTime newTaskDeadline = DateTime.Now;
 
+    private string remindTitle;
+    private string remindMessage;
+
     protected override async Task OnInitializedAsync()
     {
-        tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id);
-        taskStatuses = await TaskService.GetTaskStatusAsync();
-        employees = await EmployeeService.GetEmployeesAsync();
+        tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id) ?? new List<GetTaskViewModel>();
+        taskStatuses = await TaskService.GetTaskStatusAsync() ?? new List<GetTaskStatus>();
+        employees = await EmployeeService.GetEmployeesAsync() ?? new List<GetEmployeeViewModel>();
     }
 
     private async void OnTaskSelected(GetTaskViewModel task)
@@ -634,14 +459,63 @@
 
         if (selectedTask != null && newStatusId != selectedTask.StatusId)
         {
+            // Check if the status change is allowed
+            if (IsStatusChangeAllowed(newStatusId))
+            {
+                if (newStatusId == Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA")) // Re-Scheduled
+                {
+                    showRescheduleModal = true;
+                    JSRuntime.InvokeVoidAsync("openModal", "rescheduleModal");
+                }
+                else if (newStatusId == Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71")) // Replace with actual GUID for Re-Assigned
+                {
+                    showReassignModal = true;
+                    JSRuntime.InvokeVoidAsync("openModal", "reassignModal");
+                }
+                else
+                {
+                    isLoading = true;
+                    StateHasChanged();
+
+                    selectedTask.StatusId = newStatusId;
+                    var updateTaskModel = new UpdateTaskViewModel
+                        {
+                            Id = selectedTask.Id,
+                            StatusId = newStatusId,
+                            AssignedToEmployeeId = selectedTask.AssignedToEmployeeId,
+                            Title = selectedTask.Title,
+                            Description = selectedTask.Description,
+                            DeadlineDate = selectedTask.DeadlineDate,
+                            CreatedDate = selectedTask.CreatedDate
+                        };
+
+                    await TaskService.UpdateTaskAsync(updateTaskModel);
+
+                    isLoading = false;
+                    Snackbar.Add("Task status updated successfully!", Severity.Success);
+                    StateHasChanged();
+                }
+            }
+            else
+            {
+                Snackbar.Add("You are not authorized to change the status to this value.", Severity.Warning);
+            }
+        }
+    }
+
+    private async Task RescheduleTask()
+    {
+        if (newTaskDeadline != default(DateTime))
+        {
             isLoading = true;
             StateHasChanged();
 
-            selectedTask.StatusId = newStatusId;
+            selectedTask.StatusId = Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"); // Re-Scheduled
+            selectedTask.DeadlineDate = newTaskDeadline;
             var updateTaskModel = new UpdateTaskViewModel
                 {
                     Id = selectedTask.Id,
-                    StatusId = newStatusId,
+                    StatusId = selectedTask.StatusId,
                     AssignedToEmployeeId = selectedTask.AssignedToEmployeeId,
                     Title = selectedTask.Title,
                     Description = selectedTask.Description,
@@ -650,11 +524,55 @@
                 };
 
             await TaskService.UpdateTaskAsync(updateTaskModel);
+            tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id);
 
             isLoading = false;
-            Snackbar.Add("Task status updated successfully!", Severity.Success);
+            Snackbar.Add("Task rescheduled successfully!", Severity.Success);
+            CloseRescheduleModal();
             StateHasChanged();
         }
+    }
+
+    private void CloseRescheduleModal()
+    {
+        showRescheduleModal = false;
+        JSRuntime.InvokeVoidAsync("closeModal", "rescheduleModal");
+    }
+
+    private async Task ReassignTask()
+    {
+        if (newTaskAssignedToEmployeeId != Guid.Empty)
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            selectedTask.StatusId = Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"); // Re-Assigned
+            selectedTask.AssignedToEmployeeId = newTaskAssignedToEmployeeId;
+            var updateTaskModel = new UpdateTaskViewModel
+                {
+                    Id = selectedTask.Id,
+                    StatusId = selectedTask.StatusId,
+                    AssignedToEmployeeId = selectedTask.AssignedToEmployeeId,
+                    Title = selectedTask.Title,
+                    Description = selectedTask.Description,
+                    DeadlineDate = selectedTask.DeadlineDate,
+                    CreatedDate = selectedTask.CreatedDate
+                };
+
+            await TaskService.UpdateTaskAsync(updateTaskModel);
+            tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id);
+
+            isLoading = false;
+            Snackbar.Add("Task reassigned successfully!", Severity.Success);
+            CloseReassignModal();
+            StateHasChanged();
+        }
+    }
+
+    private void CloseReassignModal()
+    {
+        showReassignModal = false;
+        JSRuntime.InvokeVoidAsync("closeModal", "reassignModal");
     }
 
     private async Task UpdateTask(UpdateTaskViewModel updateTaskModel)
@@ -694,6 +612,13 @@
 
     private async Task SendNote()
     {
+        if (string.IsNullOrWhiteSpace(noteText))
+        {
+            noteErrorMessage = "Note cannot be empty.";
+            StateHasChanged();
+            return;
+        }
+
         var model = new PostTaskNoteViewModel
             {
                 Note = noteText,
@@ -706,6 +631,7 @@
 
         await TaskService.PostTaskNoteAsync(model, selectedTask.Title);
         noteText = string.Empty;
+        noteErrorMessage = null; // Clear the error message
         selectedFileName = null;
         fileBytes = null;
         comments = await TaskService.GetTaskNotesAsync(selectedTask.Id.ToString()); // Refresh comments
@@ -748,6 +674,7 @@
                     Title = newTaskTitle,
                     Description = newTaskDescription,
                     AssignedToEmployee = newTaskAssignedToEmployeeId,
+                    CreatedBy = UserGlobal.User.Id,
                     StatusId = newTaskStatusId,
                     Deadline = newTaskDeadline
                 };
@@ -769,6 +696,62 @@
                newTaskAssignedToEmployeeId != Guid.Empty &&
                newTaskStatusId != Guid.Empty &&
                newTaskDeadline != default(DateTime);
+    }
+
+    private void ShowRemindModal()
+    {
+        if (selectedTask != null)
+        {
+            showRemindModal = true;
+            JSRuntime.InvokeVoidAsync("openModal", "remindModal");
+        }
+        else
+        {
+            Snackbar.Add("Please select a task first.", Severity.Warning);
+        }
+    }
+
+    private void CloseRemindModal()
+    {
+        showRemindModal = false;
+        JSRuntime.InvokeVoidAsync("closeModal", "remindModal");
+    }
+
+    private async Task SendRemind(string employeeFirebaseToken)
+    {
+        if (!string.IsNullOrWhiteSpace(remindMessage))
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var notificationRequestViewModel = new NotificationRequestViewModel
+                {
+                    Title = "Reminder",
+                    Body = remindMessage,
+                    employeeNotification = true,
+                    ImageBase64 = null,
+                    FirebaseTokens = new List<string> { employeeFirebaseToken },
+                };
+
+            await NotificationClientService.SendNotificationAsync(notificationRequestViewModel);
+
+            isLoading = false;
+            Snackbar.Add("Reminder sent successfully!", Severity.Success);
+            CloseRemindModal();
+            StateHasChanged();
+        }
+    }
+
+    private bool IsStatusChangeAllowed(Guid newStatusId)
+    {
+        var restrictedStatuses = new List<Guid>
+        {
+            Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
+            Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
+            Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
+        };
+
+        return selectedTask.CreatedBy == UserGlobal.User.Id || !restrictedStatuses.Contains(newStatusId);
     }
 }
 

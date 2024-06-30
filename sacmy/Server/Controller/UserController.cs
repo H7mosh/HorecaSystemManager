@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
 using sacmy.Shared.ViewModels.UserViewModel;
 using System.Data;
+using static System.Net.WebRequestMethods;
 
 namespace sacmy.Server.Controller
 {
@@ -29,7 +30,7 @@ namespace sacmy.Server.Controller
                     Branch = e.Branch,
                     Brand = e.Brand,
                     Code = e.Code,
-                    Image = e.Image,
+                    Image = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.Image,
                     FirebaseToken = e.FirebaseToken,
                     JobTitle = e.JobTitle,
                     CreatedDate = e.CreatedDate,

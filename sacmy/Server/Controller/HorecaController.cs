@@ -58,7 +58,7 @@ namespace sacmy.Server.Controller
                                                                     IsHeBuyingFromAnotherGlassAgency = x.IsHeBuyingFromAnotherGlassAgency,
                                                                     CreatedDate = x.CreatedDate,
                                                                 }).ToList(),
-                        HorecaImage = e.HorecaImages.Select(e => "https://safinahmed.krd/horeca/"+e.Image).ToList(),
+                        HorecaImage = e.HorecaImages.Select(e => "https://safinahmedcompany.com/assets/HorecaImages/" + e.Image).ToList(),
 
                     }
                 ).OrderByDescending(e => e.CreatedDate).ToListAsync();
@@ -106,7 +106,7 @@ namespace sacmy.Server.Controller
                         IsHeBuyingFromAnotherGlassAgency = x.IsHeBuyingFromAnotherGlassAgency,
                         CreatedDate = x.CreatedDate,
                     }).ToList(),
-                    HorecaImage = e.HorecaImages.Select(e => "https://safinahmed.krd/horeca/" + e.Image).ToList(),
+                    HorecaImage = e.HorecaImages.Select(e => "https://safinahmedcompany.com/assets/HorecaImages/" + e.Image).ToList(),
                 })
                 .FirstOrDefaultAsync();
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.Models;
+
 namespace sacmy.Server.DatabaseContext;
 
 public partial class SafeenCompanyDbContext : DbContext
@@ -6923,9 +6924,13 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
 
-            entity.HasOne(d => d.AssignedToEmployeeNavigation).WithMany(p => p.Tasks)
+            entity.HasOne(d => d.AssignedToEmployeeNavigation).WithMany(p => p.TaskAssignedToEmployeeNavigations)
                 .HasForeignKey(d => d.AssignedToEmployee)
                 .HasConstraintName("FK_Task_Employee");
+
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.TaskCreatedByNavigations)
+                .HasForeignKey(d => d.CreatedBy)
+                .HasConstraintName("FK_Task_Employee1");
 
             entity.HasOne(d => d.Status).WithMany(p => p.Tasks)
                 .HasForeignKey(d => d.StatusId)
