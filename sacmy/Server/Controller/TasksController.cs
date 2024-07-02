@@ -58,7 +58,7 @@ namespace sacmy.Server.Controller
 
             if (tasks == null || !tasks.Any())
             {
-                return Ok("There's No Tasks Yet");
+                return Ok(new List<GetTaskViewModel>());
             }
 
             return Ok(tasks);

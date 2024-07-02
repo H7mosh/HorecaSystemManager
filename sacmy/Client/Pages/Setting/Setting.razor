@@ -1,0 +1,47 @@
+﻿@page "/Setting"
+@using Blazored.LocalStorage
+@using Microsoft.Extensions.Localization
+@using System.Globalization
+@using sacmy.Services
+@inject IJSRuntime JSRuntime
+@inject ILocalStorageService LocalStorage
+@inject IStringLocalizer<SharedResource> Localizer
+
+<style>
+    .dropdown-toggle {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .dropdown-menu {
+        min-width: 0;
+    }
+</style>
+
+<h3>@Localizer["Settings"]</h3>
+
+<div class="dropdown">
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="languageDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        @Localizer["Select Language"]
+    </button>
+    <ul class="dropdown-menu" aria-labelledby="languageDropdown">
+        <li><a class="dropdown-item" href="#" @onclick='() => SetLanguage("en")'>English</a></li>
+        <li><a class="dropdown-item" href="#" @onclick='() => SetLanguage("ar")'>Arabic</a></li>
+        <li><a class="dropdown-item" href="#" @onclick='() => SetLanguage("tr")'>Turkish</a></li>
+    </ul>
+</div>
+
+@code {
+    private async Task SetLanguage(string language)
+    {
+        await LocalStorage.SetItemAsync("language", language);
+        var culture = new CultureInfo(language);
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        await JSRuntime.InvokeVoidAsync("location.reload");
+    }
+}
