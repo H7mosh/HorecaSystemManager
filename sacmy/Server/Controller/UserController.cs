@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
+using sacmy.Shared.ViewModels.EmployeeViewModel;
 using sacmy.Shared.ViewModels.UserViewModel;
 using System.Data;
 using static System.Net.WebRequestMethods;
@@ -19,7 +20,7 @@ namespace sacmy.Server.Controller
         }
 
         [HttpPost("signin")]
-        public async Task<IActionResult> SignIn([FromBody] LoginRequest loginRequest)
+        public async Task<IActionResult> SignIn([FromBody] SigninPostRequestViewModel signinPostRequestViewModel)
         {
             var employee = await _context.Employees
                 .Select(e => new UserViewModel
@@ -37,7 +38,7 @@ namespace sacmy.Server.Controller
                     PhoneNumber = e.PhoneNumber,
                     Role = e.Role.Role
                 })
-                .FirstOrDefaultAsync(e => e.PhoneNumber == loginRequest.PhoneNumber && e.Code == loginRequest.Password);
+                .FirstOrDefaultAsync(e => e.PhoneNumber == signinPostRequestViewModel.PhoneNumber && e.Code == signinPostRequestViewModel.Password);
 
             if (employee != null)
             {
@@ -45,16 +46,10 @@ namespace sacmy.Server.Controller
             }
             else
             {
-                return NotFound();
+                return NotFound("username or password are incorrect");
             }
         }
 
 
-    }
-
-    public class LoginRequest
-    {
-        public string PhoneNumber { get; set; }
-        public string Password { get; set; }
     }
 }

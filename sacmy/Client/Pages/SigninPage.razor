@@ -1,0 +1,126 @@
+﻿@page "/"
+@using System.Text.Json
+@using System.Net
+@using System.Text
+@using System.Web
+@using System.Text.Json
+@using System.Net
+@using System.Text
+@using System.Web
+@using Blazored.LocalStorage
+@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.UserViewModel
+@using sacmy.Shared.ViewModels.EmployeeViewModel
+@inject HttpClient _httpClient
+@inject AuthService _authService
+@inject UserGlobalClass _userGlobalClass
+@inject NavigationManager navigationManager
+@layout NoAppbarLayout
+@inject ILocalStorageService LocalStorage
+@inject IStringLocalizer<SharedResource> Localizer
+
+
+<style>
+    body, html {
+        margin: 0px;
+        padding: 0px;
+        background-image: url(../images/signin_bg.jpg);
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        height: 100%;
+        overflow: hidden;
+    }
+
+
+    .loginform {
+        background-color: #fff;
+        width: 30%;
+        height: auto;
+        margin: 7% auto;
+        padding: 25px 10px;
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
+    }
+
+    .btn {
+        width: 100%;
+    }
+
+    .img-fluid {
+        width: 50px;
+    }
+
+</style>
+
+
+<div class="loginform">
+    <div class="text-center mt-2 mb-4">
+        <img src="/images/website_logo.png" alt="Logo" class="img-fluid">
+    </div>
+
+    <div class="container">
+        <EditForm Model="@signinModel" OnValidSubmit="HandleValidSubmit">
+            <DataAnnotationsValidator />
+            <ValidationSummary />
+
+            @if(!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @errorMessage
+                </div>
+            }
+            <div class="mb-3">
+                <label for="InputPhone" class="form-label">Phone Number</label>
+                <InputText id="InputPhone" class="form-control" @bind-Value="signinModel.PhoneNumber" />
+            </div>
+            <div class="mb-3">
+                <label for="InputPassword" class="form-label">Password</label>
+                <InputText type="password" id="InputPassword" class="form-control" @bind-Value="signinModel.Password" />
+            </div>
+            <button type="submit" class="btn btn-primary">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span class="sr-only">Loading...</span>
+                }
+                else
+                {
+                    <span>SIGN IN</span>
+                }
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private SigninPostRequestViewModel signinModel = new SigninPostRequestViewModel();
+    private string errorMessage = string.Empty;
+    private bool isLoading = false;
+
+
+    private async Task HandleValidSubmit()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            var user = await _authService.SignInAsync(signinModel);
+            navigationManager.NavigateTo("/HomeScreen");
+        }
+        catch (HttpRequestException ex)
+        {
+            // Handle sign-in failure (e.g., show an error message)
+            errorMessage = "Phone number or password are incorrect.";
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}

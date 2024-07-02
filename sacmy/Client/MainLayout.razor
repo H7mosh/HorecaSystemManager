@@ -5,7 +5,13 @@
 @using sacmy.Shared.ViewModel.HorecaViewModel
 @using sacmy.Shared.ViewModels.UserViewModel
 @inject UserGlobalClass UserGlobal
-
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@using Blazored.LocalStorage
+@using Microsoft.Extensions.Localization
+@using System.Globalization
+@using Blazored.LocalStorage;
+@inject ILocalStorageService LocalStorage
 
 @inherits LayoutComponentBase
 
@@ -14,43 +20,110 @@
 <MudSnackbarProvider />
 @* <Appbar /> *@
 
-<MudLayout>
-    <MudAppBar Elevation="1" Dense="@dense" Style="@($"background:{Colors.Blue.Accent3};")">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" OnClick="@ToggleDrawer" />
-        <MudSpacer />
-        <MudIconButton Icon="@Icons.Custom.Brands.GitHub" Color="Color.Inherit" Link="https://github.com/MudBlazor/MudBlazor" Target="_blank" />
-    </MudAppBar>
-
-
-    <MudDrawer @bind-Open="@open" Elevation="9" Variant="@DrawerVariant.Responsive" >
-        <MudDrawerHeader>
-            <MudText Typo="Typo.h6">
-                SAFIN AHMED TECH
-            </MudText>
-        </MudDrawerHeader>
-        <MudDrawerContainer>
-
-        </MudDrawerContainer>
-        <NavMenu/>
-    </MudDrawer>
-    <MudMainContent Class="pt-16 px-16">
-        <main>
-            @Body
-        </main>
-    </MudMainContent>
-</MudLayout>
+<div class="d-flex flex-column h-100">
+    <div class="appbar bg-primary text-white">
+        <button class="navbar-toggler" type="button" @onclick="ToggleDrawer">
+            <i class="bi bi-list"></i>
+        </button>
+        <span class="ms-3">@GetPageName()</span>
+        <div class="dropdown ms-auto">
+            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
+                <img src="@UserGlobal.User.Image" alt="User Avatar" width="32" height="32" class="rounded-circle me-2">
+                <strong>@UserGlobal.User.FirstName @UserGlobal.User.LastName</strong>
+            </a>
+            <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser2">
+                <li><a class="dropdown-item" href="#">New project...</a></li>
+                <li><a class="dropdown-item" href="Setting">Settings</a></li>
+                <li><a class="dropdown-item" href="#">Profile</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="#">Sign out</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="d-flex h-100">
+        <div class="sidebar bg-light" id="sidebar">
+            <div class="sidebar-header">
+                <a href="/" class="d-flex align-items-center mb-3 mb-md-auto link-dark text-decoration-none">
+                    <span class="fs-4">SAFIN AHMED TECH</span>
+                </a>
+            </div>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li class="nav-item">
+                    <a class="nav-link @GetNavLinkClass("/HomeScreen")" href="/HomeScreen">
+                        <i class="bi bi-house-door me-2"></i>
+                        Home
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @GetNavLinkClass("/Horeca")" href="/Horeca">
+                        <i class="bi bi-shop me-2"></i>
+                        Horeca
+                    </a>
+                </li>
+                @* <li class="nav-item">
+                    <a class="nav-link @GetNavLinkClass("/PurchaseManager")" href="/PurchaseManager">
+                        <i class="bi bi-cart me-2"></i>
+                        Purchase Manager
+                    </a>
+                </li> *@
+                <li class="nav-item">
+                    <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice">
+                        <i class="bi bi-file-earmark-text me-2"></i>
+                        Invoice
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @GetNavLinkClass("/CustomerTracker")" href="/CustomerTracker">
+                        <i class="bi bi-people me-2"></i>
+                        Customer Tracker
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @GetNavLinkClass("/Tasks")" href="/Tasks">
+                        <i class="bi bi-list-task me-2"></i>
+                        Tasks
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <div class="main-content flex-grow-1 p-3" id="main-content">
+            <main>
+                @Body
+            </main>
+        </div>
+    </div>
+</div>
 
 @code {
-    bool open = false;
-    bool dense = false;
-    bool preserveOpenState = false;
-    Breakpoint breakpoint = Breakpoint.None;
-    DrawerClipMode clipMode = DrawerClipMode.Never;
     private UserViewModel CurrentUser => UserGlobal.User;
-    void ToggleDrawer()
+
+    private async Task ToggleDrawer()
     {
-        open = !open;
+        await JSRuntime.InvokeVoidAsync("toggleSidebar");
+    }
+
+    private string GetNavLinkClass(string href)
+    {
+        var currentUri = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/');
+        return currentUri.Equals(href.Trim('/'), StringComparison.OrdinalIgnoreCase) ? "active" : null;
+    }
+
+    private string GetPageName()
+    {
+        var currentUri = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/');
+        return currentUri switch
+        {
+            "HomeScreen" => "Home",
+            "Horeca" => "Horeca",
+            "PurchaseManager" => "Purchase Manager",
+            "Invoice" => "Invoice",
+            "CustomerTracker" => "Customer Tracker",
+            "Tasks" => "Tasks",
+            _ => "Dashboard",
+        };
     }
 }
+
 
 

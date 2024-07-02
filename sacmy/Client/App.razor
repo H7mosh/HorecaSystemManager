@@ -1,12 +1,56 @@
-﻿<Router AppAssembly="@typeof(App).Assembly">
-    <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
-        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
-    </Found>
-    <NotFound>
-        <PageTitle>Not found</PageTitle>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p role="alert">Sorry, there's nothing at this address.</p>
-        </LayoutView>
-    </NotFound>
-</Router>
+﻿@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@using Blazored.LocalStorage
+@using Microsoft.Extensions.Localization
+@using System.Globalization
+@inherits LayoutComponentBase
+@inject ILocalStorageService LocalStorage
+@inject IStringLocalizer<SharedResource> Localizer
+
+
+<CascadingAuthenticationState>
+    <CascadingValue Value="Localizer">
+        <div class="@(isRtl ? "rtl" : "")">
+            <Router AppAssembly="@typeof(App).Assembly">
+                <Found Context="routeData">
+                    <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+                    <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+                </Found>
+                <NotFound>
+                    <PageTitle>Not found</PageTitle>
+                    <LayoutView Layout="@typeof(MainLayout)">
+                        <p role="alert">@Localizer["NotFoundMessage"]</p>
+                    </LayoutView>
+                </NotFound>
+            </Router>
+        </div>
+    </CascadingValue>
+</CascadingAuthenticationState>
+
+@code {
+    private bool isRtl = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var language = await LocalStorage.GetItemAsync<string>("language") ?? "en";
+        UpdateDirection(language);
+    }
+
+    private void UpdateDirection(string language)
+    {
+        isRtl = language == "ar";
+        var culture = new CultureInfo(language);
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        JSRuntime.InvokeVoidAsync("setRtlClass", isRtl);
+    }
+
+    private async Task SetLanguage(string language)
+    {
+        await LocalStorage.SetItemAsync("language", language);
+        UpdateDirection(language);
+        await JSRuntime.InvokeVoidAsync("location.reload");
+    }
+}
+
+

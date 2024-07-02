@@ -1,4 +1,7 @@
 ﻿@page "/Tasks"
+@using Blazored.LocalStorage
+@using Microsoft.Extensions.Localization
+@using System.Globalization
 @using sacmy.Client.Services
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.EmployeeViewModel
@@ -11,6 +14,8 @@
 @inject IJSRuntime JSRuntime
 @inject UserGlobalClass UserGlobal
 @inject ISnackbar Snackbar
+@inject ILocalStorageService LocalStorage
+@inject IStringLocalizer<SharedResource> Localizer
 
 
 <script>
@@ -30,10 +35,10 @@
 <div class="tasks-container">
     <div class="tasks-list-container">
         <div class="tasks-list-header">
-            <span>Tasks (@tasks?.Count)</span>
+            <span>@Localizer["Tasks"] (@tasks?.Count)</span>
             <div>
-                <button class="add-task-button" @onclick="ShowAddTaskModal">Add Task</button>
-                <button class="reminder-button" @onclick="ShowRemindModal">Remind</button>
+                <button class="add-task-button" @onclick="ShowAddTaskModal">@Localizer["AddTask"]</button>
+                <button class="reminder-button" @onclick="ShowRemindModal">@Localizer["Remind"]</button>
             </div>
         </div>
         @if (tasks != null && tasks.Any())
@@ -46,8 +51,8 @@
                             @task.Title
                         </div>
                         <div class="task-meta">
-                            <span>init date: @task.CreatedDate.ToString("MM-dd-yyyy hh:mm tt")</span>
-                            <span class="task-deadline">expire date: @task.DeadlineDate?.ToString("MM-dd-yyyy hh:mm tt")</span>
+                            <span>@Localizer["InitDate"] @task.CreatedDate.ToString("MM-dd-yyyy hh:mm tt")</span>
+                            <span class="task-deadline">@Localizer["ExpireDate"] @task.DeadlineDate?.ToString("MM-dd-yyyy hh:mm tt")</span>
                         </div>
                         <div class="task-status @(task.Status == "Closed" || task.Status == "Done" ? "closed" : task.Status == "Pending" ? "pending" : "inProgress")">
                             @task.Status
@@ -62,7 +67,7 @@
         }
         else
         {
-            <p>No tasks available.</p>
+            <p>@Localizer["NoTasksAvailable"]</p>
         }
     </div>
 
@@ -73,27 +78,27 @@
                 <h3>@selectedTask.Title</h3>
                 <div class="view-more-container">
                     <p class="description">
-                        <strong>Description:</strong> @selectedTask.Description
+                        <strong>@Localizer["Description"]</strong> @selectedTask.Description
                     </p>
-                    <button class="view-more-button" @onclick="ShowFullDescription">View More</button>
+                    <button class="view-more-button" @onclick="ShowFullDescription">@Localizer["ViewMore"]</button>
                 </div>
                 <div class="created-by">
-                    <span><strong>CREATED BY</strong></span>
+                    <span><strong>@Localizer["CreatedBy"]</strong></span>
                     <div class="creator-info">
                         <span>@selectedTask.CreatedbyName</span>
                         <img src="@selectedTask.CreatedbyImage" alt="Creator Avatar" />
                     </div>
-                <div class="form-group-status-container">
-                    <label for="taskStatus">Status:</label>
+                    <div class="form-group-status-container">
+                        <label for="taskStatus">@Localizer["Status"]:</label>
                         <select id="taskStatus" class="form-control" @onchange="async (e) => await OnTaskStatusChanged(e)">
                             @foreach (var status in taskStatuses)
                             {
                                 var restrictedStatuses = new List<Guid>
-                                    {
-                                    Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
-                                    Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
-                                    Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
-                                    };
+                        {
+                        Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
+                        Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
+                        Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
+                        };
 
                                 <option value="@status.Id"
                                         disabled="@((selectedTask.CreatedBy != UserGlobal.User.Id && restrictedStatuses.Contains(status.Id)) ? "disabled" : null)"
@@ -102,19 +107,18 @@
                                 </option>
                             }
                         </select>
+                    </div>
 
+                    <div class="comments-header">
+                        <i class="bi bi-chat-left-text"></i> @Localizer["Comments"]
+                    </div>
+                    <div class="comments-line"></div>
                 </div>
-
-                <div class="comments-header">
-                    <i class="bi bi-chat-left-text"></i> COMMENTS
-                </div>
-                <div class="comments-line"></div>
-            </div>
             </div>
             <div class="task-comments">
                 @if (comments.Count == 0)
                 {
-                    <div class="no-comments">There are no messages yet.</div>
+                    <div class="no-comments">@Localizer["ThereAreNoMessagesYet"]</div>
                 }
                 else
                 {
@@ -132,7 +136,7 @@
                                 {
                                     <div class="download-button">
                                         <a href="@comment.FileLink" class="download-attachment" download="filename.ext" target="_blank">
-                                            Get Attachment
+                                            @Localizer["GetAttachment"]
                                         </a>
                                     </div>
                                 }
@@ -146,7 +150,7 @@
                 @if (!string.IsNullOrEmpty(selectedFileName))
                 {
                     <div class="file-display">
-                        <div class="file-name">Selected file: @selectedFileName</div>
+                        <div class="file-name">@Localizer["SelectedFile"] @selectedFileName</div>
                         <button type="button" class="btn btn-secondary" @onclick="RemoveFile">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
                                 <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"></path>
@@ -155,11 +159,11 @@
                     </div>
                 }
                 <div class="message-box">
-                    <textarea @bind="noteText" placeholder="Write your message here..."></textarea>
+                    <textarea @bind="noteText" placeholder="@Localizer["WriteYourMessageHere"]"></textarea>
                     <div class="button-container">
-                        <button class="attach-button" @onclick="OpenFileDialog">ATTACH</button>
+                        <button class="attach-button" @onclick="OpenFileDialog">@Localizer["Attach"]</button>
                         <InputFile id="fileInput" style="display: none;" OnChange="OnFileSelected" />
-                        <button class="send-button" @onclick="SendNote">SEND</button>
+                        <button class="send-button" @onclick="SendNote">@Localizer["Send"]</button>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(noteErrorMessage))
@@ -171,7 +175,7 @@
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
                         <div class="modal-header">
-                            <h5 class="modal-title" id="descriptionModalLabel">Task Description</h5>
+                            <h5 class="modal-title" id="descriptionModalLabel">@Localizer["TaskDescription"]</h5>
                             <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseModal">
                                 <span aria-hidden="true">&times;</span>
                             </button>
@@ -180,7 +184,7 @@
                             @selectedTask.Description
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModal">Close</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModal">@Localizer["Close"]</button>
                         </div>
                     </div>
                 </div>
@@ -193,32 +197,32 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="addTaskModalLabel">Add Task</h5>
+                    <h5 class="modal-title" id="addTaskModalLabel">@Localizer["AddTask"]</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseAddTaskModal">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="taskTitle">Title</label>
-                        <input type="text" class="form-control" id="taskTitle" @bind="newTaskTitle" placeholder="Enter task title">
+                        <label for="taskTitle">@Localizer["Title"]</label>
+                        <input type="text" class="form-control" id="taskTitle" @bind="newTaskTitle" placeholder="@Localizer["EnterTaskTitle"]">
                         @if (string.IsNullOrWhiteSpace(newTaskTitle))
                         {
-                            <div class="text-danger">Title is required</div>
+                            <div class="text-danger">@Localizer["TitleIsRequired"]</div>
                         }
                     </div>
                     <div class="form-group">
-                        <label for="taskDescription">Description</label>
-                        <textarea class="form-control" id="taskDescription" @bind="newTaskDescription" placeholder="Enter task description"></textarea>
+                        <label for="taskDescription">@Localizer["Description"]</label>
+                        <textarea class="form-control" id="taskDescription" @bind="newTaskDescription" placeholder="@Localizer["EnterTaskDescription"]"></textarea>
                         @if (string.IsNullOrWhiteSpace(newTaskDescription))
                         {
-                            <div class="text-danger">Description is required</div>
+                            <div class="text-danger">@Localizer["DescriptionIsRequired"]</div>
                         }
                     </div>
                     <div class="form-group">
-                        <label for="taskAssignedTo">Assigned To</label>
+                        <label for="taskAssignedTo">@Localizer["AssignedTo"]</label>
                         <select class="form-control" id="taskAssignedTo" @onchange="(e) => newTaskAssignedToEmployeeId = Guid.Parse(e.Value.ToString())">
-                            <option value="">Select Employee</option>
+                            <option value="">@Localizer["SelectEmployee"]</option>
                             @if (employees != null)
                             {
                                 @foreach (var employee in employees)
@@ -228,20 +232,20 @@
                             }
                             else
                             {
-                                <option value="">There's No Employee Yet !</option>
+                                <option value="">@Localizer["ThereIsNoEmployeeYet"]</option>
                             }
-
                         </select>
                         @if (newTaskAssignedToEmployeeId == Guid.Empty)
                         {
-                            <div class="text-danger">Assigned Employee is required</div>
+                            <div class="text-danger">@Localizer["AssignedEmployeeIsRequired"]</div>
                         }
                     </div>
                     <div class="form-group">
-                        <label for="taskStatus">Status</label>
+                        <label for="taskStatus">@Localizer["Status"]</label>
                         <select class="form-control" id="taskStatus" @onchange="(e) => newTaskStatusId = Guid.Parse(e.Value.ToString())">
-                            <option value="">Select initial status</option>
-                            @if(taskStatuses != null){
+                            <option value="">@Localizer["SelectInitialStatus"]</option>
+                            @if (taskStatuses != null)
+                            {
                                 @foreach (var status in taskStatuses)
                                 {
                                     <option value="@status.Id">@status.StatusEn</option>
@@ -249,25 +253,25 @@
                             }
                             else
                             {
-                                <option value="">There's No Status Yet !</option>
+                                <option value="">@Localizer["ThereIsNoStatusYet"]</option>
                             }
                         </select>
                         @if (newTaskStatusId == Guid.Empty)
                         {
-                            <div class="text-danger">Status is required</div>
+                            <div class="text-danger">@Localizer["StatusIsRequired"]</div>
                         }
                     </div>
                     <div class="form-group">
-                        <label for="taskDeadline">Deadline</label>
+                        <label for="taskDeadline">@Localizer["Deadline"]</label>
                         <input type="datetime-local" class="form-control" id="taskDeadline" @bind="newTaskDeadline">
                         @if (newTaskDeadline == default(DateTime))
                         {
-                            <div class="text-danger">Deadline is required</div>
+                            <div class="text-danger">@Localizer["DeadlineIsRequired"]</div>
                         }
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseAddTaskModal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseAddTaskModal">@Localizer["Close"]</button>
                     <button type="button" class="btn btn-primary" @onclick="AddTask" disabled="@isLoading">
                         @if (isLoading)
                         {
@@ -275,7 +279,7 @@
                         }
                         else
                         {
-                            <span>Save Task</span>
+                            <span>@Localizer["SaveTask"]</span>
                         }
                     </button>
                 </div>
@@ -288,23 +292,23 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="remindModalLabel">Remind Task</h5>
+                    <h5 class="modal-title" id="remindModalLabel">@Localizer["RemindTask"]</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseRemindModal">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="remindMessage">Remind Message</label>
-                        <textarea class="form-control" id="remindMessage" @bind="remindMessage" placeholder="Enter remind message"></textarea>
+                        <label for="remindMessage">@Localizer["RemindMessage"]</label>
+                        <textarea class="form-control" id="remindMessage" @bind="remindMessage" placeholder="@Localizer["EnterRemindMessage"]"></textarea>
                         @if (string.IsNullOrWhiteSpace(remindMessage))
                         {
-                            <div class="text-danger">Message is required</div>
+                            <div class="text-danger">@Localizer["MessageIsRequired"]</div>
                         }
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseRemindModal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseRemindModal">@Localizer["Close"]</button>
                     <button type="button" class="btn btn-primary" @onclick="() => SendRemind(selectedTask.EmployeeFirebaseToken)" disabled="@isLoading">
                         @if (isLoading)
                         {
@@ -312,7 +316,7 @@
                         }
                         else
                         {
-                            <span>Send Remind</span>
+                            <span>@Localizer["SendRemind"]</span>
                         }
                     </button>
                 </div>
@@ -325,23 +329,23 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="rescheduleModalLabel">Re-Schedule Task</h5>
+                    <h5 class="modal-title" id="rescheduleModalLabel">@Localizer["RescheduleTask"]</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseRescheduleModal">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="newDeadline">New Deadline</label>
+                        <label for="newDeadline">@Localizer["NewDeadline"]</label>
                         <input type="datetime-local" class="form-control" id="newDeadline" @bind="newTaskDeadline">
                         @if (newTaskDeadline == default(DateTime))
                         {
-                            <div class="text-danger">New Deadline is required</div>
+                            <div class="text-danger">@Localizer["NewDeadlineIsRequired"]</div>
                         }
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseRescheduleModal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseRescheduleModal">@Localizer["Close"]</button>
                     <button type="button" class="btn btn-primary" @onclick="RescheduleTask" disabled="@isLoading">
                         @if (isLoading)
                         {
@@ -349,7 +353,7 @@
                         }
                         else
                         {
-                            <span>Save</span>
+                            <span>@Localizer["Save"]</span>
                         }
                     </button>
                 </div>
@@ -362,16 +366,16 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="reassignModalLabel">Re-Assign Task</h5>
+                    <h5 class="modal-title" id="reassignModalLabel">@Localizer["ReassignTask"]</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseReassignModal">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="reassignEmployee">New Employee</label>
+                        <label for="reassignEmployee">@Localizer["NewEmployee"]</label>
                         <select class="form-control" id="reassignEmployee" @onchange="(e) => newTaskAssignedToEmployeeId = Guid.Parse(e.Value.ToString())">
-                            <option value="">Select Employee</option>
+                            <option value="">@Localizer["SelectEmployee"]</option>
                             @if (employees != null)
                             {
                                 @foreach (var employee in employees)
@@ -381,18 +385,17 @@
                             }
                             else
                             {
-                                <option value="">There's No Employee Yet !</option>
+                                <option value="">@Localizer["ThereIsNoEmployeeYet"]</option>
                             }
-
                         </select>
                         @if (newTaskAssignedToEmployeeId == Guid.Empty)
                         {
-                            <div class="text-danger">New Employee is required</div>
+                            <div class="text-danger">@Localizer["NewEmployeeIsRequired"]</div>
                         }
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseReassignModal">Close</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseReassignModal">@Localizer["Close"]</button>
                     <button type="button" class="btn btn-primary" @onclick="ReassignTask" disabled="@isLoading">
                         @if (isLoading)
                         {
@@ -400,14 +403,13 @@
                         }
                         else
                         {
-                            <span>Save</span>
+                            <span>@Localizer["Save"]</span>
                         }
                     </button>
                 </div>
             </div>
         </div>
     </div>
-
 </div>
 
 <MudSnackbarProvider />

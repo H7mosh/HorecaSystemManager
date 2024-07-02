@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 using sacmy.Shared.Core;
+using sacmy.Shared.ViewModels.EmployeeViewModel;
 using sacmy.Shared.ViewModels.UserViewModel;
 
 namespace sacmy.Services
@@ -17,28 +18,20 @@ namespace sacmy.Services
             _userGobalClass = userGlobalClass;
         }
 
-        public async Task<UserViewModel> SignInAsync(string phoneNumber, string password)
+        public async Task<UserViewModel> SignInAsync(SigninPostRequestViewModel signinPostRequestViewModel)
         {
-            try
+            var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+            var response = await client.PostAsJsonAsync("api/User/signin", signinPostRequestViewModel);
+            if (response.IsSuccessStatusCode)
             {
-                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
-                var response = await client.PostAsJsonAsync("api/User/signin", new { phoneNumber, password }); 
-                if (response.IsSuccessStatusCode)
-                {
-                    var user = await response.Content.ReadFromJsonAsync<UserViewModel>();
-                    _userGobalClass.SetUser(user);
-                    return user;
-                }
-                else
-                {
-                    // Handle errors
-                    return null;
-                }
+                var user = await response.Content.ReadFromJsonAsync<UserViewModel>();
+                _userGobalClass.SetUser(user);
+                return user;
             }
-            catch (Exception ex)
+            else
             {
-                // Handle exceptions
-                return null;
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                throw new HttpRequestException(errorMessage);
             }
         }
     }

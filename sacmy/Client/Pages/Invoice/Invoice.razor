@@ -52,17 +52,17 @@ else{
         <TemplateColumn CellClass="d-flex justify-end" Filterable="false">
             <CellTemplate>
                 <MudStack Row>
-                     <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Autorenew" Size="MudBlazor.Size.Small" @onclick="() => OpenTransformDialog(context.Item.Id)" />
+                     @* <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Autorenew" Size="MudBlazor.Size.Small" @onclick="() => OpenTransformDialog(context.Item.Id)" /> *@
                      <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Comment" Size="MudBlazor.Size.Small" />
                      <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Info" Size="MudBlazor.Size.Small" @onclick="() => OpenInvoiceItemsDialog(context.Item.Id)" />
-                    @if (selectedId == context.Item.Id && isDeleteLoading)
+                    @* @if (selectedId == context.Item.Id && isDeleteLoading)
                     {
                             <MudProgressCircular Color="MudBlazor.Color.Error" Indeterminate="true" />
                     }
                     else
                     {
                             <MudFab Color="MudBlazor.Color.Error" StartIcon="@Icons.Material.Filled.Delete" Size="MudBlazor.Size.Small" @onclick="() => RemoveInvoice(context.Item.Id)" />
-                    }
+                    } *@
                 </MudStack>
             </CellTemplate>
         </TemplateColumn>

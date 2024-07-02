@@ -3,13 +3,14 @@
 @using Newtonsoft.Json
 @using sacmy.Client.Configuraion
 @using sacmy.Client.Services
+@using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.DashboardViewModel
 @using sacmy.Shared.ViewModels.InvoiceViewModel
-@inject AppConfig appConfig
-@page "/dashboard"
 @using System.Net.Http.Json
+@inject AppConfig appConfig
 @inject HttpClient httpClient
-@inject DashboardService dashboardService;
+@inject DashboardService dashboardService
+@inject UserGlobalClass userGlobalClass
 
 <style>
     .salesType {
@@ -118,37 +119,45 @@
 </style>
 
 <div class="salesType">
-    <div class="input-row">
-        <input type="date" @bind="startDate" class="custom-input" placeholder="First Date" />
-        <input type="date" @bind="endDate" class="custom-input" placeholder="Second Date" />
-        
-        <select @bind="selectedBranch" class="custom-select">
-            <option value="All">All</option>
-            <option value="Erbil">Erbil</option>
-            <option value="Baghdad">Baghdad</option>
-            <option value="zakho">Zakho</option>
-        </select>
-        <button type="button" class="btn btn-primary" @onclick="LoadInvoiceCounts">
-            Apply &#x2192;
-        </button>
-    </div>
-    <div class="branch-stats">
-        @foreach (var branch in branchSales)
-        {
-            <div class="branch-card">
-                <div class="branch-title">@branch.Branch</div>
-                <div class="stats">
-                    <div class="total">TOTAL: @branch.TotalSales.ToString("N2")$</div>
+    @if (userGlobalClass.User.Role != "manager")
+    {
+        <div>لا تملك صلاحية لعرض هذه البيانات.</div>
+    }
+    else
+    {
+        <div class="input-row">
+            <input type="date" @bind="startDate" class="custom-input" placeholder="First Date" />
+            <input type="date" @bind="endDate" class="custom-input" placeholder="Second Date" />
+
+            <select @bind="selectedBranch" class="custom-select">
+                <option value="All">All</option>
+                <option value="Erbil">Erbil</option>
+                <option value="Baghdad">Baghdad</option>
+                <option value="zakho">Zakho</option>
+            </select>
+            <button type="button" class="btn btn-primary" @onclick="LoadInvoiceCounts">
+                Apply &#x2192;
+            </button>
+        </div>
+        <div class="branch-stats">
+            @foreach (var branch in branchSales)
+            {
+                <div class="branch-card">
+                    <div class="branch-title">@branch.Branch</div>
+                    <div class="stats">
+                        <div class="total">TOTAL: @branch.TotalSales.ToString("N2")$</div>
+                    </div>
                 </div>
-            </div>
-        }
-    </div>
-    <div class="chart-container">
-        <PieChart @ref="pieChart" Width="450" Class="mb-5" />
-    </div>
+            }
+        </div>
+        <div class="chart-container">
+            <PieChart @ref="pieChart" Width="450" Class="mb-5" />
+        </div>
+    }
 </div>
 
 @code {
+
     private List<InvoiceTypeViewModel> InvoiceCounts { get; set; } = new List<InvoiceTypeViewModel>();
     private List<GetBranchSales> branchSales { get; set; } = new List<GetBranchSales>();
     private PieChart pieChart = default!;
@@ -161,12 +170,15 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (userGlobalClass.User.Role == "manager")
         {
-            await LoadInvoiceCounts();
-            await pieChart.InitializeAsync(chartData, pieChartOptions);
+            if (firstRender)
+            {
+                await LoadInvoiceCounts();
+                await pieChart.InitializeAsync(chartData, pieChartOptions);
+            }
+            await base.OnAfterRenderAsync(firstRender);
         }
-        await base.OnAfterRenderAsync(firstRender);
     }
 
     protected override void OnInitialized()
@@ -174,16 +186,17 @@
         backgroundColors = ColorBuilder.CategoricalTwelveColors;
         chartData = new BlazorBootstrap.ChartData { Labels = new List<string>(), Datasets = new List<IChartDataset>() };
         pieChartOptions = new PieChartOptions
+        {
+            Responsive = true,
+            Plugins = new PieChartPlugins
             {
-                Responsive = true,
-                Plugins = new PieChartPlugins
+                Legend = new ChartPluginsLegend
                 {
-                    Legend = new ChartPluginsLegend
-                    {
-                        Position = "right"
-                    }
+                    Position = "right"
                 }
-            };
+            }
+        };
+        
     }
 
     private async Task LoadInvoiceCounts()
