@@ -16,6 +16,10 @@ public partial class SafeenCompanyDbContext : DbContext
     {
     }
 
+    public virtual DbSet<Advertise> Advertises { get; set; }
+
+    public virtual DbSet<AppSessionLog> AppSessionLogs { get; set; }
+
     public virtual DbSet<AspNetRole> AspNetRoles { get; set; }
 
     public virtual DbSet<AspNetRoleClaim> AspNetRoleClaims { get; set; }
@@ -50,6 +54,10 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<Category> Categories { get; set; }
 
+    public virtual DbSet<Category1> Categories1 { get; set; }
+
+    public virtual DbSet<Collection> Collections { get; set; }
+
     public virtual DbSet<CommentTrackState> CommentTrackStates { get; set; }
 
     public virtual DbSet<Company> Companies { get; set; }
@@ -83,6 +91,12 @@ public partial class SafeenCompanyDbContext : DbContext
     public virtual DbSet<Customer> Customers { get; set; }
 
     public virtual DbSet<CustomerBillPoint> CustomerBillPoints { get; set; }
+
+    public virtual DbSet<CustomerFavouriteProduct> CustomerFavouriteProducts { get; set; }
+
+    public virtual DbSet<CustomerProductRelation> CustomerProductRelations { get; set; }
+
+    public virtual DbSet<CustomerViewedProduct> CustomerViewedProducts { get; set; }
 
     public virtual DbSet<Employee> Employees { get; set; }
 
@@ -142,6 +156,8 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<Masraftype> Masraftypes { get; set; }
 
+    public virtual DbSet<Material> Materials { get; set; }
+
     public virtual DbSet<MmMaxzanByWajbaFullItem> MmMaxzanByWajbaFullItems { get; set; }
 
     public virtual DbSet<MmMaxzanFullItemProcWithOutWajba> MmMaxzanFullItemProcWithOutWajbas { get; set; }
@@ -163,6 +179,8 @@ public partial class SafeenCompanyDbContext : DbContext
     public virtual DbSet<NnReturnQtty> NnReturnQtties { get; set; }
 
     public virtual DbSet<NnSalesQtty> NnSalesQtties { get; set; }
+
+    public virtual DbSet<Notification> Notifications { get; set; }
 
     public virtual DbSet<OfficeName> OfficeNames { get; set; }
 
@@ -207,8 +225,6 @@ public partial class SafeenCompanyDbContext : DbContext
     public virtual DbSet<Product> Products { get; set; }
 
     public virtual DbSet<ProductImage> ProductImages { get; set; }
-
-    public virtual DbSet<ProductSpecification> ProductSpecifications { get; set; }
 
     public virtual DbSet<PurchaseInvoice> PurchaseInvoices { get; set; }
 
@@ -396,17 +412,19 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<SendMoney> SendMoneys { get; set; }
 
-    public virtual DbSet<SeriesOrCollectionOrCategory> SeriesOrCollectionOrCategories { get; set; }
-
-    public virtual DbSet<Specification> Specifications { get; set; }
-
     public virtual DbSet<Status> Statuses { get; set; }
+
+    public virtual DbSet<Story> Stories { get; set; }
+
+    public virtual DbSet<StoryView> StoryViews { get; set; }
 
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
 
     public virtual DbSet<sacmy.Server.Models.Task> Tasks { get; set; }
 
     public virtual DbSet<TaskNote> TaskNotes { get; set; }
+
+    public virtual DbSet<TaskType> TaskTypes { get; set; }
 
     public virtual DbSet<TblLevel> TblLevels { get; set; }
 
@@ -426,6 +444,8 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<UnavilableOrderedItem> UnavilableOrderedItems { get; set; }
 
+    public virtual DbSet<UserNotification> UserNotifications { get; set; }
+
     public virtual DbSet<Userlogin> Userlogins { get; set; }
 
     public virtual DbSet<View1> View1s { get; set; }
@@ -442,10 +462,43 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<ZzOrderOnlinePrint> ZzOrderOnlinePrints { get; set; }
 
-   
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=46.165.247.249;Initial Catalog=Safeen_Company_DB;User Id=sa;Password=password1;TrustServerCertificate=True");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.UseCollation("Arabic_CI_AS");
+
+        modelBuilder.Entity<Advertise>(entity =>
+        {
+            entity.ToTable("Advertise");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+
+            entity.HasOne(d => d.Product).WithMany(p => p.Advertises)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Advertise_Products");
+        });
+
+        modelBuilder.Entity<AppSessionLog>(entity =>
+        {
+            entity.HasKey(e => e.SessionId).HasName("PK__AppSessi__C9F492904C3CD18B");
+
+            entity.Property(e => e.SessionId).ValueGeneratedNever();
+            entity.Property(e => e.AdditionalInfo).HasMaxLength(500);
+            entity.Property(e => e.AppVersion).HasMaxLength(50);
+            entity.Property(e => e.CloseLongitude).HasMaxLength(100);
+            entity.Property(e => e.CloseTime).HasColumnType("datetime");
+            entity.Property(e => e.DeviceInfo).HasMaxLength(255);
+            entity.Property(e => e.OpenLocation).HasMaxLength(100);
+            entity.Property(e => e.OpenTime).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.AppSessionLogs)
+                .HasForeignKey(d => d.CustomerId)
+                .HasConstraintName("FK_AppSessionLogs_customer");
+        });
 
         modelBuilder.Entity<AspNetRole>(entity =>
         {
@@ -631,9 +684,10 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<Brand>(entity =>
         {
-            entity.ToTable("Brand");
-
             entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.IsDeleted).HasColumnName("isDeleted");
             entity.Property(e => e.NameAr).HasMaxLength(80);
             entity.Property(e => e.NameEn).HasMaxLength(80);
             entity.Property(e => e.NameKr).HasMaxLength(80);
@@ -681,6 +735,9 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasDefaultValue(0m)
                 .HasColumnType("money")
                 .HasColumnName("hamalya");
+            entity.Property(e => e.Hidee)
+                .HasDefaultValue(false)
+                .HasColumnName("hidee");
             entity.Property(e => e.Idd)
                 .HasDefaultValue(0)
                 .HasColumnName("idd");
@@ -702,6 +759,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Notes)
                 .HasColumnType("ntext")
                 .HasColumnName("notes");
+            entity.Property(e => e.NotifyMe).HasDefaultValue(false);
             entity.Property(e => e.Now)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime")
@@ -713,6 +771,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Remaing)
                 .HasDefaultValue(0m)
                 .HasColumnType("money");
+            entity.Property(e => e.RemindAfter).HasDefaultValue(0);
             entity.Property(e => e.Subb)
                 .HasMaxLength(25)
                 .HasColumnName("subb");
@@ -792,20 +851,37 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<Catalog>(entity =>
         {
-            entity.ToTable("Catalog");
+            entity.HasIndex(e => e.BrandId, "IX_Catalogs_BrandId");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.NameAr).HasMaxLength(80);
-            entity.Property(e => e.NameEn).HasMaxLength(80);
-            entity.Property(e => e.NameKr).HasMaxLength(80);
-            entity.Property(e => e.NameTr).HasMaxLength(80);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.NameAr).HasMaxLength(60);
+            entity.Property(e => e.NameEn).HasMaxLength(60);
+            entity.Property(e => e.NameKr).HasMaxLength(60);
+            entity.Property(e => e.NameTr).HasMaxLength(60);
 
             entity.HasOne(d => d.Brand).WithMany(p => p.Catalogs)
                 .HasForeignKey(d => d.BrandId)
-                .HasConstraintName("FK_Catalog_Brand");
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Catalogs_Brands");
         });
 
         modelBuilder.Entity<Category>(entity =>
+        {
+            entity.HasIndex(e => e.BrandId, "IX_Categories_BrandId");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Brand).WithMany(p => p.Categories)
+                .HasForeignKey(d => d.BrandId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Categories_Brands");
+        });
+
+        modelBuilder.Entity<Category1>(entity =>
         {
             entity.ToTable("Category");
 
@@ -824,9 +900,25 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("NameTR");
         });
 
+        modelBuilder.Entity<Collection>(entity =>
+        {
+            entity.HasIndex(e => e.BrandId, "IX_Collections_BrandId");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Brand).WithMany(p => p.Collections)
+                .HasForeignKey(d => d.BrandId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Collections_Brands");
+        });
+
         modelBuilder.Entity<CommentTrackState>(entity =>
         {
             entity.ToTable("CommentTrackState");
+
+            entity.HasIndex(e => e.TrackCommentId, "IX_CommentTrackState_TrackCommentId");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
@@ -1215,12 +1307,73 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasConstraintName("FK_CustomerBillPoints_customer");
         });
 
+        modelBuilder.Entity<CustomerFavouriteProduct>(entity =>
+        {
+            entity.ToTable("CustomerFavouriteProduct");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.CustomerFavouriteProducts)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CustomerFavouriteProduct_customer");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.CustomerFavouriteProducts)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CustomerFavouriteProduct_Products");
+        });
+
+        modelBuilder.Entity<CustomerProductRelation>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.DiscountPercentage).HasColumnType("decimal(5, 2)");
+            entity.Property(e => e.RaisePercentage).HasColumnType("decimal(5, 2)");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.CustomerProductRelations)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CustomerProductRelations_customer");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.CustomerProductRelations)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CustomerProductRelations_Products");
+        });
+
+        modelBuilder.Entity<CustomerViewedProduct>(entity =>
+        {
+            entity.ToTable("CustomerViewedProduct");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.CustomerViewedProducts)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CustomerViewedProduct_customer");
+
+            entity.HasOne(d => d.Product).WithMany(p => p.CustomerViewedProducts)
+                .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_CustomerViewedProduct_Products");
+        });
+
         modelBuilder.Entity<Employee>(entity =>
         {
             entity.ToTable("Employee");
 
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Branch).HasMaxLength(50);
+            entity.Property(e => e.BranchAr).HasMaxLength(50);
+            entity.Property(e => e.BranchKr).HasMaxLength(50);
+            entity.Property(e => e.BranchTr).HasMaxLength(50);
             entity.Property(e => e.Brand).HasMaxLength(50);
             entity.Property(e => e.CanclledDate).HasColumnType("datetime");
             entity.Property(e => e.Code)
@@ -1230,6 +1383,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.FirstName)
                 .HasMaxLength(70)
                 .HasColumnName("First Name");
+            entity.Property(e => e.JobTitleTr).HasColumnName("jobTitleTr");
             entity.Property(e => e.LastName).HasMaxLength(70);
             entity.Property(e => e.PhoneNumber)
                 .HasMaxLength(50)
@@ -1251,10 +1405,11 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<EventCompany>(entity =>
         {
-            entity
-                .HasNoKey()
-                .ToTable("Event_company");
+            entity.HasKey(e => e.IdEvent);
 
+            entity.ToTable("Event_company");
+
+            entity.Property(e => e.IdEvent).HasColumnName("id_event");
             entity.Property(e => e.Company)
                 .HasMaxLength(50)
                 .HasColumnName("company");
@@ -1264,9 +1419,6 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
-            entity.Property(e => e.IdEvent)
-                .ValueGeneratedOnAdd()
-                .HasColumnName("id_event");
             entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
                 .HasMaxLength(50)
@@ -2063,6 +2215,17 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("masraftype");
         });
 
+        modelBuilder.Entity<Material>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.NameAr).HasMaxLength(100);
+            entity.Property(e => e.NameEn).HasMaxLength(100);
+            entity.Property(e => e.NameKr).HasMaxLength(100);
+            entity.Property(e => e.NameTr).HasMaxLength(100);
+        });
+
         modelBuilder.Entity<MmMaxzanByWajbaFullItem>(entity =>
         {
             entity
@@ -2394,6 +2557,17 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Secode).HasColumnName("secode");
         });
 
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(255);
+            entity.Property(e => e.Titel).HasMaxLength(255);
+            entity.Property(e => e.Type).HasMaxLength(150);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+        });
+
         modelBuilder.Entity<OfficeName>(entity =>
         {
             entity
@@ -2478,6 +2652,10 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasDefaultValue("")
                 .HasColumnName("uuser");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.OnlineOrders)
+                .HasForeignKey(d => d.CustomerId)
+                .HasConstraintName("FK_Online_Order_customer");
         });
 
         modelBuilder.Entity<OnlineOrderItem>(entity =>
@@ -2511,6 +2689,16 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasForeignKey(d => d.ItemId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("OnlineOrderItemsRelation");
+
+            entity.HasOne(d => d.Item1).WithMany(p => p.OnlineOrderItems)
+                .HasForeignKey(d => d.ItemId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Online_Order_Items_Products");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OnlineOrderItems)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Online_Order_Items_Online_Order");
 
             entity.HasOne(d => d.SecondryCategory).WithMany(p => p.OnlineOrderItems)
                 .HasForeignKey(d => d.SecondryCategoryId)
@@ -3074,48 +3262,66 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<Product>(entity =>
         {
+            entity.HasIndex(e => e.BrandId, "IX_Products_BrandId");
+
+            entity.HasIndex(e => e.CatalogId, "IX_Products_CatalogId");
+
+            entity.HasIndex(e => e.CategoryId, "IX_Products_CategoryId");
+
+            entity.HasIndex(e => e.CollectionId, "IX_Products_CollectionId");
+
+            entity.HasIndex(e => e.MaterialId, "IX_Products_MaterialId");
+
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.BaseUnit).HasMaxLength(70);
-            entity.Property(e => e.BoxType).HasMaxLength(50);
-            entity.Property(e => e.Code).HasMaxLength(50);
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
-            entity.Property(e => e.HeightUnit).HasMaxLength(70);
-            entity.Property(e => e.LengthUnit).HasMaxLength(70);
-            entity.Property(e => e.PieceType).HasMaxLength(50);
-            entity.Property(e => e.Sku).HasMaxLength(20);
-            entity.Property(e => e.TopUnit).HasMaxLength(70);
-            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
-            entity.Property(e => e.WeightUnit).HasMaxLength(70);
+            entity.Property(e => e.Ean).HasMaxLength(50);
+            entity.Property(e => e.InnerType).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(80);
+            entity.Property(e => e.OuterType).HasMaxLength(50);
+            entity.Property(e => e.PatternNumber).HasMaxLength(50);
+            entity.Property(e => e.Points)
+                .HasMaxLength(10)
+                .IsFixedLength();
+            entity.Property(e => e.Sku).HasMaxLength(50);
+            entity.Property(e => e.Upc).HasMaxLength(50);
+            entity.Property(e => e.UpdateDate).HasColumnType("datetime");
 
-            entity.HasOne(d => d.SeriesOrCollection).WithMany(p => p.Products)
-                .HasForeignKey(d => d.SeriesOrCollectionId)
-                .HasConstraintName("FK_Products_SeriesOrCollection");
+            entity.HasOne(d => d.Brand).WithMany(p => p.Products)
+                .HasForeignKey(d => d.BrandId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Products_Brands");
+
+            entity.HasOne(d => d.Catalog).WithMany(p => p.Products)
+                .HasForeignKey(d => d.CatalogId)
+                .HasConstraintName("FK_Products_Catalogs");
+
+            entity.HasOne(d => d.Category).WithMany(p => p.Products)
+                .HasForeignKey(d => d.CategoryId)
+                .HasConstraintName("FK_Products_Categories");
+
+            entity.HasOne(d => d.Collection).WithMany(p => p.Products)
+                .HasForeignKey(d => d.CollectionId)
+                .HasConstraintName("FK_Products_Collections");
+
+            entity.HasOne(d => d.Material).WithMany(p => p.Products)
+                .HasForeignKey(d => d.MaterialId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Products_Materials");
         });
 
         modelBuilder.Entity<ProductImage>(entity =>
         {
+            entity.HasIndex(e => e.ProductId, "IX_ProductImages_ProductId");
+
             entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.Link)
-                .HasMaxLength(200)
-                .HasColumnName("link");
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
 
             entity.HasOne(d => d.Product).WithMany(p => p.ProductImages)
                 .HasForeignKey(d => d.ProductId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_ProductImages_Products");
-        });
-
-        modelBuilder.Entity<ProductSpecification>(entity =>
-        {
-            entity.HasNoKey();
-
-            entity.HasOne(d => d.Product).WithMany()
-                .HasForeignKey(d => d.ProductId)
-                .HasConstraintName("FK_ProductSpecifications_Products");
-
-            entity.HasOne(d => d.Specification).WithMany()
-                .HasForeignKey(d => d.SpecificationId)
-                .HasConstraintName("FK_ProductSpecifications_Specifications");
         });
 
         modelBuilder.Entity<PurchaseInvoice>(entity =>
@@ -3145,6 +3351,9 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
+            entity.Property(e => e.Hidee)
+                .HasDefaultValue(false)
+                .HasColumnName("hidee");
             entity.Property(e => e.Idd)
                 .HasDefaultValue(0)
                 .HasColumnName("idd");
@@ -4829,6 +5038,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
+            entity.Property(e => e.Hidee).HasColumnName("hidee");
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Idd).HasColumnName("idd");
             entity.Property(e => e.Notes)
@@ -5055,6 +5265,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
+            entity.Property(e => e.Hidee).HasColumnName("hidee");
             entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.Idd).HasColumnName("idd");
             entity.Property(e => e.Notes)
@@ -6829,32 +7040,6 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("uuser");
         });
 
-        modelBuilder.Entity<SeriesOrCollectionOrCategory>(entity =>
-        {
-            entity.HasKey(e => e.Id).HasName("PK_SeriesOrCollection");
-
-            entity.ToTable("SeriesOrCollectionOrCategory");
-
-            entity.Property(e => e.Id).ValueGeneratedNever();
-
-            entity.HasOne(d => d.Catalog).WithMany(p => p.SeriesOrCollectionOrCategories)
-                .HasForeignKey(d => d.CatalogId)
-                .HasConstraintName("FK_SeriesOrCollectionOrCategory_Catalog");
-        });
-
-        modelBuilder.Entity<Specification>(entity =>
-        {
-            entity.Property(e => e.Id).ValueGeneratedNever();
-            entity.Property(e => e.DescriptionAr).HasMaxLength(80);
-            entity.Property(e => e.DescriptionEn).HasMaxLength(80);
-            entity.Property(e => e.DescriptionKr).HasMaxLength(80);
-            entity.Property(e => e.DescriptionTr).HasMaxLength(80);
-            entity.Property(e => e.TitelAr).HasMaxLength(80);
-            entity.Property(e => e.TitelEn).HasMaxLength(80);
-            entity.Property(e => e.TitleKr).HasMaxLength(80);
-            entity.Property(e => e.TitleTr).HasMaxLength(80);
-        });
-
         modelBuilder.Entity<Status>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("PK_State");
@@ -6864,6 +7049,41 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.StateAr).HasMaxLength(50);
             entity.Property(e => e.StateEn).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<Story>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Stories__3214EC07196386A4");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedAt).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.Description).HasMaxLength(255);
+            entity.Property(e => e.Expiration).HasColumnType("datetime");
+            entity.Property(e => e.MediaType).HasMaxLength(50);
+            entity.Property(e => e.MediaUrl).HasMaxLength(255);
+            entity.Property(e => e.Message).HasMaxLength(255);
+
+            entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.Stories)
+                .HasForeignKey(d => d.CreatedBy)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Stories_Brands");
+        });
+
+        modelBuilder.Entity<StoryView>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ViewedAt).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.StoryViews)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoryViews_customer");
+
+            entity.HasOne(d => d.Story).WithMany(p => p.StoryViews)
+                .HasForeignKey(d => d.StoryId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_StoryViews_Stories");
         });
 
         modelBuilder.Entity<SystemSetting>(entity =>
@@ -6915,10 +7135,18 @@ public partial class SafeenCompanyDbContext : DbContext
         {
             entity.ToTable("Task");
 
+            entity.HasIndex(e => e.AssignedToEmployee, "IX_Task_AssignedToEmployee");
+
+            entity.HasIndex(e => e.CreatedBy, "IX_Task_CreatedBy");
+
+            entity.HasIndex(e => e.StatusId, "IX_Task_StatusId");
+
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.CustomerId).HasColumnName("customerId");
             entity.Property(e => e.Deadline).HasColumnType("datetime");
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.InvoiceId).HasColumnName("invoiceId");
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
 
             entity.HasOne(d => d.AssignedToEmployeeNavigation).WithMany(p => p.TaskAssignedToEmployeeNavigations)
@@ -6932,10 +7160,19 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.HasOne(d => d.Status).WithMany(p => p.Tasks)
                 .HasForeignKey(d => d.StatusId)
                 .HasConstraintName("FK_Task_Status");
+
+            entity.HasOne(d => d.Type).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.TypeId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_Task_TaskType");
         });
 
         modelBuilder.Entity<TaskNote>(entity =>
         {
+            entity.HasIndex(e => e.CreatedBy, "IX_TaskNotes_CreatedBy");
+
+            entity.HasIndex(e => e.TaskId, "IX_TaskNotes_TaskId");
+
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
@@ -6949,6 +7186,19 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasForeignKey(d => d.TaskId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_TaskNotes_Task");
+        });
+
+        modelBuilder.Entity<TaskType>(entity =>
+        {
+            entity.ToTable("TaskType");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.DeletedDate).HasColumnType("datetime");
+            entity.Property(e => e.TypeAr).HasMaxLength(70);
+            entity.Property(e => e.TypeEn).HasMaxLength(70);
+            entity.Property(e => e.TypeKr).HasMaxLength(70);
+            entity.Property(e => e.TypeTr).HasMaxLength(70);
         });
 
         modelBuilder.Entity<TblLevel>(entity =>
@@ -6995,6 +7245,14 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<Track>(entity =>
         {
+            entity.HasIndex(e => e.CustomerId, "IX_Tracks_CustomerId");
+
+            entity.HasIndex(e => e.EmployeId, "IX_Tracks_EmployeId");
+
+            entity.HasIndex(e => e.InvoiceId, "IX_Tracks_InvoiceId");
+
+            entity.HasIndex(e => e.TypeId, "IX_Tracks_TypeId");
+
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
@@ -7019,6 +7277,12 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<TrackComment>(entity =>
         {
+            entity.HasIndex(e => e.AssignedTo, "IX_TrackComments_AssignedTo");
+
+            entity.HasIndex(e => e.EmployeeId, "IX_TrackComments_EmployeeId");
+
+            entity.HasIndex(e => e.TrackId, "IX_TrackComments_TrackId");
+
             entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
@@ -7039,6 +7303,10 @@ public partial class SafeenCompanyDbContext : DbContext
 
         modelBuilder.Entity<TrackCommentState>(entity =>
         {
+            entity.HasIndex(e => e.StateId, "IX_TrackCommentStates_StateId");
+
+            entity.HasIndex(e => e.TrackCommentId, "IX_TrackCommentStates_TrackCommentId");
+
             entity.Property(e => e.Id).ValueGeneratedNever();
 
             entity.HasOne(d => d.State).WithMany(p => p.TrackCommentStates)
@@ -7080,6 +7348,24 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.BillId).HasColumnName("billId");
             entity.Property(e => e.PattrenCode).HasMaxLength(12);
             entity.Property(e => e.Sku).HasMaxLength(12);
+        });
+
+        modelBuilder.Entity<UserNotification>(entity =>
+        {
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Status).HasMaxLength(50);
+            entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.UserNotifications)
+                .HasForeignKey(d => d.CustomerId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserNotifications_customer");
+
+            entity.HasOne(d => d.Notification).WithMany(p => p.UserNotifications)
+                .HasForeignKey(d => d.NotificationId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_UserNotifications_Notifications");
         });
 
         modelBuilder.Entity<Userlogin>(entity =>

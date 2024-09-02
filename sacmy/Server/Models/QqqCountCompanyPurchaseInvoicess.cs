@@ -34,4 +34,6 @@ public partial class QqqCountCompanyPurchaseInvoicess
     public string? Address { get; set; }
 
     public string? EventId { get; set; }
+
+    public bool? Hidee { get; set; }
 }

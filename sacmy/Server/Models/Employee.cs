@@ -17,7 +17,19 @@ public partial class Employee
 
     public string? JobTitle { get; set; }
 
+    public string? JobTitleAr { get; set; }
+
+    public string? JobTitleTr { get; set; }
+
+    public string? JobTitleKr { get; set; }
+
     public string? Branch { get; set; }
+
+    public string? BranchAr { get; set; }
+
+    public string? BranchTr { get; set; }
+
+    public string? BranchKr { get; set; }
 
     public string? Brand { get; set; }
 
@@ -26,6 +38,10 @@ public partial class Employee
     public string? FirebaseToken { get; set; }
 
     public Guid? RoleId { get; set; }
+
+    public bool? Shown { get; set; }
+
+    public bool? IsDeleted { get; set; }
 
     public DateTime? CreatedDate { get; set; }
 

@@ -38,4 +38,6 @@ public partial class PurchaseInvoice
     public string? Wajba { get; set; }
 
     public string? EventId { get; set; }
+
+    public bool? Hidee { get; set; }
 }

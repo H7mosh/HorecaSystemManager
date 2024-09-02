@@ -43,9 +43,13 @@ public partial class OnlineOrderItem
 
     public DateTime? CancelledDate { get; set; }
 
-    public virtual Category? Category { get; set; }
+    public virtual Category1? Category { get; set; }
+
+    public virtual Product Item1 { get; set; } = null!;
 
     public virtual Item1 ItemNavigation { get; set; } = null!;
+
+    public virtual OnlineOrder Order { get; set; } = null!;
 
     public virtual SecondryCategory? SecondryCategory { get; set; }
 }

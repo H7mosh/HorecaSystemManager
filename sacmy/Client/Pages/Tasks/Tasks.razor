@@ -94,11 +94,11 @@
                             @foreach (var status in taskStatuses)
                             {
                                 var restrictedStatuses = new List<Guid>
-                        {
-                        Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
-                        Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
-                        Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
-                        };
+                                    {
+                                    Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
+                                    Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
+                                    Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
+                                    };
 
                                 <option value="@status.Id"
                                         disabled="@((selectedTask.CreatedBy != UserGlobal.User.Id && restrictedStatuses.Contains(status.Id)) ? "disabled" : null)"
@@ -193,100 +193,11 @@
     }
 
     <!-- Add Task Modal -->
-    <div class="modal fade @(showAddTaskModal ? "show d-block" : "")" id="addTaskModal" tabindex="-1" role="dialog" aria-labelledby="addTaskModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="addTaskModalLabel">@Localizer["AddTask"]</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseAddTaskModal">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label for="taskTitle">@Localizer["Title"]</label>
-                        <input type="text" class="form-control" id="taskTitle" @bind="newTaskTitle" placeholder="@Localizer["EnterTaskTitle"]">
-                        @if (string.IsNullOrWhiteSpace(newTaskTitle))
-                        {
-                            <div class="text-danger">@Localizer["TitleIsRequired"]</div>
-                        }
-                    </div>
-                    <div class="form-group">
-                        <label for="taskDescription">@Localizer["Description"]</label>
-                        <textarea class="form-control" id="taskDescription" @bind="newTaskDescription" placeholder="@Localizer["EnterTaskDescription"]"></textarea>
-                        @if (string.IsNullOrWhiteSpace(newTaskDescription))
-                        {
-                            <div class="text-danger">@Localizer["DescriptionIsRequired"]</div>
-                        }
-                    </div>
-                    <div class="form-group">
-                        <label for="taskAssignedTo">@Localizer["AssignedTo"]</label>
-                        <select class="form-control" id="taskAssignedTo" @onchange="(e) => newTaskAssignedToEmployeeId = Guid.Parse(e.Value.ToString())">
-                            <option value="">@Localizer["SelectEmployee"]</option>
-                            @if (employees != null)
-                            {
-                                @foreach (var employee in employees)
-                                {
-                                    <option value="@employee.Id">@employee.FirstName @employee.LastName</option>
-                                }
-                            }
-                            else
-                            {
-                                <option value="">@Localizer["ThereIsNoEmployeeYet"]</option>
-                            }
-                        </select>
-                        @if (newTaskAssignedToEmployeeId == Guid.Empty)
-                        {
-                            <div class="text-danger">@Localizer["AssignedEmployeeIsRequired"]</div>
-                        }
-                    </div>
-                    <div class="form-group">
-                        <label for="taskStatus">@Localizer["Status"]</label>
-                        <select class="form-control" id="taskStatus" @onchange="(e) => newTaskStatusId = Guid.Parse(e.Value.ToString())">
-                            <option value="">@Localizer["SelectInitialStatus"]</option>
-                            @if (taskStatuses != null)
-                            {
-                                @foreach (var status in taskStatuses)
-                                {
-                                    <option value="@status.Id">@status.StatusEn</option>
-                                }
-                            }
-                            else
-                            {
-                                <option value="">@Localizer["ThereIsNoStatusYet"]</option>
-                            }
-                        </select>
-                        @if (newTaskStatusId == Guid.Empty)
-                        {
-                            <div class="text-danger">@Localizer["StatusIsRequired"]</div>
-                        }
-                    </div>
-                    <div class="form-group">
-                        <label for="taskDeadline">@Localizer["Deadline"]</label>
-                        <input type="datetime-local" class="form-control" id="taskDeadline" @bind="newTaskDeadline">
-                        @if (newTaskDeadline == default(DateTime))
-                        {
-                            <div class="text-danger">@Localizer["DeadlineIsRequired"]</div>
-                        }
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseAddTaskModal">@Localizer["Close"]</button>
-                    <button type="button" class="btn btn-primary" @onclick="AddTask" disabled="@isLoading">
-                        @if (isLoading)
-                        {
-                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                        }
-                        else
-                        {
-                            <span>@Localizer["SaveTask"]</span>
-                        }
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <AddTaskModal IsVisible="@showAddTaskModal"
+                    IsVisibleChanged="@(EventCallback.Factory.Create<bool>(this, value => showAddTaskModal = value))"
+                    CustomerId=null
+                    InvoiceId=null />
+    
     <!-- Remind Modal -->
     <div class="modal fade @(showRemindModal ? "show d-block" : "")" id="remindModal" tabindex="-1" role="dialog" aria-labelledby="remindModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -415,9 +326,10 @@
 <MudSnackbarProvider />
 
 @code {
-    private List<GetTaskViewModel> tasks = null!;
+    private List<GetTaskViewModel> tasks = new List<GetTaskViewModel>();
     private List<GetTaskNotes> comments = new List<GetTaskNotes>();
     private List<GetTaskStatus> taskStatuses;
+    private List<GetTaskType> taskTypes;
     private List<GetEmployeeViewModel> employees;
     private GetTaskViewModel selectedTask;
     private string selectedFileName;
@@ -436,6 +348,7 @@
     private string newTaskDescription;
     private Guid newTaskAssignedToEmployeeId = Guid.Empty;
     private Guid newTaskStatusId = Guid.Empty;
+    private Guid newTaskTypeId = Guid.Empty;
     private DateTime newTaskDeadline = DateTime.Now;
 
     private string remindTitle;
@@ -446,6 +359,18 @@
         tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id) ?? new List<GetTaskViewModel>();
         taskStatuses = await TaskService.GetTaskStatusAsync() ?? new List<GetTaskStatus>();
         employees = await EmployeeService.GetEmployeesAsync() ?? new List<GetEmployeeViewModel>();
+        taskTypes = await TaskService.GetTaskTypesAsync() ?? new List<GetTaskType>();
+
+        if (taskTypes != null && taskTypes.Any())
+        {
+            newTaskTypeId = taskTypes.Last().Id; // Set the last TaskType as the default value
+        }
+    }
+
+    private void ShowAddTaskModal()
+    {
+        JSRuntime.InvokeVoidAsync("openModal", "addTaskModal");
+        showAddTaskModal = true;
     }
 
     private async void OnTaskSelected(GetTaskViewModel task)
@@ -651,55 +576,6 @@
         showModal = false;
     }
 
-    private void ShowAddTaskModal()
-    {
-        showAddTaskModal = true;
-        JSRuntime.InvokeVoidAsync("openModal", "addTaskModal");
-    }
-
-    private void CloseAddTaskModal()
-    {
-        showAddTaskModal = false;
-        JSRuntime.InvokeVoidAsync("closeModal", "addTaskModal");
-    }
-
-    private async Task AddTask()
-    {
-        if (IsValid())
-        {
-            isLoading = true;
-            StateHasChanged();
-
-            var newTask = new PostTaskViewModel
-                {
-                    Id = Guid.NewGuid(),
-                    Title = newTaskTitle,
-                    Description = newTaskDescription,
-                    AssignedToEmployee = newTaskAssignedToEmployeeId,
-                    CreatedBy = UserGlobal.User.Id,
-                    StatusId = newTaskStatusId,
-                    Deadline = newTaskDeadline
-                };
-
-            await TaskService.PostTaskAsync(newTask);
-            tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id);
-
-            isLoading = false;
-            Snackbar.Add("Task added successfully!", Severity.Success);
-            CloseAddTaskModal();
-            StateHasChanged();
-        }
-    }
-
-    private bool IsValid()
-    {
-        return !string.IsNullOrWhiteSpace(newTaskTitle) &&
-               !string.IsNullOrWhiteSpace(newTaskDescription) &&
-               newTaskAssignedToEmployeeId != Guid.Empty &&
-               newTaskStatusId != Guid.Empty &&
-               newTaskDeadline != default(DateTime);
-    }
-
     private void ShowRemindModal()
     {
         if (selectedTask != null)
@@ -756,30 +632,3 @@
         return selectedTask.CreatedBy == UserGlobal.User.Id || !restrictedStatuses.Contains(newStatusId);
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

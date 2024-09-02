@@ -71,5 +71,11 @@ public partial class BuyFatora
 
     public bool? IsDeleted { get; set; }
 
+    public bool? Hidee { get; set; }
+
+    public int? RemindAfter { get; set; }
+
+    public bool? NotifyMe { get; set; }
+
     public virtual ICollection<Track> Tracks { get; set; } = new List<Track>();
 }

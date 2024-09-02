@@ -149,6 +149,9 @@
 	<data name="Status" xml:space="preserve">
     <value>Durum:</value>
   </data>
+	<data name="TaskType" xml:space="preserve">
+    <value>görev</value>
+  </data>
 	<data name="Comments" xml:space="preserve">
     <value>YORUMLAR</value>
   </data>

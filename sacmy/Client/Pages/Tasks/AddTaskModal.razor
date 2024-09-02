@@ -1,0 +1,269 @@
+﻿@using Blazored.LocalStorage
+@using sacmy.Client.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.EmployeeViewModel
+@using sacmy.Shared.ViewModels.TasksViewModel
+@inject TaskService TaskService
+@inject EmployeeService EmployeeService
+@inject NotificationClientService NotificationClientService
+@using Microsoft.AspNetCore.Components.Forms
+@inject IJSRuntime JSRuntime
+@inject UserGlobalClass UserGlobal
+@inject ISnackbar Snackbar
+@inject ILocalStorageService LocalStorage
+@inject IStringLocalizer<SharedResource> Localizer
+@inject UserGlobalClass UserGlobal
+
+@inject IJSRuntime JSRuntime
+
+@if (IsVisible)
+{
+    <div class="modal fade show d-block" id="addTaskModal" tabindex="-1" role="dialog" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                @if (isLoading)
+                {
+                    <div class="modal-body text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">Loading...</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="addTaskModalLabel">@Localizer["Add Task"]</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseModal">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="taskType">@Localizer["Task Type"]</label>
+                                <select class="form-control" id="taskType" @bind="TaskTypeId">
+                                    @if (TaskTypes != null)
+                                    {
+                                        @foreach (var type in TaskTypes)
+                                        {
+                                            <option value="@type.Id">@type.TypeEn</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="customerId">@Localizer["Customer ID"]</label>
+                                <input type="text" class="form-control" id="customerId" value="@CustomerId" disabled />
+                            </div>
+                            <div class="form-group">
+                                <label for="invoiceId">@Localizer["Invoice ID"]</label>
+                                <input type="text" class="form-control" id="invoiceId" value="@InvoiceId" disabled />
+                            </div>
+                            <div class="form-group">
+                                <label for="taskTitle">@Localizer["Title"]</label>
+                                <input type="text" class="form-control" id="taskTitle" @bind="NewTaskTitle" placeholder="@Localizer["Enter Task Title"]">
+                                @if (string.IsNullOrWhiteSpace(NewTaskTitle))
+                                {
+                                    <div class="text-danger">@Localizer["Title is required"]</div>
+                                }
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDescription">@Localizer["Description"]</label>
+                                <textarea class="form-control" id="taskDescription" @bind="NewTaskDescription" placeholder="@Localizer["Enter Task Description"]"></textarea>
+                                @if (string.IsNullOrWhiteSpace(NewTaskDescription))
+                                {
+                                    <div class="text-danger">@Localizer["Description is required"]</div>
+                                }
+                            </div>
+                            <div class="form-group">
+                                <label for="taskStatus">@Localizer["Status"]</label>
+                                <select class="form-control" id="taskStatus" @bind="NewTaskStatusId">
+                                    @if (TaskStatuses != null)
+                                    {
+                                        @foreach (var status in TaskStatuses)
+                                        {
+                                            <option value="@status.Id">@status.StatusEn</option>
+                                        }
+                                    }
+                                </select>
+                                @if (NewTaskStatusId == Guid.Empty)
+                                {
+                                    <div class="text-danger">@Localizer["Status is required"]</div>
+                                }
+                            </div>
+                            <div class="form-group">
+                                <label for="taskDeadline">@Localizer["Deadline"]</label>
+                                <input type="datetime-local" class="form-control" id="taskDeadline" @bind="NewTaskDeadline">
+                                @if (NewTaskDeadline == default(DateTime))
+                                {
+                                    <div class="text-danger">@Localizer["Deadline is required"]</div>
+                                }
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseModal">@Localizer["Close"]</button>
+                            <button type="button" class="btn btn-primary" @onclick="AddTaskAsync" disabled="@isLoading">
+                                @if (isLoading)
+                                {
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                }
+                                else
+                                {
+                                    <span>@Localizer["Save Task"]</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public string TaskType { get; set; } = "other"; // Default TaskType
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public int? CustomerId { get; set; }
+    [Parameter] public int? InvoiceId { get; set; }
+
+    private Guid TaskTypeId { get; set; } = Guid.Empty; // The ID of the task type to be used
+    private string NewTaskTitle { get; set; }
+    private string NewTaskDescription { get; set; }
+    private Guid NewTaskAssignedToEmployeeId { get; set; } = Guid.Empty;
+    private Guid NewTaskStatusId { get; set; } = Guid.Empty;
+    private DateTime NewTaskDeadline { get; set; } = DateTime.Now;
+
+    private List<GetTaskType> TaskTypes;
+    private List<GetEmployeeViewModel> Employees;
+    private List<GetTaskStatus> TaskStatuses;
+    private bool isLoading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible)
+        {
+            // Fetch necessary data
+            await FetchDataAsync();
+            SetTaskTypeIdBasedOnType(); // Set the TaskTypeId based on the passed TaskType
+        }
+        else
+        {
+            ResetState(); // Reset modal state when it is closed
+        }
+    }
+
+    private async Task FetchDataAsync()
+    {
+        try
+        {
+            TaskTypes = await TaskService.GetTaskTypesAsync();
+            Employees = await EmployeeService.GetEmployeesAsync();
+            TaskStatuses = await TaskService.GetTaskStatusAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetTaskTypeIdBasedOnType()
+    {
+        if (TaskTypes != null)
+        {
+            switch (TaskType.ToLower())
+            {
+                case "dept":
+                    TaskTypeId = TaskTypes.FirstOrDefault(t => t.TypeEn == "Indebted Customer")?.Id ?? Guid.Empty;
+                    break;
+                case "uncompleted":
+                    TaskTypeId = TaskTypes.FirstOrDefault(t => t.TypeEn == "Uncompleted Order")?.Id ?? Guid.Empty;
+                    break;
+                case "hidden":
+                    TaskTypeId = TaskTypes.FirstOrDefault(t => t.TypeEn == "Inactive Customer")?.Id ?? Guid.Empty;
+                    break;
+                default:
+                    TaskTypeId = TaskTypes.FirstOrDefault(t => t.TypeEn == "Other")?.Id ?? Guid.Empty;
+                    break;
+            }
+
+            TaskType = TaskTypes.Find(e => e.Id == TaskTypeId).TypeEn;
+
+        }
+    }
+
+    private void ResetState()
+    {
+        TaskTypeId = Guid.Empty;
+        NewTaskTitle = string.Empty;
+        NewTaskDescription = string.Empty;
+        NewTaskAssignedToEmployeeId = Guid.Empty;
+        NewTaskStatusId = Guid.Empty;
+        NewTaskDeadline = DateTime.Now;
+        isLoading = true;
+    }
+
+    private async void CloseModal()
+    {
+        await JSRuntime.InvokeVoidAsync("closeModal", "addTaskModal");
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task AddTaskAsync()
+    {
+        if (IsValid())
+        {
+            isLoading = true;
+
+            var newTask = new PostTaskViewModel
+                {
+                    Id = Guid.NewGuid(),
+                    Title = NewTaskTitle,
+                    Description = NewTaskDescription,
+                    AssignedToEmployee = NewTaskAssignedToEmployeeId,
+                    CreatedBy = UserGlobal.User.Id,
+                    StatusId = NewTaskStatusId,
+                    Deadline = NewTaskDeadline,
+                    TaskTypeId = TaskTypeId,
+                    CustomerId = CustomerId,
+                    InvoiceId = InvoiceId
+                };
+
+            await TaskService.PostTaskAsync(newTask);
+
+            isLoading = false;
+            Snackbar.Add("Task added successfully!", Severity.Success);
+            CloseModal();
+        }
+    }
+
+    private bool IsValid()
+    {
+        return !string.IsNullOrWhiteSpace(NewTaskTitle) &&
+               !string.IsNullOrWhiteSpace(NewTaskDescription) &&
+               NewTaskStatusId != Guid.Empty &&
+               NewTaskDeadline != default(DateTime);
+    }
+}
+
+<script>
+    window.openFileDialog = function () {
+        document.getElementById('fileInput').click();
+    };
+
+    window.openModal = function (modalId) {
+        $('#' + modalId).modal('show');
+    };
+
+    window.closeModal = function (modalId) {
+        $('#' + modalId).modal('hide');
+    };
+</script>
+
+
+
+

@@ -34,4 +34,8 @@ public partial class OnlineOrder
     public DateTime? UpdatedDate { get; set; }
 
     public DateTime? DeletedDate { get; set; }
+
+    public virtual Customer? Customer { get; set; }
+
+    public virtual ICollection<OnlineOrderItem> OnlineOrderItems { get; set; } = new List<OnlineOrderItem>();
 }

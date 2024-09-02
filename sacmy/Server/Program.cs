@@ -9,7 +9,7 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<SafeenCompanyDbContext>(
     options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString("productionConnectionString")
+        builder.Configuration.GetConnectionString("onlineConnectionString")
     )
 );
 builder.Services.AddScoped<FileService>();

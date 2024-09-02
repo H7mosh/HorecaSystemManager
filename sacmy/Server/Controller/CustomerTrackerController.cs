@@ -101,8 +101,9 @@ namespace sacmy.Server.Controller
                     .ThenInclude(t => t.TrackComments)
                         .ThenInclude(tc => tc.TrackCommentStates)
                             .ThenInclude(tcs => tcs.State)
+                .Where(c => !string.IsNullOrEmpty(c.Customer1)) // Filter out customers with null or empty Customer1
                 .GroupBy(x => x.Customer1)
-                .Select(g => g.First())
+                .Select(g => g.FirstOrDefault())
                 .ToListAsync();
 
             var costumerCountTRunnings = await _context.QqqCountCostumerNewTRunings.ToListAsync();
@@ -119,17 +120,29 @@ namespace sacmy.Server.Controller
 
             var result = costumerCountTRunnings
                 .GroupBy(q => q.Costumer)
-                .Select(g => new DeptCustomerViewModel
+                .Select(g =>
                 {
-                    Id = 0,
-                    CustomerName = g.Key,
-                    TotalTransTotalN = g.Sum(q => q.TransTotalN ?? 0),
-                    HasRecentReceipt = customersWithRecentReceipt.Contains(g.Key) ? "نعم" : "لا"
+                    var customer = customers.FirstOrDefault(e => e.Customer1.ToLower() == g.Key.ToLower());
+
+                    if (customer != null)
+                    {
+                        return new DeptCustomerViewModel
+                        {
+                            Id = customer.Id,
+                            CustomerName = g.Key,
+                            TotalTransTotalN = g.Sum(q => q.TransTotalN ?? 0),
+                            HasRecentReceipt = customersWithRecentReceipt.Contains(g.Key) ? "نعم" : "لا"
+                        };
+                    }
+
+                    return null; // Handle case where customer is null
                 })
-                .Where(e => e.TotalTransTotalN > 200);
+                .Where(e => e != null && e.TotalTransTotalN > 200) // Filter out null results
+                .ToList();
 
             return Ok(result);
         }
+
 
         [HttpGet("GetHiddenCustomer")]
         public async Task<ActionResult<List<CustomerHiddenViewModel>>> GetHidderCustomer()
