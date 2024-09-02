@@ -149,6 +149,9 @@
 	<data name="Status" xml:space="preserve">
     <value>الحالة:</value>
   </data>
+	<data name="TaskType" xml:space="preserve">
+    <value>نوع ألتاسك:</value>
+  </data>
 	<data name="Comments" xml:space="preserve">
     <value>التعليقات</value>
   </data>

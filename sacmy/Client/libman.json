@@ -27,14 +27,6 @@
       "destination": "wwwroot/moment.js/"
     },
     {
-      "library": "bootstrap@5.3.3",
-      "destination": "wwwroot/bootstrap/bootstrap/",
-      "files": [
-        "js/bootstrap.min.js",
-        "css/bootstrap.min.css"
-      ]
-    },
-    {
       "library": "bootstrap-icons@1.11.3",
       "destination": "wwwroot/bootstrap-icons/",
       "files": [
@@ -2102,6 +2094,13 @@
       "files": [
         "jquery.min.js",
         "jquery.min.map"
+      ]
+    },
+    {
+      "library": "bootstrap@5.3.3",
+      "destination": "wwwroot/bootstrap/css/bootstrap/",
+      "files": [
+        "css/bootstrap.rtl.min.css"
       ]
     }
   ]

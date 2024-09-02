@@ -51,9 +51,23 @@ public partial class Customer
 
     public double? PlusOne { get; set; }
 
+    public virtual ICollection<AppSessionLog> AppSessionLogs { get; set; } = new List<AppSessionLog>();
+
     public virtual ICollection<CostumerLocation> CostumerLocations { get; set; } = new List<CostumerLocation>();
 
     public virtual ICollection<CustomerBillPoint> CustomerBillPoints { get; set; } = new List<CustomerBillPoint>();
 
+    public virtual ICollection<CustomerFavouriteProduct> CustomerFavouriteProducts { get; set; } = new List<CustomerFavouriteProduct>();
+
+    public virtual ICollection<CustomerProductRelation> CustomerProductRelations { get; set; } = new List<CustomerProductRelation>();
+
+    public virtual ICollection<CustomerViewedProduct> CustomerViewedProducts { get; set; } = new List<CustomerViewedProduct>();
+
+    public virtual ICollection<OnlineOrder> OnlineOrders { get; set; } = new List<OnlineOrder>();
+
+    public virtual ICollection<StoryView> StoryViews { get; set; } = new List<StoryView>();
+
     public virtual ICollection<Track> Tracks { get; set; } = new List<Track>();
+
+    public virtual ICollection<UserNotification> UserNotifications { get; set; } = new List<UserNotification>();
 }

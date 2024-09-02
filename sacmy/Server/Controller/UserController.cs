@@ -31,7 +31,7 @@ namespace sacmy.Server.Controller
                     Branch = e.Branch,
                     Brand = e.Brand,
                     Code = e.Code,
-                    Image = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.Image,
+                    Image = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.Image,
                     FirebaseToken = e.FirebaseToken,
                     JobTitle = e.JobTitle,
                     CreatedDate = e.CreatedDate,

@@ -34,4 +34,6 @@ public partial class QqqCompanyPurchaseInvoicessForPurchaseManager
     public string? EventId { get; set; }
 
     public decimal? SmTotal { get; set; }
+
+    public bool? Hidee { get; set; }
 }

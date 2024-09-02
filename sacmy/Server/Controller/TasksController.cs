@@ -41,11 +41,11 @@ namespace sacmy.Server.Controller
                     StatusId = e.Status.Id,
                     AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + " " + e.AssignedToEmployeeNavigation.LastName,
                     AssignedToEmployeeId = e.AssignedToEmployeeNavigation.Id,
-                    EmployeeImage = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.AssignedToEmployeeNavigation.Image,
+                    EmployeeImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.AssignedToEmployeeNavigation.Image,
                     EmployeeFirebaseToken = e.AssignedToEmployeeNavigation.FirebaseToken,
                     CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
                     CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
-                    CreatedbyImage = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                    CreatedbyImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
                     CreatedDate = e.CreatedDate,
                     DeadlineDate = e.Deadline
                 }).OrderByDescending(e => e.CreatedDate).ToListAsync();
@@ -74,8 +74,11 @@ namespace sacmy.Server.Controller
                 sacmy.Server.Models.Task task = new Models.Task();
 
                 task.Id = postTaskViewModel.Id;
+                task.TypeId = postTaskViewModel.TaskTypeId;
                 task.Title = postTaskViewModel.Title;
                 task.Description = postTaskViewModel.Description;
+                task.CustomerId = postTaskViewModel.CustomerId;
+                task.InvoiceId = postTaskViewModel.InvoiceId;
                 task.AssignedToEmployee = postTaskViewModel?.AssignedToEmployee;
                 task.CreatedBy = postTaskViewModel?.CreatedBy;
                 task.StatusId = postTaskViewModel.StatusId;
@@ -107,7 +110,7 @@ namespace sacmy.Server.Controller
                                 FileLink = e.FileLink,
                                 CreatedBy = e.CreatedBy,
                                 EmployeeName = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
-                                EmployeeImage = "https://safinahmedcompany.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                                EmployeeImage = "https://api.safinahmedtech/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
                                 EmpolyeeRole = e.CreatedByNavigation.Role.Role,
                                 CreatedDate = e.CreatedDate,
                             }).
@@ -158,7 +161,7 @@ namespace sacmy.Server.Controller
             {
                 Id = Guid.NewGuid(),
                 Note = model.Note,
-                FileLink = string.IsNullOrEmpty(model.FileBase64) ? null : "https://safinahmedcompany.com/assets/TaskAttachment/" +model.FileName  ,
+                FileLink = string.IsNullOrEmpty(model.FileBase64) ? null : "https://api.safinahmedtech/assets/TaskAttachment/" + model.FileName  ,
                 CreatedBy = model.EmployeeId,
                 CreatedDate = DateTime.Now,
                 TaskId = model.TaskId
@@ -181,6 +184,22 @@ namespace sacmy.Server.Controller
                                 }).ToListAsync();
 
             return Ok(status);
+        }
+
+        [HttpGet("GetTaskType")]
+        public async Task<IActionResult> GetTaskType()
+        {
+            var taskTypes = await _context.TaskTypes.OrderByDescending(e => e.CreatedDate)
+                            .Select(e => new GetTaskType
+                            {
+                                Id = e.Id,
+                                TypeAr = e.TypeAr,
+                                TypeEn = e.TypeEn,
+                                TypeTr = e.TypeKr,
+                                TypeKr = e.TypeKr,
+                            }).ToListAsync();
+
+            return Ok(taskTypes);
         }
 
         [HttpPost("UpdateTask")]

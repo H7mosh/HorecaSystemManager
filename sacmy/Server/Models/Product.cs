@@ -7,63 +7,87 @@ public partial class Product
 {
     public Guid Id { get; set; }
 
-    public Guid? SeriesOrCollectionId { get; set; }
+    public Guid BrandId { get; set; }
 
-    public string Sku { get; set; } = null!;
+    public Guid? CollectionId { get; set; }
 
-    public string? Code { get; set; }
+    public Guid? CategoryId { get; set; }
+
+    public Guid MaterialId { get; set; }
+
+    public Guid? CatalogId { get; set; }
+
+    public string? Sku { get; set; }
+
+    public string? PatternNumber { get; set; }
 
     public string? Name { get; set; }
 
-    public string? Description { get; set; }
+    public string? Decription { get; set; }
 
-    public double? Price { get; set; }
+    public double Price { get; set; }
 
-    public int? Points { get; set; }
+    public string? Points { get; set; }
 
     public int? Quantity { get; set; }
 
-    public int? Box { get; set; }
+    public string? InnerType { get; set; }
 
-    public string? BoxType { get; set; }
+    public int InnerTypeCount { get; set; }
 
-    public int? Piece { get; set; }
+    public string? InnerTypeImage { get; set; }
 
-    public string? PieceType { get; set; }
+    public string? OuterType { get; set; }
 
-    public string? Ean { get; set; }
+    public int OuterTypeCount { get; set; }
 
-    public string? Upc { get; set; }
+    public string? OuterTypeImages { get; set; }
 
     public double? Height { get; set; }
 
-    public string? HeightUnit { get; set; }
-
-    public double? Weight { get; set; }
-
-    public string? WeightUnit { get; set; }
-
-    public double? Length { get; set; }
-
-    public string? LengthUnit { get; set; }
+    public double? Diameter { get; set; }
 
     public double? Top { get; set; }
 
-    public string? TopUnit { get; set; }
-
     public double? Base { get; set; }
 
-    public string? BaseUnit { get; set; }
+    public double? Volume { get; set; }
 
-    public bool? IsDeleted { get; set; }
+    public double? Weight { get; set; }
 
-    public DateTime? CreatedDate { get; set; }
+    public double? Area { get; set; }
 
-    public DateTime? UpdatedDate { get; set; }
+    public string? Upc { get; set; }
+
+    public string? Ean { get; set; }
+
+    public bool IsDeleted { get; set; }
+
+    public DateTime CreatedDate { get; set; }
 
     public DateTime? DeletedDate { get; set; }
 
-    public virtual ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
+    public DateTime? UpdateDate { get; set; }
 
-    public virtual SeriesOrCollectionOrCategory? SeriesOrCollection { get; set; }
+    public virtual ICollection<Advertise> Advertises { get; set; } = new List<Advertise>();
+
+    public virtual Brand Brand { get; set; } = null!;
+
+    public virtual Catalog? Catalog { get; set; }
+
+    public virtual Category? Category { get; set; }
+
+    public virtual Collection? Collection { get; set; }
+
+    public virtual ICollection<CustomerFavouriteProduct> CustomerFavouriteProducts { get; set; } = new List<CustomerFavouriteProduct>();
+
+    public virtual ICollection<CustomerProductRelation> CustomerProductRelations { get; set; } = new List<CustomerProductRelation>();
+
+    public virtual ICollection<CustomerViewedProduct> CustomerViewedProducts { get; set; } = new List<CustomerViewedProduct>();
+
+    public virtual Material Material { get; set; } = null!;
+
+    public virtual ICollection<OnlineOrderItem> OnlineOrderItems { get; set; } = new List<OnlineOrderItem>();
+
+    public virtual ICollection<ProductImage> ProductImages { get; set; } = new List<ProductImage>();
 }

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace sacmy.Server.Models;
 
-public partial class Category
+public partial class Material
 {
     public Guid Id { get; set; }
 
@@ -19,13 +19,9 @@ public partial class Category
 
     public bool IsDeleted { get; set; }
 
-    public DateTime? DeletedDate { get; set; }
-
     public DateTime CreatedDate { get; set; }
 
-    public Guid BrandId { get; set; }
-
-    public virtual Brand Brand { get; set; } = null!;
+    public DateTime? DeletedDate { get; set; }
 
     public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

@@ -15,18 +15,22 @@
 
 @inherits LayoutComponentBase
 
+
+@* <Appbar /> *@
+
 <MudThemeProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
-@* <Appbar /> *@
 
 <div class="d-flex flex-column h-100">
-    <div class="appbar bg-primary text-white">
-        <button class="navbar-toggler" type="button" @onclick="ToggleDrawer">
-            <i class="bi bi-list"></i>
-        </button>
-        <span class="ms-3">@GetPageName()</span>
-        <div class="dropdown ms-auto">
+    <div class="appbar bg-primary text-white d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <button class="navbar-toggler" type="button" @onclick="ToggleDrawer">
+                <i class="bi bi-list"></i>
+            </button>
+            <span class="ms-3">@GetPageName()</span> <!-- Home or other page names -->
+        </div>
+        <div class="dropdown">
             <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
                 <img src="@UserGlobal.User.Image" alt="User Avatar" width="32" height="32" class="rounded-circle me-2">
                 <strong>@UserGlobal.User.FirstName @UserGlobal.User.LastName</strong>
@@ -40,6 +44,7 @@
             </ul>
         </div>
     </div>
+
     <div class="d-flex h-100">
         <div class="sidebar bg-light" id="sidebar">
             <div class="sidebar-header">
@@ -50,39 +55,39 @@
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
                 <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/HomeScreen")" href="/HomeScreen">
+                    <a class="nav-link @GetNavLinkClass("/HomeScreen")" href="/HomeScreen" @onclick="() => ToggleDrawer()">
                         <i class="bi bi-house-door me-2"></i>
                         Home
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/Horeca")" href="/Horeca">
+                    <a class="nav-link @GetNavLinkClass("/Horeca")" href="/Horeca" @onclick="() => ToggleDrawer()">
                         <i class="bi bi-shop me-2"></i>
                         Horeca
                     </a>
                 </li>
-                @* <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/PurchaseManager")" href="/PurchaseManager">
-                        <i class="bi bi-cart me-2"></i>
-                        Purchase Manager
-                    </a>
-                </li> *@
                 <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice">
+                    <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice" @onclick="() => ToggleDrawer()">
                         <i class="bi bi-file-earmark-text me-2"></i>
                         Invoice
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/CustomerTracker")" href="/CustomerTracker">
+                    <a class="nav-link @GetNavLinkClass("/CustomerTracker")" href="/CustomerTracker" @onclick="() => ToggleDrawer()">
                         <i class="bi bi-people me-2"></i>
                         Customer Tracker
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/Tasks")" href="/Tasks">
+                    <a class="nav-link @GetNavLinkClass("/Tasks")" href="/Tasks" @onclick="() => ToggleDrawer()">
                         <i class="bi bi-list-task me-2"></i>
                         Tasks
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link @GetNavLinkClass("/CustomerInvoiceTrack")" href="/CustomerInvoiceTrack" @onclick="() => ToggleDrawer()">
+                        <i class="bi bi-list-task me-2"></i>
+                        Customer Invoice Track
                     </a>
                 </li>
             </ul>
@@ -119,11 +124,9 @@
             "PurchaseManager" => "Purchase Manager",
             "Invoice" => "Invoice",
             "CustomerTracker" => "Customer Tracker",
+            "CustomerInvoiceTrack" => "Customer Invoice Track",
             "Tasks" => "Tasks",
             _ => "Dashboard",
         };
     }
 }
-
-
-

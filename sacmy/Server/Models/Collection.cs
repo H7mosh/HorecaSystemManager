@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace sacmy.Server.Models;
 
-public partial class Category
+public partial class Collection
 {
     public Guid Id { get; set; }
 
@@ -17,11 +17,11 @@ public partial class Category
 
     public string? Image { get; set; }
 
-    public bool IsDeleted { get; set; }
+    public DateTime CreatedDate { get; set; }
 
     public DateTime? DeletedDate { get; set; }
 
-    public DateTime CreatedDate { get; set; }
+    public bool? IsDeleted { get; set; }
 
     public Guid BrandId { get; set; }
 

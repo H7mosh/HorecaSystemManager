@@ -85,7 +85,7 @@ public partial class Item1
 
     public DateOnly? DeletedDate { get; set; }
 
-    public virtual Category CategoryNavigation { get; set; } = null!;
+    public virtual Category1 CategoryNavigation { get; set; } = null!;
 
     public virtual ICollection<FeatureItem> FeatureItems { get; set; } = new List<FeatureItem>();
 

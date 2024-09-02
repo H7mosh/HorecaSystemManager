@@ -13,6 +13,12 @@ public partial class Task
 
     public Guid? AssignedToEmployee { get; set; }
 
+    public int? CustomerId { get; set; }
+
+    public int? InvoiceId { get; set; }
+
+    public Guid TypeId { get; set; }
+
     public Guid? StatusId { get; set; }
 
     public DateTime? Deadline { get; set; }
@@ -34,4 +40,6 @@ public partial class Task
     public virtual Status? Status { get; set; }
 
     public virtual ICollection<TaskNote> TaskNotes { get; set; } = new List<TaskNote>();
+
+    public virtual TaskType Type { get; set; } = null!;
 }

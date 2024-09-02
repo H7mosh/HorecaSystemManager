@@ -15,11 +15,15 @@ public partial class Catalog
 
     public string? NameKr { get; set; }
 
-    public string? Image { get; set; }
+    public bool IsDeleted { get; set; }
 
-    public Guid? BrandId { get; set; }
+    public DateTime CreatedDate { get; set; }
 
-    public virtual Brand? Brand { get; set; }
+    public DateTime? DeletedDate { get; set; }
 
-    public virtual ICollection<SeriesOrCollectionOrCategory> SeriesOrCollectionOrCategories { get; set; } = new List<SeriesOrCollectionOrCategory>();
+    public Guid BrandId { get; set; }
+
+    public virtual Brand Brand { get; set; } = null!;
+
+    public virtual ICollection<Product> Products { get; set; } = new List<Product>();
 }

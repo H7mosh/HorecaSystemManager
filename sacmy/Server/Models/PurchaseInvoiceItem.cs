@@ -60,4 +60,6 @@ public partial class PurchaseInvoiceItem
     /// Qtt_Remaining
     /// </summary>
     public double? Naqis { get; set; }
+
+    public Guid? BatchId { get; set; }
 }
