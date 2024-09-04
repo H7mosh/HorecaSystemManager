@@ -18,6 +18,7 @@
 @inject IStringLocalizer<SharedResource> Localizer
 
 
+
 <script>
     window.openFileDialog = function () {
         document.getElementById('fileInput').click();
@@ -32,6 +33,135 @@
     };
 </script>
 
+<style>
+    /* Custom DataGrid Styles */
+    .custom-data-grid .mud-table-container {
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 0;
+    }
+
+    .custom-data-grid table {
+        background-color: #fff;
+        width: 100%;
+    }
+
+    /* Adjust grid height to remove extra space */
+    .custom-data-grid {
+        height: auto;
+    }
+
+        .custom-data-grid tr {
+            height: 60px;
+        }
+
+            .custom-data-grid tr:hover {
+                background-color: #C9DEFE; /* Light blue background on hover */
+            }
+
+
+        /* Header styling to match the example */
+        .custom-data-grid th {
+            background-color: #5D9EFD; /* Example header color */
+            font-weight: 600;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #64b5f6;
+        }
+
+        .custom-data-grid td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+
+    .search-field {
+        max-width: 250px;
+    }
+
+    .employee-column {
+        display: flex;
+        align-items: center;
+    }
+
+    .employee-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-dot {
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        margin-right: 8px;
+        background: radial-gradient(circle, rgba(255,0,0,1) 0%, rgba(255,0,0,0.3) 40%, rgba(255,255,255,0) 70%);
+    }
+
+    .task-status-card {
+        background-color: #fff;
+        border-radius: 8px;
+        text-align: center;
+        padding: 10px 0px;
+        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+        margin: 12px;
+        width: 250px;
+    }
+
+    .task-status-icon {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 90px;
+        height: 90px;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+    }
+
+        .task-status-icon.all {
+            background-color: rgba(0, 0, 0, 0.7); /* Green with 30% opacity */
+        }
+
+        .task-status-icon.closed {
+            background-color: rgba(56, 193, 103, 0.3); /* Green with 30% opacity */
+        }
+
+        .task-status-icon.in-progress {
+            background-color: rgba(255, 165, 0, 0.3); /* Orange with 30% opacity */
+        }
+
+        .task-status-icon.pending {
+            background-color: rgba(128, 128, 128, 0.3); /* Grey with 30% opacity */
+        }
+
+        .task-status-icon.re-assigned {
+            background-color: rgba(0, 123, 255, 0.3); /* Blue with 30% opacity */
+        }
+
+        .task-status-icon.re-scheduled {
+            background-color: rgba(147, 112, 219, 0.3); /* Purple with 30% opacity */
+        }
+
+    .task-status-text {
+        font-weight: 600;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .task-status-count {
+        font-weight: 700;
+        font-size: medium;
+        color: #7b7c7d;
+    }
+
+    .selected-status-card {
+        border: 2px solid #007bff; /* Change the border color to indicate selection */
+        box-shadow: 0px 4px 10px rgba(0, 123, 255, 0.5); /* Highlight the selected card with a stronger shadow */
+    }
+
+</style>
+
 <div class="tasks-container">
     <div class="tasks-list-container">
         <div class="tasks-list-header">
@@ -41,29 +171,109 @@
                 <button class="reminder-button" @onclick="ShowRemindModal">@Localizer["Remind"]</button>
             </div>
         </div>
+
+        <!-- Task Status Cards Section -->
+        <div class="d-flex justify-content-between">
+            <div class="task-status-card @(selectedStatus == "" ? "selected-status-card" : "")" @onclick="@(() => FilterTasksByStatus(""))">
+                <div class="task-status-icon all">
+                    <i class="bi bi-list-task text-light"></i>
+                </div>
+                <div class="task-status-text">@Localizer["All"]</div>
+                <div class="task-status-count">@GetTaskCountByStatus("")</div>
+            </div>
+
+            <div class="task-status-card @(selectedStatus == "Closed" ? "selected-status-card" : "")" @onclick="@(() => FilterTasksByStatus("Closed"))">
+                <div class="task-status-icon closed">
+                    <i class="bi bi-check-circle-fill text-success"></i>
+                </div>
+                <div class="task-status-text">@Localizer["Closed"]</div>
+                <div class="task-status-count">@GetTaskCountByStatus("Closed")</div>
+            </div>
+
+            <div class="task-status-card @(selectedStatus == "In Progress" ? "selected-status-card" : "")" @onclick="@(() => FilterTasksByStatus("In Progress"))">
+                <div class="task-status-icon in-progress">
+                    <i class="bi bi-hourglass-split text-warning"></i>
+                </div>
+                <div class="task-status-text">@Localizer["InProgress"]</div>
+                <div class="task-status-count">@GetTaskCountByStatus("In Progress")</div>
+            </div>
+
+            <div class="task-status-card @(selectedStatus == "Pending" ? "selected-status-card" : "")" @onclick="@(() => FilterTasksByStatus("Pending"))">
+                <div class="task-status-icon pending">
+                    <i class="bi bi-three-dots text-secondary"></i>
+                </div>
+                <div class="task-status-text">@Localizer["Pending"]</div>
+                <div class="task-status-count">@GetTaskCountByStatus("Pending")</div>
+            </div>
+
+            <div class="task-status-card @(selectedStatus == "Re Assigned" ? "selected-status-card" : "")" @onclick="@(() => FilterTasksByStatus("Re Assigned"))">
+                <div class="task-status-icon re-assigned">
+                    <i class="bi bi-people-fill text-primary"></i>
+                </div>
+                <div class="task-status-text">@Localizer["ReAssigned"]</div>
+                <div class="task-status-count">@GetTaskCountByStatus("Re Assigned")</div>
+            </div>
+
+            <div class="task-status-card @(selectedStatus == "Re Scheduled" ? "selected-status-card" : "")" @onclick="@(() => FilterTasksByStatus("Re Scheduled"))">
+                <div class="task-status-icon re-scheduled">
+                    <i class="bi bi-calendar-event-fill text-purple"></i>
+                </div>
+                <div class="task-status-text">@Localizer["ReScheduled"]</div>
+                <div class="task-status-count">@GetTaskCountByStatus("Re Scheduled")</div>
+            </div>
+        </div>
+
         @if (tasks != null && tasks.Any())
         {
-            <div class="tasks-list">
-                @foreach (var task in tasks)
-                {
-                    <div class="task-item @(selectedTask?.Id == task.Id ? "selected" : "")" @onclick="(() => OnTaskSelected(task))">
-                        <div class="task-title">
-                            @task.Title
-                        </div>
-                        <div class="task-meta">
-                            <span>@Localizer["InitDate"] @task.CreatedDate.ToString("MM-dd-yyyy hh:mm tt")</span>
-                            <span class="task-deadline">@Localizer["ExpireDate"] @task.DeadlineDate?.ToString("MM-dd-yyyy hh:mm tt")</span>
-                        </div>
-                        <div class="task-status @(task.Status == "Closed" || task.Status == "Done" ? "closed" : task.Status == "Pending" ? "pending" : "inProgress")">
-                            @task.Status
-                        </div>
-                        <div class="task-assigned">
-                            <span>@task.AssignedToEmployee</span>
-                            <img src="@task.EmployeeImage" alt="Employee Avatar" />
-                        </div>
-                    </div>
-                }
-            </div>
+            <MudDataGrid T="GetTaskViewModel" MultiSelection="true" Items="@filteredTasks" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+                         Hideable="true" RowClick="OnTaskSelected" Class="custom-data-grid" Style="height: 100%;">
+                <ToolBarContent>
+                    <MudSpacer />
+                    <MudTextField @bind-Value="_searchString" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" Immediate="true"
+                                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
+                </ToolBarContent>
+                <Columns>
+                    <!-- Employee Column -->
+                    <TemplateColumn Title="@Localizer["Employee"]" Width="20%">
+                        <CellTemplate>
+                            <MudStack Row>
+                                <MudAvatar Size="MudBlazor.Size.Small" Image="@context.Item.EmployeeImage" Alt="@Localizer["EmployeeAvatar"]" />
+                                <MudText>@context.Item.AssignedToEmployee</MudText>
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <!-- Task Title Column -->
+                    <PropertyColumn Property="x => x.Title" Title="@Localizer["Task"]" Width="30%" />
+
+                    <!-- Task Status Column -->
+                    <TemplateColumn Title="@Localizer["Status"]" Width="15%">
+                        <CellTemplate>
+                            <MudStack Row>
+                                <div class="status-dot" style="background: @GetStatusGradient(context.Item.Status);"></div>
+                                <MudText>@context.Item.Status</MudText>
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <TemplateColumn Title="@Localizer["InitDate"]" Width="20%">
+                        <CellTemplate>
+                            @GetRelativeTime(context.Item.CreatedDate)
+                        </CellTemplate>
+                    </TemplateColumn>
+
+                    <!-- Expire Date Column -->
+                    <TemplateColumn Title="@Localizer["ExpireDate"]" Width="15%">
+                        <CellTemplate>
+                            <MudText>@context.Item.DeadlineDate</MudText>
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="GetTaskViewModel" />
+                </PagerContent>
+            </MudDataGrid>
+
         }
         else
         {
@@ -86,7 +296,7 @@
                     <span><strong>@Localizer["CreatedBy"]</strong></span>
                     <div class="creator-info">
                         <span>@selectedTask.CreatedbyName</span>
-                        <img src="@selectedTask.CreatedbyImage" alt="Creator Avatar" />
+                        <img src="@selectedTask.CreatedbyImage" alt="@Localizer["CreatorAvatar"]" />
                     </div>
                     <div class="form-group-status-container">
                         <label for="taskStatus">@Localizer["Status"]:</label>
@@ -94,11 +304,11 @@
                             @foreach (var status in taskStatuses)
                             {
                                 var restrictedStatuses = new List<Guid>
-                                    {
-                                    Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
-                                    Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
-                                    Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
-                                    };
+                        {
+                        Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
+                        Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
+                        Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
+                        };
 
                                 <option value="@status.Id"
                                         disabled="@((selectedTask.CreatedBy != UserGlobal.User.Id && restrictedStatuses.Contains(status.Id)) ? "disabled" : null)"
@@ -125,7 +335,7 @@
                     @foreach (var comment in comments)
                     {
                         <div class="comment-container" style="background-color: @(comment.EmpolyeeRole == "manager" ? "rgba(56, 122, 223, 0.2)" : "inherit")">
-                            <img class="comment-avatar" src="@comment.EmployeeImage" alt="Commenter Avatar" />
+                            <img class="comment-avatar" src="@comment.EmployeeImage" alt="@Localizer["CommenterAvatar"]" />
                             <div class="comment-content">
                                 <div class="comment-header">
                                     <span class="comment-author">@comment.EmployeeName</span>
@@ -194,10 +404,10 @@
 
     <!-- Add Task Modal -->
     <AddTaskModal IsVisible="@showAddTaskModal"
-                    IsVisibleChanged="@(EventCallback.Factory.Create<bool>(this, value => showAddTaskModal = value))"
-                    CustomerId=null
-                    InvoiceId=null />
-    
+                  IsVisibleChanged="@(EventCallback.Factory.Create<bool>(this, value => showAddTaskModal = value))"
+                  CustomerId=null
+                  InvoiceId=null />
+
     <!-- Remind Modal -->
     <div class="modal fade @(showRemindModal ? "show d-block" : "")" id="remindModal" tabindex="-1" role="dialog" aria-labelledby="remindModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
@@ -240,7 +450,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="rescheduleModalLabel">@Localizer["RescheduleTask"]</h5>
+                    <h5 class="modal-title" id="rescheduleModalLabel">@Localizer["ReScheduleTask"]</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseRescheduleModal">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -277,7 +487,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="reassignModalLabel">@Localizer["ReassignTask"]</h5>
+                    <h5 class="modal-title" id="reassignModalLabel">@Localizer["ReAssignTask"]</h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseReassignModal">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -327,11 +537,13 @@
 
 @code {
     private List<GetTaskViewModel> tasks = new List<GetTaskViewModel>();
+    private List<GetTaskViewModel> filteredTasks = new List<GetTaskViewModel>(); // List to hold filtered tasks
     private List<GetTaskNotes> comments = new List<GetTaskNotes>();
     private List<GetTaskStatus> taskStatuses;
     private List<GetTaskType> taskTypes;
     private List<GetEmployeeViewModel> employees;
     private GetTaskViewModel selectedTask;
+    private string selectedStatus = null; // Hold the currently selected status
     private string selectedFileName;
     private string noteText;
     private byte[] fileBytes;
@@ -353,10 +565,12 @@
 
     private string remindTitle;
     private string remindMessage;
+    private string _searchString;
 
     protected override async Task OnInitializedAsync()
     {
         tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id) ?? new List<GetTaskViewModel>();
+        filteredTasks = tasks; // Initially show all tasks
         taskStatuses = await TaskService.GetTaskStatusAsync() ?? new List<GetTaskStatus>();
         employees = await EmployeeService.GetEmployeesAsync() ?? new List<GetEmployeeViewModel>();
         taskTypes = await TaskService.GetTaskTypesAsync() ?? new List<GetTaskType>();
@@ -373,12 +587,35 @@
         showAddTaskModal = true;
     }
 
-    private async void OnTaskSelected(GetTaskViewModel task)
+    private async void OnTaskSelected(DataGridRowClickEventArgs<GetTaskViewModel> args)
     {
-        selectedTask = task;
-        comments = await TaskService.GetTaskNotesAsync(task.Id.ToString()); // Fetch comments for selected task
+        selectedTask = args.Item;
+        comments = await TaskService.GetTaskNotesAsync(selectedTask.Id.ToString()); // Fetch comments for selected task
         StateHasChanged();
     }
+
+    private Func<GetTaskViewModel, bool> _quickFilter => x =>
+    {
+        if (string.IsNullOrWhiteSpace(_searchString))
+            return true;
+
+        if (!string.IsNullOrEmpty(x.AssignedToEmployee) && x.AssignedToEmployee.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrEmpty(x.Title) && x.Title.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(x.CreatedbyName) && x.CreatedbyName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(x.Status) && x.Status.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!string.IsNullOrWhiteSpace(x.CreatedDate.ToString()) && x.CreatedDate.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        return false;
+    };
 
     private async Task OnTaskStatusChanged(ChangeEventArgs e)
     {
@@ -631,4 +868,71 @@
 
         return selectedTask.CreatedBy == UserGlobal.User.Id || !restrictedStatuses.Contains(newStatusId);
     }
+
+    private string GetStatusGradient(string status)
+    {
+        return status switch
+        {
+            "In Progress" => "radial-gradient(circle, rgba(255,165,0,1) 0%, rgba(255,165,0,0.3) 40%, rgba(255,255,255,0) 70%)",
+            "Closed" => "radial-gradient(circle, rgba(0,128,0,1) 0%, rgba(0,128,0,0.3) 40%, rgba(255,255,255,0) 70%)",
+            "Re-Scheduled" => "radial-gradient(circle, rgba(0,0,0,1) 0%, rgba(0,0,0,0.3) 40%, rgba(255,255,255,0) 70%)",
+            "Re-Assigned" => "radial-gradient(circle, rgba(128,0,128,1) 0%, rgba(128,0,128,0.3) 40%, rgba(255,255,255,0) 70%)",
+            "Open" => "radial-gradient(circle, rgba(0,0,255,1) 0%, rgba(0,0,255,0.3) 40%, rgba(255,255,255,0) 70%)",
+            _ => "radial-gradient(circle, rgba(255,0,0,1) 0%, rgba(255,0,0,0.3) 40%, rgba(255,255,255,0) 70%)"
+        };
+    }
+
+    private string GetRelativeTime(DateTime? date)
+    {
+        if (!date.HasValue) return string.Empty;
+
+        var timeSpan = DateTime.Now - date.Value;
+
+        if (timeSpan.TotalMinutes < 1)
+            return Localizer["JustNow"];
+
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} {Localizer["MinutesAgo"]}";
+
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} {Localizer["HoursAgo"]}";
+
+        if (timeSpan.TotalDays < 1)
+            return $"{Localizer["TodayAt"]} {date.Value:hh:mm tt}";
+
+        if (timeSpan.TotalDays < 2)
+            return $"{Localizer["YesterdayAt"]} {date.Value:hh:mm tt}";
+
+        return date.Value.ToString(Localizer["DateTimeFormat"]);
+    }
+
+
+    private int GetTaskCountByStatus(string status)
+    {
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            return tasks.Count;
+        }
+        return tasks?.Count(task => task.Status.Equals(status, StringComparison.OrdinalIgnoreCase)) ?? 0;
+    }
+
+    private void FilterTasksByStatus(string status)
+    {
+
+        if (string.IsNullOrWhiteSpace(status))
+        {
+            selectedStatus = "";
+            // If no status is selected, show all tasks
+            filteredTasks = tasks;
+        }
+        else
+        {
+            selectedStatus = status;
+            // Filter tasks based on the selected status
+            filteredTasks = tasks.Where(task => task.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+        }
+
+        StateHasChanged(); // Update the UI
+    }
+
 }

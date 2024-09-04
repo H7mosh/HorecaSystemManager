@@ -118,8 +118,9 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 	
-<!--Start Task Page-->	
-  <data name="Tasks" xml:space="preserve">
+<!--Start Task Page-->
+	<!--Start Tasks Page-->
+	<data name="Tasks" xml:space="preserve">
     <value>المهام</value>
   </data>
 	<data name="AddTask" xml:space="preserve">
@@ -144,19 +145,19 @@
     <value>عرض المزيد</value>
   </data>
 	<data name="CreatedBy" xml:space="preserve">
-    <value>أنشأها</value>
+    <value>أنشئ بواسطة</value>
   </data>
 	<data name="Status" xml:space="preserve">
     <value>الحالة:</value>
   </data>
 	<data name="TaskType" xml:space="preserve">
-    <value>نوع ألتاسك:</value>
+    <value>نوع المهمة</value>
   </data>
 	<data name="Comments" xml:space="preserve">
     <value>التعليقات</value>
   </data>
 	<data name="ThereAreNoMessagesYet" xml:space="preserve">
-    <value>لا توجد رسائل بعد.</value>
+    <value>لا توجد رسائل حتى الآن.</value>
   </data>
 	<data name="SelectedFile" xml:space="preserve">
     <value>الملف المحدد:</value>
@@ -192,7 +193,7 @@
     <value>الوصف مطلوب</value>
   </data>
 	<data name="AssignedTo" xml:space="preserve">
-    <value>مخصص ل</value>
+    <value>مخصص لـ</value>
   </data>
 	<data name="SelectEmployee" xml:space="preserve">
     <value>اختر موظف</value>
@@ -204,7 +205,7 @@
     <value>الموظف المعين مطلوب</value>
   </data>
 	<data name="SelectInitialStatus" xml:space="preserve">
-    <value>اختر الحالة المبدئية</value>
+    <value>اختر الحالة الأولية</value>
   </data>
 	<data name="ThereIsNoStatusYet" xml:space="preserve">
     <value>لا توجد حالة حتى الآن!</value>
@@ -246,75 +247,122 @@
     <value>الموظف الجديد مطلوب</value>
   </data>
 	<data name="SaveTask" xml:space="preserve">
-    <value>احفظ المهمة</value>
+    <value>حفظ المهمة</value>
   </data>
 	<data name="Save" xml:space="preserve">
-    <value>احفظ</value>
+    <value>حفظ</value>
   </data>
 	<data name="GetAttachment" xml:space="preserve">
     <value>احصل على المرفق</value>
   </data>
-	<!--End Task Page-->
-	
-	
-	<!--start sign in page-->
-	
-	<data name="PhoneNumber" xml:space="preserve">
-  <value>رقم الهاتف</value>
-</data>
-	<data name="PleaseEnterPhoneNumber" xml:space="preserve">
-  <value>يرجى إدخال رقم الهاتف</value>
-</data>
-	<data name="Password" xml:space="preserve">
-  <value>كلمة المرور</value>
-</data>
-	<data name="PleaseEnterPassword" xml:space="preserve">
-  <value>يرجى إدخال كلمة المرور</value>
-</data>
-	<data name="Loading" xml:space="preserve">
-  <value>جار التحميل</value>
-</data>
-	<data name="SignIn" xml:space="preserve">
-  <value>تسجيل الدخول</value>
-</data>
-	
-<!--end signin page-->
-	
-	<!--Main Layout Page-->
 
+	<!-- Added Translations -->
+	<data name="All" xml:space="preserve">
+    <value>الكل</value>
+  </data>
+	<data name="Closed" xml:space="preserve">
+    <value>مغلق</value>
+  </data>
+	<data name="InProgress" xml:space="preserve">
+    <value>قيد التقدم</value>
+  </data>
+	<data name="Pending" xml:space="preserve">
+    <value>معلق</value>
+  </data>
+	<data name="ReAssigned" xml:space="preserve">
+    <value>إعادة تعيين</value>
+  </data>
+	<data name="ReScheduled" xml:space="preserve">
+    <value>إعادة جدولة</value>
+  </data>
+	<data name="Search" xml:space="preserve">
+    <value>بحث</value>
+  </data>
+	<data name="Employee" xml:space="preserve">
+    <value>الموظف</value>
+  </data>
+	<data name="Task" xml:space="preserve">
+    <value>المهمة</value>
+  </data>
+	<data name="EmployeeAvatar" xml:space="preserve">
+    <value>صورة الموظف</value>
+  </data>
+	<data name="CreatorAvatar" xml:space="preserve">
+    <value>صورة المنشئ</value>
+  </data>
+	<data name="CommenterAvatar" xml:space="preserve">
+    <value>صورة المعلق</value>
+  </data>
+	<data name="JustNow" xml:space="preserve">
+    <value>الآن</value>
+  </data>
+	<data name="MinutesAgo" xml:space="preserve">
+    <value>منذ دقائق</value>
+  </data>
+	<data name="HoursAgo" xml:space="preserve">
+    <value>منذ ساعات</value>
+  </data>
+	<data name="TodayAt" xml:space="preserve">
+    <value>اليوم في</value>
+  </data>
+	<data name="YesterdayAt" xml:space="preserve">
+    <value>أمس في</value>
+  </data>
+	<data name="DateTimeFormat" xml:space="preserve">
+    <value>dd MMM, yyyy hh:mm tt</value>
+  </data>
+
+	<!--sign in page-->
+	<data name="PhoneNumber" xml:space="preserve">
+    <value>رقم الهاتف</value>
+  </data>
+	<data name="PleaseEnterPhoneNumber" xml:space="preserve">
+    <value>يرجى إدخال رقم الهاتف</value>
+  </data>
+	<data name="Password" xml:space="preserve">
+    <value>كلمة المرور</value>
+  </data>
+	<data name="PleaseEnterPassword" xml:space="preserve">
+    <value>يرجى إدخال كلمة المرور</value>
+  </data>
+	<data name="Loading" xml:space="preserve">
+    <value>جاري التحميل</value>
+  </data>
+	<data name="SignIn" xml:space="preserve">
+    <value>تسجيل الدخول</value>
+  </data>
+
+	<!--Main Layout Page-->
 	<data name="NewProject" xml:space="preserve">
     <value>مشروع جديد...</value>
-</data>
+  </data>
 	<data name="Settings" xml:space="preserve">
     <value>الإعدادات</value>
-</data>
+  </data>
 	<data name="Profile" xml:space="preserve">
     <value>الملف الشخصي</value>
-</data>
+  </data>
 	<data name="SignOut" xml:space="preserve">
     <value>تسجيل الخروج</value>
-</data>
+  </data>
 	<data name="Home" xml:space="preserve">
     <value>الصفحة الرئيسية</value>
-</data>
+  </data>
 	<data name="Horeca" xml:space="preserve">
-    <value>هوريكا</value>
-</data>
+    <value>هو ريكا</value>
+  </data>
 	<data name="PurchaseManager" xml:space="preserve">
     <value>مدير المشتريات</value>
-</data>
+  </data>
 	<data name="Invoice" xml:space="preserve">
     <value>الفاتورة</value>
-</data>
+  </data>
 	<data name="CustomerTracker" xml:space="preserve">
-    <value>تتبع العملاء</value>
-</data>
-	<data name="Tasks" xml:space="preserve">
-    <value>المهام</value>
-</data>
+    <value>متعقب العملاء</value>
+  </data>
 	<data name="Dashboard" xml:space="preserve">
     <value>لوحة التحكم</value>
-</data>
+  </data>
 
 	<!--End Main Layout Page-->
 </root>

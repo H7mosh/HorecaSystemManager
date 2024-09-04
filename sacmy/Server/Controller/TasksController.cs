@@ -110,7 +110,7 @@ namespace sacmy.Server.Controller
                                 FileLink = e.FileLink,
                                 CreatedBy = e.CreatedBy,
                                 EmployeeName = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
-                                EmployeeImage = "https://api.safinahmedtech/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                                EmployeeImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
                                 EmpolyeeRole = e.CreatedByNavigation.Role.Role,
                                 CreatedDate = e.CreatedDate,
                             }).
@@ -161,7 +161,7 @@ namespace sacmy.Server.Controller
             {
                 Id = Guid.NewGuid(),
                 Note = model.Note,
-                FileLink = string.IsNullOrEmpty(model.FileBase64) ? null : "https://api.safinahmedtech/assets/TaskAttachment/" + model.FileName  ,
+                FileLink = string.IsNullOrEmpty(model.FileBase64) ? null : "https://api.safinahmedtech.com/assets/TaskAttachment/" + model.FileName  ,
                 CreatedBy = model.EmployeeId,
                 CreatedDate = DateTime.Now,
                 TaskId = model.TaskId
