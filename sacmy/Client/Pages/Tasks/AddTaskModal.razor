@@ -13,8 +13,39 @@
 @inject ILocalStorageService LocalStorage
 @inject IStringLocalizer<SharedResource> Localizer
 @inject UserGlobalClass UserGlobal
-
 @inject IJSRuntime JSRuntime
+
+<style>
+    .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 6px solid rgba(0, 123, 255, 0.2);
+    border-top: 6px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    color: #007bff;
+}
+
+</style>
+
 
 @if (IsVisible)
 {
@@ -24,8 +55,9 @@
                 @if (isLoading)
                 {
                     <div class="modal-body text-center">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">Loading...</span>
+                        <div class="loading-container">
+                            <div class="loading-spinner"></div>
+                            <p class="loading-text">Loading, please wait...</p>
                         </div>
                     </div>
                 }
@@ -73,6 +105,27 @@
                                 @if (string.IsNullOrWhiteSpace(NewTaskDescription))
                                 {
                                     <div class="text-danger">@Localizer["Description is required"]</div>
+                                }
+                            </div>
+                            <div class="form-group">
+                                <label for="taskAssignedTo">@Localizer["AssignedTo"]</label>
+                                <select class="form-control" id="taskAssignedTo" @bind="NewTaskAssignedToEmployeeId">
+                                    <option value="">@Localizer["Select Employee"]</option>
+                                    @if (Employees != null)
+                                    {
+                                        @foreach (var employee in Employees)
+                                        {
+                                            <option value="@employee.Id">@employee.FirstName @employee.LastName</option>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <option value="">@Localizer["No Employees Available"]</option>
+                                    }
+                                </select>
+                                @if (NewTaskAssignedToEmployeeId == Guid.Empty)
+                                {
+                                    <div class="text-danger">@Localizer["Assigned Employee is required"]</div>
                                 }
                             </div>
                             <div class="form-group">
@@ -146,6 +199,7 @@
             // Fetch necessary data
             await FetchDataAsync();
             SetTaskTypeIdBasedOnType(); // Set the TaskTypeId based on the passed TaskType
+            SetDefaultStatus(); // Set default status to "Pending"
         }
         else
         {
@@ -193,6 +247,15 @@
 
             TaskType = TaskTypes.Find(e => e.Id == TaskTypeId).TypeEn;
 
+        }
+    }
+
+    private void SetDefaultStatus()
+    {
+        if (TaskStatuses != null)
+        {
+            var pendingStatus = TaskStatuses.FirstOrDefault(s => s.StatusEn.Equals("Pending", StringComparison.OrdinalIgnoreCase));
+            NewTaskStatusId = pendingStatus?.Id ?? Guid.Empty;
         }
     }
 
@@ -263,7 +326,3 @@
         $('#' + modalId).modal('hide');
     };
 </script>
-
-
-
-

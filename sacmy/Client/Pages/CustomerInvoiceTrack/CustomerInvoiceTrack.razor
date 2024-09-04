@@ -19,11 +19,10 @@
         color: darkgrey;
     }
 
-        .custom-inactive-link:hover {
-            color: blue;
-            border-bottom: 2px solid blue;
-        }
-
+    .custom-inactive-link:hover {
+        color: blue;
+        border-bottom: 2px solid blue;
+    }
 
     /* Custom DataGrid Styles */
     .custom-data-grid .mud-table-container {
@@ -43,38 +42,72 @@
         height: auto;
     }
 
-        .custom-data-grid tr {
-            height: 60px;
-        }
+    .custom-data-grid tr {
+        height: 60px;
+    }
 
-            .custom-data-grid tr:hover {
-                background-color: #C9DEFE; /* Light blue background on hover */
-            }
+    .custom-data-grid tr:hover {
+        background-color: #C9DEFE; /* Light blue background on hover */
+    }
 
-        .custom-data-grid tbody tr:nth-child(even) {
-            background-color: #F4F9FF; /* Light grey background for even rows */
-        }
+    .custom-data-grid tbody tr:nth-child(even) {
+        background-color: #F4F9FF; /* Light grey background for even rows */
+    }
 
-        /* Header styling to match the example */
-        .custom-data-grid th {
-            background-color: #5D9EFD; /* Example header color */
-            font-weight: 600;
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #64b5f6;
-        }
+    /* Header styling to match the example */
+    .custom-data-grid th {
+        background-color: #5D9EFD; /* Example header color */
+        font-weight: 600;
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid #64b5f6;
+    }
 
-        .custom-data-grid td {
-            padding: 12px;
-            vertical-align: middle;
-        }
+    .custom-data-grid td {
+        padding: 12px;
+        vertical-align: middle;
+    }
 
-        .custom-data-grid .mud-switch {
-            color: #007bff;
-        }
+    .custom-data-grid .mud-switch {
+        color: #007bff;
+    }
 
     .search-field {
         max-width: 250px;
+    }
+
+    .loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050; /* Ensure it sits on top of other content */
+    }
+
+    .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 6px solid rgba(255, 255, 255, 0.2);
+    border-top: 6px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+        margin-top: 20px;
+        font-size: 1.2rem;
+        color: #fff;
+        text-align: center;
     }
 
 </style>
@@ -103,7 +136,10 @@
 
     @if (isLoading)
     {
-        <div>Loading...</div>
+        <div class="loading-overlay">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Loading, please wait...</p>
+        </div>
     }
     else if (activeTab == 1 && customerData != null)
     {
@@ -118,10 +154,11 @@
             <Columns>
                 <PropertyColumn Property="x => x.Id" Title="Id" />
                 <PropertyColumn Property="x => x.Name" Title="Full Name" />
-                <PropertyColumn Property="x => x.Type" Title="Position" />
-                <PropertyColumn Property="x => x.LastDate" Title="Date of Birth" />
+                <PropertyColumn Property="x => x.Type" Title="Type" />
+                <PropertyColumn Property="x => x.LastDate" Title="Last Invoice Date" />
                 <PropertyColumn Property="x => x.TrackType" Title="Skills" />
                 <PropertyColumn Property="x => x.State" Title="Exp" />
+                
             </Columns>
             <PagerContent>
                 <MudDataGridPager T="CustomerHiddenViewModel" />
@@ -142,7 +179,7 @@
                 <PropertyColumn Property="x => x.Id" Title="Id" />
                 <PropertyColumn Property="x => x.CustomerName" Title="Customer Name" />
                 <PropertyColumn Property="x => x.TotalTransTotalN" Title="Amount" />
-                <PropertyColumn Property="x => x.HasRecentReceipt" Title="Due Date" />
+                <PropertyColumn Property="x => x.HasRecentReceipt" Title="Has Recent Receipt" />
             </Columns>
             <PagerContent>
                 <MudDataGridPager T="DeptCustomerViewModel" />
@@ -180,11 +217,7 @@
         <div>No data available.</div>
     }
 
-    <AddTaskModal IsVisible="@showAddTaskModal"
-                  IsVisibleChanged="@(value => showAddTaskModal = value)"
-                  CustomerId="selectedCustomerId"
-                  InvoiceId="selectedInvoiceId"
-                  TaskType="@taskType" />
+    <AddTaskModal IsVisible="@showAddTaskModal" IsVisibleChanged="@(value => showAddTaskModal = value)" CustomerId="selectedCustomerId" InvoiceId="selectedInvoiceId" TaskType="@taskType" />
 
 </div>
 
