@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using sacmy.Client.Pages.Invoice;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
@@ -31,14 +32,23 @@ namespace sacmy.Server.Controller
 
             var tasks = await _context.Tasks
                 .Include(e => e.AssignedToEmployeeNavigation)
+                .Include(e => e.Type)
                 .Include(e => e.Status)
                 .Select(e => new GetTaskViewModel
                 {
                     Id = e.Id,
                     Title = e.Title,
                     Description = e.Description,
-                    Status = e.Status.StateEn,
+                    TypeEn = e.Type.TypeEn,
+                    TypeAr = e.Type.TypeAr,
+                    TypeTr = e.Type.TypeTr,
+                    StatusEn = e.Status.StateEn,
+                    StatusAr = e.Status.StateAr,
+                    StatusTr = e.Status.StateEn,
                     StatusId = e.Status.Id,
+                    InvoiceId = e.InvoiceId,
+                    CutsomerName = e.Customer.Customer1,
+                    CutsomerId= e.CustomerId,
                     AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + " " + e.AssignedToEmployeeNavigation.LastName,
                     AssignedToEmployeeId = e.AssignedToEmployeeNavigation.Id,
                     EmployeeImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.AssignedToEmployeeNavigation.Image,
@@ -63,6 +73,108 @@ namespace sacmy.Server.Controller
 
             return Ok(tasks);
            
+        }
+
+        [HttpGet("GetTasksByInvoiceIdOrCustomerId")]
+        public async Task<IActionResult> GetTasksByInvoiceIdOrCustomerId([FromQuery] Guid UserId , [FromQuery] int? invoiceId , [FromQuery] int? customerId)
+        {
+            Employee employee = await _context.Employees.Include(e => e.Role).FirstOrDefaultAsync(e => e.Id == UserId);
+            var tasks = new List<GetTaskViewModel>();
+
+            if (invoiceId.HasValue)
+            {
+                tasks = await _context.Tasks
+               .Include(e => e.AssignedToEmployeeNavigation)
+               .Include(e => e.Type)
+               .Include(e => e.Status)
+               .Where(e => e.InvoiceId == invoiceId)
+               .Select(e => new GetTaskViewModel
+               {
+                   Id = e.Id,
+                   Title = e.Title,
+                   Description = e.Description,
+                   TypeEn = e.Type.TypeEn,
+                   TypeAr = e.Type.TypeAr,
+                   TypeTr = e.Type.TypeTr,
+                   StatusEn = e.Status.StateEn,
+                   StatusAr = e.Status.StateAr,
+                   StatusTr = e.Status.StateEn,
+                   StatusId = e.Status.Id,
+                   InvoiceId = e.InvoiceId,
+                   CutsomerName = e.Customer.Customer1,
+                   AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + " " + e.AssignedToEmployeeNavigation.LastName,
+                   AssignedToEmployeeId = e.AssignedToEmployeeNavigation.Id,
+                   EmployeeImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.AssignedToEmployeeNavigation.Image,
+                   EmployeeFirebaseToken = e.AssignedToEmployeeNavigation.FirebaseToken,
+                   CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
+                   CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
+                   CreatedbyImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                   CreatedDate = e.CreatedDate,
+                   DeadlineDate = e.Deadline
+               }).OrderByDescending(e => e.CreatedDate).ToListAsync();
+
+                // Filter tasks based on UserId
+                if (employee.Role.Role != "manager")
+                {
+                    tasks = tasks.Where(t => t.AssignedToEmployeeId == UserId).ToList();
+                }
+
+                if (tasks == null || !tasks.Any())
+                {
+                    return Ok(new List<GetTaskViewModel>());
+                }
+
+                return Ok(tasks);
+            }
+
+            else if (customerId.HasValue)
+            {
+                tasks = await _context.Tasks
+                .Include(e => e.AssignedToEmployeeNavigation)
+                .Include(e => e.Type)
+                .Include(e => e.Status)
+                .Where(e => e.CustomerId == customerId)
+                .Select(e => new GetTaskViewModel
+                {
+                    Id = e.Id,
+                    Title = e.Title,
+                    Description = e.Description,
+                    TypeEn = e.Type.TypeEn,
+                    TypeAr = e.Type.TypeAr,
+                    TypeTr = e.Type.TypeTr,
+                    StatusEn = e.Status.StateEn,
+                    StatusAr = e.Status.StateAr,
+                    StatusTr = e.Status.StateEn,
+                    StatusId = e.Status.Id,
+                    InvoiceId = e.InvoiceId,
+                    CutsomerName = e.Customer.Customer1,
+                    AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + " " + e.AssignedToEmployeeNavigation.LastName,
+                    AssignedToEmployeeId = e.AssignedToEmployeeNavigation.Id,
+                    EmployeeImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.AssignedToEmployeeNavigation.Image,
+                    EmployeeFirebaseToken = e.AssignedToEmployeeNavigation.FirebaseToken,
+                    CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
+                    CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
+                    CreatedbyImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                    CreatedDate = e.CreatedDate,
+                    DeadlineDate = e.Deadline
+                }).OrderByDescending(e => e.CreatedDate).ToListAsync();
+
+                // Filter tasks based on UserId
+                if (employee.Role.Role != "manager")
+                {
+                    tasks = tasks.Where(t => t.AssignedToEmployeeId == UserId).ToList();
+                }
+
+                if (tasks == null || !tasks.Any())
+                {
+                    return Ok(new List<GetTaskViewModel>());
+                }
+
+                return Ok(tasks);
+            }
+
+            return Ok(tasks);
+
         }
 
         [HttpPost]

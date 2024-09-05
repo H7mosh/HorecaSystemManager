@@ -13,7 +13,7 @@ public partial class EventDeleted
 
     public string? TypeeventName { get; set; }
 
-    public DateOnly? TypeeventDate { get; set; }
+    public DateTime? TypeeventDate { get; set; }
 
     public string? UserDeleted { get; set; }
 

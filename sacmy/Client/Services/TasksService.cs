@@ -25,6 +25,12 @@ namespace sacmy.Client.Services
             return await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskViewModel>>(query);
         }
 
+        public async Task<List<GetTaskViewModel>> GetTasksByOrderOrCustomerAsync(Guid userId, int? customerId, int? invoiceId)
+        {
+            var query = $"api/Tasks/GetTasksByInvoiceIdOrCustomerId?UserId={userId}&CustomerId={customerId}&InvoiceId={invoiceId}";
+            return await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskViewModel>>(query);
+        }
+
         public async Task<List<GetTaskNotes>> GetTaskNotesAsync(string taskId)
         {
             var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskNotes>>($"api/tasks/GetTaskNotes?taskId={taskId}");

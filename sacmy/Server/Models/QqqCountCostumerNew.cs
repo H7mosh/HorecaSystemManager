@@ -15,11 +15,11 @@ public partial class QqqCountCostumerNew
 
     public decimal? Ttttotal { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public string? Notess { get; set; }
 
-    public DateOnly? MtabqaDate { get; set; }
+    public DateTime? MtabqaDate { get; set; }
 
     public string? Typeevent { get; set; }
 
@@ -44,4 +44,6 @@ public partial class QqqCountCostumerNew
     public decimal? RettRemain { get; set; }
 
     public bool? Checkeed { get; set; }
+
+    public int? Id { get; set; }
 }

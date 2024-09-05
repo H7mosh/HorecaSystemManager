@@ -21,7 +21,7 @@ public partial class QqqCountOfficePayToCostumerDollar
 
     public int Id { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public string? Customer { get; set; }
 

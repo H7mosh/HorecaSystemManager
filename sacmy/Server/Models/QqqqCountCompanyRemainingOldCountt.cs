@@ -13,7 +13,7 @@ public partial class QqqqCountCompanyRemainingOldCountt
 
     public int Id { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public decimal? SoldTotal { get; set; }
 }

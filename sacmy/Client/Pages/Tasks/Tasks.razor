@@ -160,6 +160,52 @@
         box-shadow: 0px 4px 10px rgba(0, 123, 255, 0.5); /* Highlight the selected card with a stronger shadow */
     }
 
+    .detail-text {
+        color: #A0A0A0; /* Light gray */
+        font-size: 0.875rem; /* Slightly smaller font size */
+        text-align: center; /* Center align the text */
+    }
+
+    .scroll-container {
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        width: 100%;
+    }
+
+    /* Ensure the table cells and headers have consistent width */
+    .mud-table-header-cell, .mud-table-cell {
+        width: 100% !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+        /* Specific styles for adjusting widths of the columns */
+        .mud-table-header-cell:nth-child(1), .mud-table-cell:nth-child(1) {
+            width: 30% !important; /* Adjust for Employee Column */
+        }
+
+        .mud-table-header-cell:nth-child(2), .mud-table-cell:nth-child(2) {
+            width: 40% !important; /* Adjust for Type and Detail Column */
+        }
+
+        .mud-table-header-cell:nth-child(3), .mud-table-cell:nth-child(3) {
+            width: 30% !important; /* Adjust for Task Title Column */
+        }
+
+        .mud-table-header-cell:nth-child(4), .mud-table-cell:nth-child(4) {
+            width: 15% !important; /* Adjust for Status Column */
+        }
+
+        .mud-table-header-cell:nth-child(5), .mud-table-cell:nth-child(5) {
+            width: 20% !important; /* Adjust for Start Date Column */
+        }
+
+        .mud-table-header-cell:nth-child(6), .mud-table-cell:nth-child(6) {
+            width: 20% !important; /* Adjust for End Date Column */
+        }
+
 </style>
 
 <div class="tasks-container">
@@ -225,54 +271,109 @@
 
         @if (tasks != null && tasks.Any())
         {
-            <MudDataGrid T="GetTaskViewModel" MultiSelection="true" Items="@filteredTasks" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-                         Hideable="true" RowClick="OnTaskSelected" Class="custom-data-grid" Style="height: 100%;">
-                <ToolBarContent>
-                    <MudSpacer />
-                    <MudTextField @bind-Value="_searchString" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" Immediate="true"
-                                  AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
-                </ToolBarContent>
-                <Columns>
-                    <!-- Employee Column -->
-                    <TemplateColumn Title="@Localizer["Employee"]" Width="20%">
-                        <CellTemplate>
-                            <MudStack Row>
-                                <MudAvatar Size="MudBlazor.Size.Small" Image="@context.Item.EmployeeImage" Alt="@Localizer["EmployeeAvatar"]" />
-                                <MudText>@context.Item.AssignedToEmployee</MudText>
-                            </MudStack>
-                        </CellTemplate>
-                    </TemplateColumn>
+            <div class="scroll-container">
+                <MudDataGrid T="GetTaskViewModel" MultiSelection="true" Items="@filteredTasks" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
+                             Hideable="true" RowClick="OnTaskSelected" Class="custom-data-grid" Style="height: 100%;" >
+                    <ToolBarContent>
+                        <MudSpacer />
+                        <MudTextField @bind-Value="_searchString" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" Immediate="true"
+                                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
+                    </ToolBarContent>
+                    <Columns>
+                        <!-- Employee Column -->
+                        <TemplateColumn>
+                            <HeaderTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body1">@Localizer["Employee"]</MudText>
+                                </MudStack>
+                            </HeaderTemplate>
+                            <CellTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudAvatar Size="MudBlazor.Size.Small" Image="@context.Item.EmployeeImage" Alt="@Localizer["EmployeeAvatar"]" />
+                                    <MudText Typo="Typo.body2">@context.Item.AssignedToEmployee</MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                    <!-- Task Title Column -->
-                    <PropertyColumn Property="x => x.Title" Title="@Localizer["Task"]" Width="30%" />
+                        <!-- Type and CustomerName/InvoiceId Column -->
+                        <TemplateColumn>
+                            <HeaderTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body1">@Localizer["Type and Detail"]</MudText>
+                                </MudStack>
+                            </HeaderTemplate>
+                            <CellTemplate>
+                                <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body2" Align="Align.Center">@context.Item.TypeEn</MudText>
+                                    <MudDivider />
+                                    @if (!string.IsNullOrEmpty(context.Item.CutsomerName))
+                                    {
+                                        <MudText Class="detail-text" Align="Align.Center">@context.Item.CutsomerName</MudText>
+                                    }
+                                    else if (context.Item.InvoiceId.HasValue)
+                                    {
+                                        <MudText Class="detail-text" Align="Align.Center">@context.Item.InvoiceId.ToString()</MudText>
+                                    }
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                    <!-- Task Status Column -->
-                    <TemplateColumn Title="@Localizer["Status"]" Width="15%">
-                        <CellTemplate>
-                            <MudStack Row>
-                                <div class="status-dot" style="background: @GetStatusGradient(context.Item.Status);"></div>
-                                <MudText>@context.Item.Status</MudText>
-                            </MudStack>
-                        </CellTemplate>
-                    </TemplateColumn>
+                        <!-- Task Title Column -->
+                        <TemplateColumn>
+                            <HeaderTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body1">@Localizer["Task Title"]</MudText>
+                                </MudStack>
+                            </HeaderTemplate>
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.Title</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                    <TemplateColumn Title="@Localizer["InitDate"]" Width="20%">
-                        <CellTemplate>
-                            @GetRelativeTime(context.Item.CreatedDate)
-                        </CellTemplate>
-                    </TemplateColumn>
+                        <!-- Task Status Column -->
+                        <TemplateColumn>
+                            <HeaderTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body1">@Localizer["Status"]</MudText>
+                                </MudStack>
+                            </HeaderTemplate>
+                            <CellTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <div class="status-dot" style="background: @GetStatusGradient(context.Item.StatusEn);"></div>
+                                    <MudText Typo="Typo.body2">@context.Item.StatusEn</MudText>
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                    <!-- Expire Date Column -->
-                    <TemplateColumn Title="@Localizer["ExpireDate"]" Width="15%">
-                        <CellTemplate>
-                            <MudText>@context.Item.DeadlineDate</MudText>
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-                <PagerContent>
-                    <MudDataGridPager T="GetTaskViewModel" />
-                </PagerContent>
-            </MudDataGrid>
+                        <!-- Start Date Column -->
+                        <TemplateColumn>
+                            <HeaderTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body1">@Localizer["Start Date"]</MudText>
+                                </MudStack>
+                            </HeaderTemplate>
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.CreatedDate.ToString("g")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+
+                        <!-- End Date Column -->
+                        <TemplateColumn>
+                            <HeaderTemplate>
+                                <MudStack Row AlignItems="AlignItems.Center">
+                                    <MudText Typo="Typo.body1">@Localizer["End Date"]</MudText>
+                                </MudStack>
+                            </HeaderTemplate>
+                            <CellTemplate>
+                                <MudText Typo="Typo.body2">@context.Item.DeadlineDate?.ToString("g")</MudText>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <PagerContent>
+                        <MudDataGridPager T="GetTaskViewModel" />
+                    </PagerContent>
+                </MudDataGrid>
+            </div>
 
         }
         else
@@ -536,6 +637,8 @@
 <MudSnackbarProvider />
 
 @code {
+
+    
     private List<GetTaskViewModel> tasks = new List<GetTaskViewModel>();
     private List<GetTaskViewModel> filteredTasks = new List<GetTaskViewModel>(); // List to hold filtered tasks
     private List<GetTaskNotes> comments = new List<GetTaskNotes>();
@@ -608,7 +711,7 @@
         if (!string.IsNullOrWhiteSpace(x.CreatedbyName) && x.CreatedbyName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
-        if (!string.IsNullOrWhiteSpace(x.Status) && x.Status.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(x.StatusEn) && x.StatusEn.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
             return true;
 
         if (!string.IsNullOrWhiteSpace(x.CreatedDate.ToString()) && x.CreatedDate.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
@@ -913,7 +1016,7 @@
         {
             return tasks.Count;
         }
-        return tasks?.Count(task => task.Status.Equals(status, StringComparison.OrdinalIgnoreCase)) ?? 0;
+        return tasks?.Count(task => task.StatusEn.Equals(status, StringComparison.OrdinalIgnoreCase)) ?? 0;
     }
 
     private void FilterTasksByStatus(string status)
@@ -929,7 +1032,7 @@
         {
             selectedStatus = status;
             // Filter tasks based on the selected status
-            filteredTasks = tasks.Where(task => task.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+            filteredTasks = tasks.Where(task => task.StatusEn.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
         }
 
         StateHasChanged(); // Update the UI

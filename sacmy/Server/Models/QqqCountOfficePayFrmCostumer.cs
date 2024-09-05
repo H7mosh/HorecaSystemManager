@@ -33,7 +33,7 @@ public partial class QqqCountOfficePayFrmCostumer
 
     public string? Uuser { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public string? Symbol { get; set; }
 }

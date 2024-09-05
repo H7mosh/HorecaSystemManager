@@ -79,11 +79,11 @@ public partial class Item1
 
     public string Category { get; set; } = null!;
 
-    public DateOnly DateCreated { get; set; }
+    public DateTime DateCreated { get; set; }
 
-    public DateOnly? DateUpdated { get; set; }
+    public DateTime? DateUpdated { get; set; }
 
-    public DateOnly? DeletedDate { get; set; }
+    public DateTime? DeletedDate { get; set; }
 
     public virtual Category1 CategoryNavigation { get; set; } = null!;
 

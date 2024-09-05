@@ -45,7 +45,7 @@ public partial class MmMaxzanFullItemProcWithWajba
 
     public string? Barcod { get; set; }
 
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 
     public int? Points { get; set; }
 }

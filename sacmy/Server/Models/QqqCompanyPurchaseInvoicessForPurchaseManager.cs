@@ -11,7 +11,7 @@ public partial class QqqCompanyPurchaseInvoicessForPurchaseManager
 
     public int Id { get; set; }
 
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 
     public int? Idd { get; set; }
 

@@ -1,10 +1,11 @@
 ﻿@page "/CustomerInvoiceTrack"
 @using sacmy.Client.Pages.Tasks
 @using sacmy.Shared.ViewModels.CustomerTracker
-@using sacmy.Shared.ViewModels.CustomerTracker
+@using System.Linq.Expressions
 @using System.Net.Http
 @using System.Net.Http.Json
 @using sacmy.Shared.ViewModels.InvoiceViewModel
+@using sacmy.Client.Pages.Components.CustomDataGrid
 @inject HttpClient Http
 <!--<h3>CustomerInvoiceTrack</h3>-->
 
@@ -19,10 +20,11 @@
         color: darkgrey;
     }
 
-    .custom-inactive-link:hover {
-        color: blue;
-        border-bottom: 2px solid blue;
-    }
+        .custom-inactive-link:hover {
+            color: blue;
+            border-bottom: 2px solid blue;
+        }
+
 
     /* Custom DataGrid Styles */
     .custom-data-grid .mud-table-container {
@@ -42,72 +44,38 @@
         height: auto;
     }
 
-    .custom-data-grid tr {
-        height: 60px;
-    }
+        .custom-data-grid tr {
+            height: 60px;
+        }
 
-    .custom-data-grid tr:hover {
-        background-color: #C9DEFE; /* Light blue background on hover */
-    }
+            .custom-data-grid tr:hover {
+                background-color: #C9DEFE; /* Light blue background on hover */
+            }
 
-    .custom-data-grid tbody tr:nth-child(even) {
-        background-color: #F4F9FF; /* Light grey background for even rows */
-    }
+        .custom-data-grid tbody tr:nth-child(even) {
+            background-color: #F4F9FF; /* Light grey background for even rows */
+        }
 
-    /* Header styling to match the example */
-    .custom-data-grid th {
-        background-color: #5D9EFD; /* Example header color */
-        font-weight: 600;
-        text-align: left;
-        padding: 12px;
-        border-bottom: 1px solid #64b5f6;
-    }
+        /* Header styling to match the example */
+        .custom-data-grid th {
+            background-color: #5D9EFD; /* Example header color */
+            font-weight: 600;
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #64b5f6;
+        }
 
-    .custom-data-grid td {
-        padding: 12px;
-        vertical-align: middle;
-    }
+        .custom-data-grid td {
+            padding: 12px;
+            vertical-align: middle;
+        }
 
-    .custom-data-grid .mud-switch {
-        color: #007bff;
-    }
+        .custom-data-grid .mud-switch {
+            color: #007bff;
+        }
 
     .search-field {
         max-width: 250px;
-    }
-
-    .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1050; /* Ensure it sits on top of other content */
-    }
-
-    .loading-spinner {
-    width: 50px;
-    height: 50px;
-    border: 6px solid rgba(255, 255, 255, 0.2);
-    border-top: 6px solid #fff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .loading-text {
-        margin-top: 20px;
-        font-size: 1.2rem;
-        color: #fff;
-        text-align: center;
     }
 
 </style>
@@ -143,74 +111,21 @@
     }
     else if (activeTab == 1 && customerData != null)
     {
-        <MudDataGrid T="CustomerHiddenViewModel" MultiSelection="true" Items="@customerData" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-                     Hideable="true" RowClick="@CustomerRowClicked" RowContextMenuClick="RowRightClicked" SelectedItemsChanged="@SelectedItemsChanged"
-                     Class="custom-data-grid" Style="height: 100%;">
-            <ToolBarContent>
-                <MudSpacer />
-                <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
-            </ToolBarContent>
-            <Columns>
-                <PropertyColumn Property="x => x.Id" Title="Id" />
-                <PropertyColumn Property="x => x.Name" Title="Full Name" />
-                <PropertyColumn Property="x => x.Type" Title="Type" />
-                <PropertyColumn Property="x => x.LastDate" Title="Last Invoice Date" />
-                <PropertyColumn Property="x => x.TrackType" Title="Skills" />
-                <PropertyColumn Property="x => x.State" Title="Exp" />
-                
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="CustomerHiddenViewModel" />
-            </PagerContent>
-        </MudDataGrid>
+        <sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="CustomerHiddenViewModel" Items="@customerData" SearchString="@_searchString"
+                                       QuickFilter="@_quickFilter" OnRowClick="CustomerRowClicked" 
+                                       OnSelectedItemsChanged="SelectedItemsChanged" Columns="@customerColumns" />
     }
     else if (activeTab == 2 && debtorData != null)
     {
-        <MudDataGrid T="DeptCustomerViewModel" MultiSelection="true" Items="@debtorData" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilterDebtor"
-                     Hideable="true" RowClick="@DebtorRowClicked" RowContextMenuClick="DebtorRowRightClicked" SelectedItemsChanged="@SelectedDebtorItemsChanged"
-                     Class="custom-data-grid" Style="height: 100%;">
-            <ToolBarContent>
-                <MudSpacer />
-                <MudTextField @bind-Value="_searchDebtorString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
-            </ToolBarContent>
-            <Columns>
-                <PropertyColumn Property="x => x.Id" Title="Id" />
-                <PropertyColumn Property="x => x.CustomerName" Title="Customer Name" />
-                <PropertyColumn Property="x => x.TotalTransTotalN" Title="Amount" />
-                <PropertyColumn Property="x => x.HasRecentReceipt" Title="Has Recent Receipt" />
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="DeptCustomerViewModel" />
-            </PagerContent>
-        </MudDataGrid>
+        <sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="DeptCustomerViewModel" Items="@debtorData" SearchString="@_searchDebtorString"
+                                                      QuickFilter="@_quickFilterDebtor" OnRowClick="DebtorRowClicked" 
+                                                      OnSelectedItemsChanged="SelectedDebtorItemsChanged" Columns="@debtorColumns" />
     }
     else if (activeTab == 3 && invoiceData != null)
     {
-        <MudDataGrid T="InvoiceViewModel" MultiSelection="true" Items="@invoiceData" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilterInvoice"
-                     Hideable="true" RowClick="@InvoiceRowClicked" RowContextMenuClick="InvoiceRowRightClicked" SelectedItemsChanged="@SelectedInvoiceItemsChanged"
-                     Class="custom-data-grid" Style="height: 100%;">
-            <ToolBarContent>
-                <MudSpacer />
-                <MudTextField @bind-Value="_searchInvoiceString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
-                              AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
-            </ToolBarContent>
-            <Columns>
-                <PropertyColumn Property="x => x.Id" Title="Id" />
-                <PropertyColumn Property="x => x.CustomerName" Title="Customer Name" />
-                <PropertyColumn Property="x => x.CustomerType" Title="Customer Type" />
-                <PropertyColumn Property="x => x.Address" Title="Address" />
-                <PropertyColumn Property="x => x.InvoiceBranch" Title="Branch" />
-                <PropertyColumn Property="x => x.Total" Title="Total" />
-                <PropertyColumn Property="x => x.DateTime" Title="Date" />
-                <PropertyColumn Property="x => x.TrackType" Title="Track Type" />
-                <PropertyColumn Property="x => x.State" Title="State" />
-            </Columns>
-            <PagerContent>
-                <MudDataGridPager T="InvoiceViewModel" />
-            </PagerContent>
-        </MudDataGrid>
+        <sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel" Items="@invoiceData" SearchString="@_searchInvoiceString"
+                                                      QuickFilter="@_quickFilterInvoice" OnRowClick="InvoiceRowClicked" 
+                                                      OnSelectedItemsChanged="SelectedInvoiceItemsChanged" Columns="@invoiceColumns" />
     }
     else
     {
@@ -218,7 +133,6 @@
     }
 
     <AddTaskModal IsVisible="@showAddTaskModal" IsVisibleChanged="@(value => showAddTaskModal = value)" CustomerId="selectedCustomerId" InvoiceId="selectedInvoiceId" TaskType="@taskType" />
-
 </div>
 
 @code {
@@ -230,17 +144,60 @@
     private string _searchString;
     private string _searchDebtorString;
     private string _searchInvoiceString;
-    private bool _sortNameByLength;
-    private List<string> _events = new();
 
     private int? selectedCustomerId = null;
     private int? selectedInvoiceId = null;
     private bool showAddTaskModal = false;
     private string taskType = "other";
 
+    private List<ColumnDefinition<CustomerHiddenViewModel>> customerColumns = new List<ColumnDefinition<CustomerHiddenViewModel>>
+    {
+        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Id, Title = "Id" },
+        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Name, Title = "Full Name" },
+        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Type, Title = "Type" },
+        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastDate, Title = "Last Invoice Date" },
+    };
+
+    private List<ColumnDefinition<DeptCustomerViewModel>> debtorColumns = new List<ColumnDefinition<DeptCustomerViewModel>>
+    {
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.Id, Title = "Id" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TotalTransTotalN, Title = "Amount" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.HasRecentReceipt, Title = "Has Recent Receipt" }
+    };
+
+    private List<ColumnDefinition<InvoiceViewModel>> invoiceColumns = new List<ColumnDefinition<InvoiceViewModel>>
+    {
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Id, Title = "Id" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerType, Title = "Customer Type" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Address, Title = "Address" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.InvoiceBranch, Title = "Branch" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Total, Title = "Total" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.DateTime, Title = "Date" },
+    };
+
     protected override async Task OnInitializedAsync()
     {
         await SetActiveTab(activeTab);
+    }
+
+    private async Task SetActiveTab(int tabIndex)
+    {
+        activeTab = tabIndex;
+
+        if (activeTab == 1)
+        {
+            await FetchCustomerData();
+        }
+        else if (activeTab == 2)
+        {
+            await FetchCustomerRemainTotal();
+        }
+        else if (activeTab == 3)
+        {
+            await FetchUncompletedInvoices();
+        }
     }
 
     private async Task FetchCustomerData()
@@ -254,7 +211,6 @@
         }
         catch (Exception ex)
         {
-            // Handle exceptions
             Console.WriteLine(ex.Message);
         }
         finally
@@ -274,7 +230,6 @@
         }
         catch (Exception ex)
         {
-            // Handle exceptions
             Console.WriteLine(ex.Message);
         }
         finally
@@ -294,31 +249,11 @@
         }
         catch (Exception ex)
         {
-            // Handle exceptions
             Console.WriteLine(ex.Message);
         }
         finally
         {
             isLoading = false;
-        }
-    }
-
-    private async Task SetActiveTab(int tabIndex)
-    {
-        activeTab = tabIndex;
-
-        if (activeTab == 1)
-        {
-            await FetchCustomerData();
-        }
-        else if (activeTab == 2)
-        {
-            await FetchCustomerRemainTotal();
-        }
-        else if (activeTab == 3)
-        {
-            await FetchUncompletedInvoices();
-
         }
     }
 
@@ -346,112 +281,40 @@
         showAddTaskModal = true;
     }
 
-    private void OtherRowClicked()
-    {
-        selectedCustomerId = null;
-        selectedInvoiceId = null;
-        taskType = "other";
-        showAddTaskModal = true;
-    }
+    private void SelectedItemsChanged(HashSet<CustomerHiddenViewModel> items) { }
 
-    private void RowRightClicked(DataGridRowClickEventArgs<CustomerHiddenViewModel> args)
-    {
-        _events.Insert(0, $"Event = RowRightClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
+    private void SelectedDebtorItemsChanged(HashSet<DeptCustomerViewModel> items) { }
 
-    private void DebtorRowRightClicked(DataGridRowClickEventArgs<DeptCustomerViewModel> args)
-    {
-        _events.Insert(0, $"Event = RowRightClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-
-    private void SelectedItemsChanged(HashSet<CustomerHiddenViewModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
-
-    private void SelectedDebtorItemsChanged(HashSet<DeptCustomerViewModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
-
-    private void InvoiceRowRightClicked(DataGridRowClickEventArgs<InvoiceViewModel> args)
-    {
-        _events.Insert(0, $"Event = RowRightClick, Index = {args.RowIndex}, Data = {System.Text.Json.JsonSerializer.Serialize(args.Item)}");
-    }
-
-    private void SelectedInvoiceItemsChanged(HashSet<InvoiceViewModel> items)
-    {
-        _events.Insert(0, $"Event = SelectedItemsChanged, Data = {System.Text.Json.JsonSerializer.Serialize(items)}");
-    }
+    private void SelectedInvoiceItemsChanged(HashSet<InvoiceViewModel> items) { }
 
     private Func<CustomerHiddenViewModel, bool> _quickFilter => x =>
     {
-        if (string.IsNullOrWhiteSpace(_searchString))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.Name) && x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.Type) && x.Type.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.TrackType) && x.TrackType.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.State) && x.State.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
+        if (string.IsNullOrWhiteSpace(_searchString)) return true;
+        if (!string.IsNullOrEmpty(x.Name) && x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrEmpty(x.Type) && x.Type.Contains(_searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrWhiteSpace(x.TrackType) && x.TrackType.Contains(_searchString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrWhiteSpace(x.State) && x.State.Contains(_searchString, StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     };
 
     private Func<DeptCustomerViewModel, bool> _quickFilterDebtor => x =>
     {
-        if (string.IsNullOrWhiteSpace(_searchDebtorString))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.CustomerName) && x.CustomerName.Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.TotalTransTotalN.ToString()) && x.TotalTransTotalN.ToString().Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.HasRecentReceipt) && x.HasRecentReceipt.Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
+        if (string.IsNullOrWhiteSpace(_searchDebtorString)) return true;
+        if (!string.IsNullOrEmpty(x.CustomerName) && x.CustomerName.Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrEmpty(x.TotalTransTotalN.ToString()) && x.TotalTransTotalN.ToString().Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrWhiteSpace(x.HasRecentReceipt) && x.HasRecentReceipt.Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     };
 
     private Func<InvoiceViewModel, bool> _quickFilterInvoice => x =>
     {
-        if (string.IsNullOrWhiteSpace(_searchInvoiceString))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.CustomerName) && x.CustomerName.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.CustomerType) && x.CustomerType.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.Id.ToString()) && x.Id.ToString().Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.InvoiceBranch) && x.InvoiceBranch.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.TrackType) && x.TrackType.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.State) && x.State.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
+        if (string.IsNullOrWhiteSpace(_searchInvoiceString)) return true;
+        if (!string.IsNullOrEmpty(x.CustomerName) && x.CustomerName.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrEmpty(x.CustomerType) && x.CustomerType.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrWhiteSpace(x.Id.ToString()) && x.Id.ToString().Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrWhiteSpace(x.InvoiceBranch) && x.InvoiceBranch.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrWhiteSpace(x.TrackType) && x.TrackType.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase)) return true;
+        if (!string.IsNullOrWhiteSpace(x.State) && x.State.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase)) return true;
         return false;
     };
 }
-
-
-
-
-
-
-
-

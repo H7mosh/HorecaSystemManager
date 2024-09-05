@@ -29,7 +29,7 @@ public partial class PayToMandob
 
     public bool? Runn { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public string? ToOffice { get; set; }
 

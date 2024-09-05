@@ -1,0 +1,190 @@
+﻿@using System.Linq.Expressions
+@typeparam TItem
+@using sacmy.Client.Pages.Components.CustomDataGrid
+@using sacmy.Client.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.TasksViewModel
+@inject UserGlobalClass UserGlobal
+@inject IJSRuntime JSRuntime
+@inject TaskService TaskService
+
+<style>
+    .custom-active-link.active {
+    background-color: transparent !important;
+    color: blue !important;
+    border-bottom: 2px solid blue !important;
+}
+
+.custom-inactive-link {
+    color: darkgrey;
+}
+
+.custom-inactive-link:hover {
+    color: blue;
+    border-bottom: 2px solid blue;
+}
+
+/* Custom DataGrid Styles */
+.custom-data-grid .mud-table-container {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
+}
+
+.custom-data-grid table {
+    background-color: #fff;
+    width: 100%;
+}
+
+/* Adjust grid height to remove extra space */
+.custom-data-grid {
+    height: auto;
+}
+
+.custom-data-grid tr {
+    height: 60px;
+}
+
+.custom-data-grid tr:hover {
+    background-color: #C9DEFE; /* Light blue background on hover */
+}
+
+.custom-data-grid tbody tr:nth-child(even) {
+    background-color: #F4F9FF; /* Light grey background for even rows */
+}
+
+/* Header styling to match the example */
+.custom-data-grid th {
+    background-color: #5D9EFD; /* Example header color */
+    font-weight: 600;
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #64b5f6;
+}
+
+.custom-data-grid td {
+    padding: 12px;
+    vertical-align: middle;
+}
+
+.search-field {
+    max-width: 250px;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1050; /* Ensure it sits on top of other content */
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 6px solid rgba(255, 255, 255, 0.2);
+    border-top: 6px solid #fff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.loading-text {
+    margin-top: 20px;
+    font-size: 1.2rem;
+    color: #fff;
+    text-align: center;
+}
+/* Rounded blue button with the style from the image */
+.rounded-button {
+    background-color: #5D9EFD;
+    border-radius: 50px; /* Fully rounded */
+    padding: 10px 20px; /* Padding for size */
+    color: white;
+    font-size: 14px;
+    font-weight: bold;
+    border: none;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Slight shadow */
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+    outline: none;
+}
+
+    .rounded-button:hover {
+        background-color: dodgerblue; /* Slightly darker on hover */
+        box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.2); /* Deeper shadow on hover */
+    }
+
+    .rounded-button:focus {
+        outline: none;
+    }
+
+</style>
+
+<MudDataGrid T="TItem" MultiSelection="true" Items="@Items" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@QuickFilter"
+             Hideable="true" RowClick="@OnRowClick" SelectedItemsChanged="@OnSelectedItemsChanged" Class="custom-data-grid">
+    <ToolBarContent>
+        <MudSpacer />
+        <MudTextField @bind-Value="SearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true"
+                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
+    </ToolBarContent>
+    <Columns>
+        @foreach (var column in Columns)
+        {
+            <PropertyColumn Property="@column.Property" Title="@column.Title" />
+        }
+
+        <!-- Add a button column to each row -->
+        <TemplateColumn Title="Actions">
+            <CellTemplate>
+                <button class="rounded-button" type="button" onclick="async () => await ShowRelatedTasksModal(context.Item.CustomerId, context.Item.InvoiceId)">
+                    Detail
+                </button>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="TItem" />
+    </PagerContent>
+</MudDataGrid>
+
+
+
+@code {
+    [Parameter] public string SearchString { get; set; }
+    [Parameter] public IEnumerable<TItem> Items { get; set; }
+    [Parameter] public Func<TItem, bool> QuickFilter { get; set; }
+    [Parameter] public List<ColumnDefinition<TItem>> Columns { get; set; }
+    [Parameter] public EventCallback<DataGridRowClickEventArgs<TItem>> OnRowClick { get; set; }
+    [Parameter] public EventCallback<HashSet<TItem>> OnSelectedItemsChanged { get; set; }
+
+    private List<GetTaskViewModel> relatedTasks = new List<GetTaskViewModel>();
+
+}
+
+
+
+<script>
+    window.openModal = function (modalId) {
+        $('#' + modalId).modal('show');
+    };
+
+    window.closeModal = function (modalId) {
+        $('#' + modalId).modal('hide');
+    };
+
+</script>
+
+
+
+

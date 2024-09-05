@@ -462,7 +462,7 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<ZzOrderOnlinePrint> ZzOrderOnlinePrints { get; set; }
 
-  
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.UseCollation("Arabic_CI_AS");
@@ -5370,6 +5370,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.EventId)
                 .HasMaxLength(100)
                 .HasColumnName("event_id");
+            entity.Property(e => e.Id).HasColumnName("ID");
             entity.Property(e => e.IdEvent).HasColumnName("id_event");
             entity.Property(e => e.MtabqaDate).HasColumnName("mtabqaDate");
             entity.Property(e => e.MtabqaDatee)
@@ -7153,6 +7154,14 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.HasOne(d => d.CreatedByNavigation).WithMany(p => p.TaskCreatedByNavigations)
                 .HasForeignKey(d => d.CreatedBy)
                 .HasConstraintName("FK_Task_Employee1");
+
+            entity.HasOne(d => d.Customer).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.CustomerId)
+                .HasConstraintName("FK_Task_customer");
+
+            entity.HasOne(d => d.Invoice).WithMany(p => p.Tasks)
+                .HasForeignKey(d => d.InvoiceId)
+                .HasConstraintName("FK_Task_BuyFatora");
 
             entity.HasOne(d => d.Status).WithMany(p => p.Tasks)
                 .HasForeignKey(d => d.StatusId)

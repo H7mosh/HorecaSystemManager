@@ -7,7 +7,7 @@ public partial class ZzOrderOnlinePrint
 {
     public int OrderId { get; set; }
 
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 
     public string? CostumerName { get; set; }
 

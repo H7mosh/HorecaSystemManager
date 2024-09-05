@@ -77,5 +77,7 @@ public partial class BuyFatora
 
     public bool? NotifyMe { get; set; }
 
+    public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
+
     public virtual ICollection<Track> Tracks { get; set; } = new List<Track>();
 }

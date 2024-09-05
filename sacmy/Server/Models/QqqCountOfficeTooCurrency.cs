@@ -7,7 +7,7 @@ public partial class QqqCountOfficeTooCurrency
 {
     public int Id { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public string? Note { get; set; }
 
