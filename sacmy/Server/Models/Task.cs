@@ -37,6 +37,10 @@ public partial class Task
 
     public virtual Employee? CreatedByNavigation { get; set; }
 
+    public virtual Customer? Customer { get; set; }
+
+    public virtual BuyFatora? Invoice { get; set; }
+
     public virtual Status? Status { get; set; }
 
     public virtual ICollection<TaskNote> TaskNotes { get; set; } = new List<TaskNote>();

@@ -67,6 +67,8 @@ public partial class Customer
 
     public virtual ICollection<StoryView> StoryViews { get; set; } = new List<StoryView>();
 
+    public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
+
     public virtual ICollection<Track> Tracks { get; set; } = new List<Track>();
 
     public virtual ICollection<UserNotification> UserNotifications { get; set; } = new List<UserNotification>();

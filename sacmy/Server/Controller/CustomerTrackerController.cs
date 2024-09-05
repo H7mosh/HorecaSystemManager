@@ -143,7 +143,6 @@ namespace sacmy.Server.Controller
             return Ok(result);
         }
 
-
         [HttpGet("GetHiddenCustomer")]
         public async Task<ActionResult<List<CustomerHiddenViewModel>>> GetHidderCustomer()
         {

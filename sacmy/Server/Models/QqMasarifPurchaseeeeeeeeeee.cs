@@ -11,7 +11,7 @@ public partial class QqMasarifPurchaseeeeeeeeeee
 
     public string? Address { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public string? Driver { get; set; }
 

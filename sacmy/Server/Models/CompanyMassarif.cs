@@ -21,7 +21,7 @@ public partial class CompanyMassarif
 
     public string? Subb { get; set; }
 
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 
     public string? Symbol { get; set; }
 }

@@ -23,5 +23,5 @@ public partial class PayFromQasa
 
     public string? Subb { get; set; }
 
-    public DateOnly? Date { get; set; }
+    public DateTime? Date { get; set; }
 }

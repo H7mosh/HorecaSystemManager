@@ -13,7 +13,7 @@ public partial class QqCostumerRemainForReport
 
     public string? Subb { get; set; }
 
-    public DateOnly? Datee { get; set; }
+    public DateTime? Datee { get; set; }
 
     public string? Costumer { get; set; }
 
