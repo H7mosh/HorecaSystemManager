@@ -2,6 +2,8 @@
 @using Newtonsoft.Json
 @using System.Text
 @using sacmy.Client.Configuraion
+@using sacmy.Client.Pages.Components.CustomDataGrid
+@using sacmy.Client.Pages.Components.Dialogs
 @using sacmy.Shared.ViewModels.InvoiceViewModel
 @using static MudBlazor.CategoryTypes
 @inject NavigationManager NavigationManager
@@ -11,163 +13,423 @@
 @inject AppConfig appConfig
 
 <style>
-    :root {
-        --mud-palette-table-hover: #ECEAFB;
+  /* Modern DataGrid Styling with Enhanced Visual Design */
+.custom-data-grid {
+    --primary-light: #60a5fa;  /* Lighter blue */
+    --primary-main: #3b82f6;   /* Main blue */
+    --primary-dark: #2563eb;   /* Darker blue for hover */
+    --header-bg: #f0f9ff;      /* Very light blue background */
+    --header-text: #1e40af;    /* Dark blue text */
+    --hover-color: #f0f9ff;    /* Light blue hover */
+    --alternate-row: #fafbff;  /* Subtle alternate row color */
+    --border-color: #e5e7eb;   /* Light gray border */
+    --text-primary: #334155;   /* Dark gray text */
+    --text-secondary: #64748b; /* Medium gray text */
+    --shadow-sm: rgba(0, 0, 0, 0.03);
+    --shadow-md: rgba(0, 0, 0, 0.05);
+}
+
+/* Container Styling */
+.custom-data-grid .mud-table-container {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 
+        0 4px 6px -1px var(--shadow-sm),
+        0 2px 4px -1px var(--shadow-sm);
+    border: 1px solid var(--border-color);
+    margin: 1.5rem 0;
+    background: white;
+}
+
+/* Table Base Styling */
+.custom-data-grid table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Enhanced Header Styling */
+.custom-data-grid th {
+    background: var(--header-bg);
+    color: var(--header-text);
+    font-weight: 600;
+    text-align: left;
+    padding: 16px 20px;
+    font-size: 0.875rem;
+    letter-spacing: 0.03em;
+    border-bottom: 2px solid var(--primary-light);
+    position: relative;
+    transition: all 0.2s ease;
+}
+
+.custom-data-grid th:after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary-main);
+    transform: scaleX(0);
+    transition: transform 0.2s ease;
+}
+
+.custom-data-grid th:hover:after {
+    transform: scaleX(1);
+}
+
+/* Row Styling */
+.custom-data-grid tr {
+    height: 64px;
+    transition: all 0.25s ease;
+}
+
+.custom-data-grid td {
+    padding: 16px 20px;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+}
+
+.custom-data-grid tbody tr:hover {
+    background-color: var(--hover-color);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow-md);
+}
+
+.custom-data-grid tbody tr:nth-child(even) {
+    background-color: var(--alternate-row);
+}
+
+/* Enhanced Cell Content */
+.custom-data-grid td .mud-chip {
+    border-radius: 6px;
+    font-weight: 500;
+}
+
+/* Status Indicators */
+.custom-data-grid .status-cell {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.custom-data-grid .status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+/* Action Buttons */
+.custom-data-grid .mud-button {
+    text-transform: none;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    padding: 8px 16px;
+    background-color: var(--primary-main);
+    color: white;
+}
+
+.custom-data-grid .mud-button:hover {
+    background-color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px var(--shadow-md);
+}
+
+.custom-data-grid .mud-button .mud-button-icon {
+    margin-right: 8px;
+}
+
+/* Switch Styling */
+.custom-data-grid .mud-switch {
+    --switch-width: 3.5rem;
+    --switch-height: 2rem;
+}
+
+.custom-data-grid .mud-switch-track {
+    background-color: #e2e8f0;
+    border-radius: 999px;
+    width: var(--switch-width);
+    height: var(--switch-height);
+    transition: all 0.3s ease;
+}
+
+.custom-data-grid .mud-switch-thumb {
+    background-color: white;
+    width: calc(var(--switch-height) - 4px);
+    height: calc(var(--switch-height) - 4px);
+    box-shadow: 0 2px 4px var(--shadow-md);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.custom-data-grid .mud-switch.mud-checked .mud-switch-track {
+    background-color: var(--primary-main);
+}
+
+/* Search Field Enhancement */
+.search-field {
+    max-width: 300px;
+    margin-bottom: 1.5rem;
+}
+
+.search-field .mud-input {
+    border-radius: 10px;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s ease;
+    padding: 8px 12px;
+}
+
+.search-field .mud-input:focus-within {
+    border-color: var(--primary-main);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.search-field .mud-input-outlined-border {
+    border-color: transparent;
+}
+
+/* Loading State */
+.custom-data-grid .mud-progress-circular {
+    color: var(--primary-main);
+}
+
+/* Pagination Enhancement */
+.custom-data-grid .mud-table-pagination {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--header-bg);
+}
+
+.custom-data-grid .mud-table-pagination-caption {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.custom-data-grid .mud-table-pagination-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.custom-data-grid .mud-table-pagination-actions button {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.custom-data-grid .mud-table-pagination-actions button:hover {
+    background-color: var(--primary-light);
+    color: white;
+}
+
+/* Selection Checkbox */
+.custom-data-grid .mud-checkbox {
+    color: var(--primary-main);
+}
+
+/* Column Resize Handle */
+.custom-data-grid .mud-table-cell-resize-handle {
+    width: 3px;
+    background-color: var(--primary-light);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.custom-data-grid th:hover .mud-table-cell-resize-handle {
+    opacity: 1;
+}
+
+/* Empty State */
+.custom-data-grid .mud-table-empty {
+    padding: 48px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Responsive Design */
+@@media (max-width: 768px) {
+    .custom-data-grid td,
+    .custom-data-grid th {
+        padding: 12px 16px;
     }
-
-
-    .my-custom-class {
-        backdrop-filter: blur(0.2px);
+    
+    .search-field {
+        max-width: 100%;
     }
+    
+    .custom-data-grid .mud-table-pagination {
+        flex-direction: column;
+        gap: 16px;
+        align-items: center;
+    }
+}
 
+/* Print Styles */
+@@media print {
+    .custom-data-grid {
+        box-shadow: none;
+    }
+    
+    .custom-data-grid tr:hover {
+        transform: none;
+        box-shadow: none;
+    }
+    
+    .custom-data-grid .mud-button,
+    .custom-data-grid .mud-switch,
+    .search-field {
+        display: none;
+    }
+}
+}
 </style>
 
+<sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
+                                                             Items="@InvoiceList"
+                                                             SearchString="@_searchInvoiceString"
+                                                             OnRowClick="InvoiceRowClicked"
+                                                             OnSelectedItemsChanged="SelectedInvoiceItemsChanged"
+                                                             Columns="@invoiceColumns"
+                                                             ShowRowButton="true"
+                                                             RowButtonText="Items"
+                                                             RowButtonIcon="@Icons.Material.Outlined.List"
+                                                             RowButtonTitle="Actions"
+                                                             OnRowButtonClick="@ShowInvoiceItems"
+                                                             ShowSwitch="true"
+                                                             SwitchLabel="Show UnCompleted Invoice"
+                                                             @bind-SwitchValue="showUncompletedInvoice" />
 
-<h3>Invoice</h3>
-<MudButton Variant="Variant.Outlined" @onclick="() => GetInvoicesMadeBefore25Days()">Expierd Invoice</MudButton>
 
-@if (isLoading)
+
+@code
 {
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh;">
-        <MudProgressCircular Color="MudBlazor.Color.Primary" Indeterminate="true" />
-    </div>
-}
-
-
-else{
-    <MudDataGrid T="InvoiceViewModel" Items="@InvoiceList" Filterable="true" Virtualize="true" Striped="true" FixedHeader="true" Height="60VH"
-             ColumnResizeMode="ResizeMode.None" Bordered="false" Outlined="true" SortMode="SortMode.Single" FilterMode="DataGridFilterMode.Simple"
-             Hover="true" RowClick="@RowClicked">
-
-   
-<Columns>
-        
-        <MudBlazor.PropertyColumn Property="x => x.Id" Title="Id" />
-        <MudBlazor.PropertyColumn Property="x => x.CustomerName" Title="Customer" />
-        <MudBlazor.PropertyColumn Property="x => x.CustomerType" Title="Type" />
-        <MudBlazor.PropertyColumn Property="x => x.Address" Title="Address" />
-        <MudBlazor.PropertyColumn Property="x => x.Total" Title="Total" />
-        <MudBlazor.PropertyColumn Property="x => x.InvoiceBranch" Title="Branch" />
-        <MudBlazor.PropertyColumn Property="x => x.DateTime" Title="DateTime" />
-        <TemplateColumn CellClass="d-flex justify-end" Filterable="false">
-            <CellTemplate>
-                <MudStack Row>
-                     @* <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Autorenew" Size="MudBlazor.Size.Small" @onclick="() => OpenTransformDialog(context.Item.Id)" /> *@
-                     <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Comment" Size="MudBlazor.Size.Small" />
-                     <MudFab Color="MudBlazor.Color.Info" StartIcon="@Icons.Material.Filled.Info" Size="MudBlazor.Size.Small" @onclick="() => OpenInvoiceItemsDialog(context.Item.Id)" />
-                    @* @if (selectedId == context.Item.Id && isDeleteLoading)
-                    {
-                            <MudProgressCircular Color="MudBlazor.Color.Error" Indeterminate="true" />
-                    }
-                    else
-                    {
-                            <MudFab Color="MudBlazor.Color.Error" StartIcon="@Icons.Material.Filled.Delete" Size="MudBlazor.Size.Small" @onclick="() => RemoveInvoice(context.Item.Id)" />
-                    } *@
-                </MudStack>
-            </CellTemplate>
-        </TemplateColumn>
-    </Columns>
-
-</MudDataGrid>
-}
-
-
-@code {
     int selectedId = -1;
     private bool isLoading = false;
     private bool isDeleteLoading = false;
     private List<InvoiceViewModel> InvoiceList = new List<InvoiceViewModel>();
-    private List<InvoiceViewModel> ExpierdInvoiceList = new List<InvoiceViewModel>();
+    private List<InvoiceViewModel> InvoiceData = new List<InvoiceViewModel>();
+    private string _searchInvoiceString;
+    private bool _showUncompletedInvoice;
+    private bool showUncompletedInvoice
+    {
+        get => _showUncompletedInvoice;
+        set
+        {
+            if (_showUncompletedInvoice != value)
+            {
+                _showUncompletedInvoice = value;
+                OnSwitchChanged();
+            }
+        }
+    }
 
-
-    protected override async Task OnInitializedAsync(){
+    protected override async Task OnInitializedAsync()
+    {
         isLoading = true;
-        InvoiceList = await httpClient.GetFromJsonAsync<List<InvoiceViewModel>>("api/Invoice");
+        InvoiceData = await httpClient.GetFromJsonAsync<List<InvoiceViewModel>>("api/Invoice");
+        InvoiceList = InvoiceData;
         isLoading = false;
     }
 
-    private void OpenTransformDialog(int Id)
+    
+    private async void InvoiceRowClicked(DataGridRowClickEventArgs<InvoiceViewModel> args)
     {
-        // Pass the invoice parameter to the dialog
-        MudBlazor.DialogOptions closeOnEscapeKey = new MudBlazor.DialogOptions() { CloseOnEscapeKey = true, ClassBackground = "my-custom-class" };
-
-        // Pass the invoice parameter to the dialog component
-        var dialogResult = DialogService.Show<TransformInvoiceDialog>("Transform Invoice Dialog", parameters: new DialogParameters { ["Id"] = Id }, options: closeOnEscapeKey );
+        // Row click handling code here
     }
 
-    private async Task OpenInvoiceItemsDialog(int invoiceId)
+    private void SelectedInvoiceItemsChanged(HashSet<InvoiceViewModel> items)
     {
-        MudBlazor.DialogOptions MudBlazor = new MudBlazor.DialogOptions() { MaxWidth = MaxWidth.ExtraLarge, FullWidth = true };
-        var invoiceItems = await GetInvoiceItems(invoiceId);
-
-        var dialogResult = DialogService.Show<InvoiceItemsDialog>("Invoice Items Dialog", parameters: new DialogParameters { ["InvoiceItems"] = invoiceItems }, MudBlazor);
+        // Handle selected invoice items here
     }
 
-    private async Task<List<InvoiceItemsViewModel>> GetInvoiceItems(int invoiceId)
+    private async Task OnSwitchChanged()
     {
-        try
+        isLoading = true;
+        if (showUncompletedInvoice)
         {
-            var response = await httpClient.GetFromJsonAsync<List<InvoiceItemsViewModel>>($"api/Invoice/GetInvoiceItems?InvoiceId={invoiceId}");
-
-            return response;
+            InvoiceList = InvoiceData.Where(e => e.IsCompleted == true).ToList();
         }
-        catch (Exception ex)
+        else
         {
-            Console.WriteLine($"Error fetching invoice items: {ex.Message}");
-            return new List<InvoiceItemsViewModel>(); 
+            InvoiceList = InvoiceData;
         }
+
+        StateHasChanged();
+        isLoading = false;
     }
 
-    private List<InvoiceViewModel> GetInvoicesMadeBefore25Days()
+
+    private List<ColumnDefinition<InvoiceViewModel>> invoiceColumns = new List<ColumnDefinition<InvoiceViewModel>>
     {
-        // Get the current date
-        DateTime currentDate = DateTime.Now;
-
-        // Calculate the date 25 days ago
-        DateTime twentyFiveDaysAgo = currentDate.AddDays(-25);
-
-        // Filter the InvoiceList to get the invoices made before 25 days
-        InvoiceList = InvoiceList.Where(invoice => invoice.DateTime < twentyFiveDaysAgo).ToList();
-
-        return InvoiceList;
-    }
-
-    private async Task RemoveInvoice(int Id)
-    {
-        selectedId = Id;
-        isDeleteLoading = true;
-        try
+        new ColumnDefinition<InvoiceViewModel>
         {
+            Property = x => x.Id,
+            Title = "Id"
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.CustomerName,
+            Title = "Customer Name"
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.CustomerType,
+            Title = "Customer Type"
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.Address,
+            Title = "Address"
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.InvoiceBranch,
+            Title = "Branch"
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.Total,
+            Title = "Total",
+            Formatter = x => x.Total.ToString("C", new System.Globalization.CultureInfo("en-US"))
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.DateTime,
+            Title = "Date"
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.TaskStatus,
+            Title = "Associated Task Status"
+        },
+        new ColumnDefinition<InvoiceViewModel>
+        {
+            Property = x => x.LastComment,
+            Title = "Last Comment"
+        },
+    };
 
-            // Make the HTTP POST request to remove the invoice
-            var response = await httpClient.PostAsJsonAsync("https://localhost:7281/api/Invoice/RemoveInvoice", Id);
+    private async Task ShowInvoiceItems(InvoiceViewModel invoice)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Invoice", invoice }
+        };
 
-            // Check if the request was successful
-            if (response.IsSuccessStatusCode)
+        var options = new DialogOptions
             {
-                // Remove the invoice from the list
-                InvoiceList.RemoveAll(invoice => invoice.Id == Id);
-                SnackbarService.Add("Invoice Removed Successfully", Severity.Success);
-            }
-            else
-            {
-                // Handle unsuccessful request
-                // For example, show an error message to the user
-                // You can use JSInterop to show a toast or alert
-                await JS.InvokeVoidAsync("alert", "Failed to remove the invoice. Please try again.");
-            }
-        }
-        catch (Exception ex)
-        {
-            // Handle any exceptions
-            // For example, log the exception or show an error message to the user
-            await JS.InvokeVoidAsync("alert", "An error occurred while removing the invoice. Please try again later.");
-        }
-        isDeleteLoading = false;
-    }
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+                DisableBackdropClick = true
+            };
 
-    void RowClicked(DataGridRowClickEventArgs<InvoiceViewModel> args)
-    {
-        selectedId = args.Item.Id;
+        var dialog = await DialogService.ShowAsync<InvoiceItemDialogg>("Invoice Items", parameters, options);
+        await dialog.Result;
     }
 }
+

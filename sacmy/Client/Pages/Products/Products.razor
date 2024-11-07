@@ -1,0 +1,70 @@
+﻿@page "/Products"
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@using sacmy.Shared.ViewModels.ProductsViewModel
+@using static MudBlazor.Icons.Material
+@using Microsoft.AspNetCore.Components.Forms
+@using static MudBlazor.CategoryTypes
+
+
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadProducts">Load Products</MudButton>
+<MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GeneratePDF">Generate PDF</MudButton>
+
+<!-- Bootstrap Modal for Progress Bar -->
+<div class="modal fade" id="progressModal" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="progressModalLabel">Generating PDF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="progress">
+                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<MudDataGrid T="GetProductsViewModel" Items="@products" Dense="true" Bordered="true">
+    <Columns>
+        <PropertyColumn Property="x => x.PatternNumber" />
+        <PropertyColumn Property="x => x.Sku" />
+        <PropertyColumn Property="x => x.BrandName" />
+        <PropertyColumn Property="x => x.CollectionName" />
+        <PropertyColumn Property="x => x.BoxCount" />
+        <PropertyColumn Property="x => x.PieceCount" />
+    </Columns>
+</MudDataGrid>
+
+@code {
+    private List<GetProductsViewModel> products = new();
+
+    private async Task LoadProducts()
+    {
+        try
+        {
+            products = await Http.GetFromJsonAsync<List<GetProductsViewModel>>("api/product");
+            Snackbar.Add("Products Loaded Successfully", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error loading products: {ex.Message}", Severity.Error);
+        }
+    }
+
+    private async Task GeneratePDF()
+    {
+        // Call the JavaScript function to generate the PDF
+        await JS.InvokeVoidAsync("generatePDF", products);
+    }
+}
+
+
+
+
+
+

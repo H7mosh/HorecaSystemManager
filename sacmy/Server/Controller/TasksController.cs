@@ -223,6 +223,7 @@ namespace sacmy.Server.Controller
                                 CreatedBy = e.CreatedBy,
                                 EmployeeName = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
                                 EmployeeImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                                EmpolyeeFirebaseToken = e.CreatedByNavigation.FirebaseToken,
                                 EmpolyeeRole = e.CreatedByNavigation.Role.Role,
                                 CreatedDate = e.CreatedDate,
                             }).

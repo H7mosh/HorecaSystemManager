@@ -14,16 +14,31 @@ namespace sacmy.Server.Controller
             _notificationService = notificationService;
         }
 
-        [HttpPost("send")]
-        public async Task<IActionResult> SendNotification([FromBody] NotificationRequestViewModel request)
+        // API to send immediate notification
+        [HttpPost("sendOrSchedule")]
+        public async Task<IActionResult> SendOrScheduleNotification([FromBody] ScheduledNotificationRequestViewModel request)
         {
+            // Validate the request
             if (request == null || string.IsNullOrEmpty(request.Title) || string.IsNullOrEmpty(request.Body) || request.FirebaseTokens == null || !request.FirebaseTokens.Any())
             {
                 return BadRequest("Invalid request.");
             }
 
-            await _notificationService.SendNotificationAsync(request.Title, request.Body, request.FirebaseTokens , request.employeeNotification);
-            return Ok("Notification sent successfully.");
+            // Check if the request is for a scheduled notification
+            if (request.ScheduleTime.HasValue && request.ScheduleTime > DateTime.Now)
+            {
+                // Schedule the notification for a future time
+                await _notificationService.ScheduleNotification(request.Title, request.Body, request.FirebaseTokens, request.employeeNotification, request.ScheduleTime.Value);
+                return Ok("Notification scheduled successfully.");
+            }
+            else
+            {
+                // Send the notification immediately
+                await _notificationService.SendNotificationAsync(request.Title, request.Body, request.FirebaseTokens, request.employeeNotification);
+                return Ok("Notification sent successfully.");
+            }
         }
+
     }
+
 }

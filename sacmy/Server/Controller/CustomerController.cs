@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using sacmy.Server.DatabaseContext;
 using sacmy.Shared.ViewModels.CustomerViewModel;
+using System.Text;
 
 namespace sacmy.Server.Controller
 {
@@ -10,9 +12,11 @@ namespace sacmy.Server.Controller
     public class CustomerController : ControllerBase
     {
         private SafeenCompanyDbContext _context;
-        public CustomerController(SafeenCompanyDbContext context)
+        private readonly NotificationService _notificationService;
+        public CustomerController(SafeenCompanyDbContext context , NotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         [HttpGet]
@@ -38,5 +42,31 @@ namespace sacmy.Server.Controller
 
             return Ok(invoiceList);
         }
+
+        [HttpPost("SendNotification/{customerName}")]
+        public async Task<IActionResult> SendNotificationToCustomer(string customerName)
+        {
+            // Retrieve the customer's FirebaseToken based on customerId
+            var customer = await _context.Customers
+                .Where(e => e.Customer1 == customerName && e.FirebaseToken != null)
+                .Select(e => e.FirebaseToken)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrEmpty(customer))
+            {
+                return NotFound($"Customer with ID {customerName} not found or does not have a FirebaseToken.");
+            }
+
+            // Call the notification service to send the notification
+            var title = "تحديث على حالة ألطلبيه";
+            var body = "طلبيتك في ألمخزن الان";
+            var firebaseTokens = new List<string> { customer };
+
+            await _notificationService.SendNotificationAsync(title, body, firebaseTokens, false);
+
+            return Ok("Notification sent successfully.");
+        }
+
+
     }
 }

@@ -364,5 +364,75 @@
     <value>لوحة التحكم</value>
   </data>
 
+	<data name="HiddenCustomer" xml:space="preserve">
+    <value>زبون مخفي</value>
+</data>
+	<data name="Debtor" xml:space="preserve">
+    <value>مدين</value>
+</data>
+	<data name="UnCompletedInvoice" xml:space="preserve">
+    <value>فاتورة غير مكتملة</value>
+</data>
+	<data name="Customer" xml:space="preserve">
+    <value>زبون</value>
+</data>
+	<data name="TasksForCustomerInvoice" xml:space="preserve">
+    <value>المهام لزبون/فاتورة</value>
+</data>
+	<data name="Title" xml:space="preserve">
+    <value>العنوان</value>
+</data>
+	<data name="Type" xml:space="preserve">
+    <value>النوع</value>
+</data>
+	<data name="CreatedBy" xml:space="preserve">
+    <value>تم إنشاؤه بواسطة</value>
+</data>
+	<data name="AssignedTo" xml:space="preserve">
+    <value>مخصص ل</value>
+</data>
+	<data name="CreatedDate" xml:space="preserve">
+    <value>تاريخ الإنشاء</value>
+</data>
+	<data name="NoDataAvailable" xml:space="preserve">
+    <value>لا توجد بيانات متاحة.</value>
+</data>
+	<data name="LoadingTasks" xml:space="preserve">
+    <value>جاري تحميل المهام، يرجى الانتظار...</value>
+</data>
+	<data name="CustomerInvoiceTasks" xml:space="preserve">
+    <value>مهام الفواتير الخاصة بالعميل</value>
+</data>
+	<data name="HiddenCustomer" xml:space="preserve">
+    <value>عميل مخفي</value>
+</data>
+	<data name="Debtor" xml:space="preserve">
+    <value>مدين</value>
+</data>
+	<data name="UnCompletedInvoice" xml:space="preserve">
+    <value>فاتورة غير مكتملة</value>
+</data>
+	<data name="Customer" xml:space="preserve">
+    <value>عميل</value>
+</data>
+	<data name="LoadingPleaseWait" xml:space="preserve">
+    <value>جارٍ التحميل، يرجى الانتظار...</value>
+</data>
+	<data name="NoDataAvailable" xml:space="preserve">
+    <value>لا توجد بيانات متاحة</value>
+</data>
+	<data name="TasksForCustomerOrInvoice" xml:space="preserve">
+    <value>المهام الخاصة بالعميل/الفاتورة</value>
+</data>
+	<data name="LoadingTasksPleaseWait" xml:space="preserve">
+    <value>جارٍ تحميل المهام، يرجى الانتظار...</value>
+</data>
+	<data name="AddNewTask" xml:space="preserve">
+    <value>إضافة مهمة جديدة</value>
+</data>
+	<data name="Close" xml:space="preserve">
+    <value>إغلاق</value>
+</data>
+
 	<!--End Main Layout Page-->
 </root>

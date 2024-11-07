@@ -15,6 +15,7 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
         public string EmployeeName { get; set; }
         public string EmployeeImage { get; set; }
         public string EmpolyeeRole {  get; set; }
+        public string EmpolyeeFirebaseToken {  get; set; }
         public DateTime CreatedDate { get; set; }
     }
 }

@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
@@ -9,9 +10,10 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<SafeenCompanyDbContext>(
     options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString("onlineConnectionString")
+        builder.Configuration.GetConnectionString("productionConnectionString")
     )
 );
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(builder.Configuration.GetConnectionString("productionConnectionString")));
 builder.Services.AddScoped<FileService>();
 builder.Services.AddScoped<NotificationService>();
 
@@ -33,7 +35,8 @@ else
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
-
+app.UseHangfireDashboard();
+app.UseHangfireServer();
 app.UseRouting();
 
 app.MapRazorPages();

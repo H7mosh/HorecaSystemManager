@@ -18,5 +18,8 @@ namespace sacmy.Shared.ViewModels.InvoiceViewModel
         public decimal Total { get; set; }
         public decimal Cost { get; set; }
         public string? Batch { get; set; }
+        public bool IsChecked { get; set; }
+        public string Notes { get; set; }
     }
+
 }
