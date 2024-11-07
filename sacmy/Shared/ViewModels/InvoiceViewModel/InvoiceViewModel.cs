@@ -14,9 +14,11 @@ namespace sacmy.Shared.ViewModels.InvoiceViewModel
         public string Address { get; set; }
         public string InvoiceBranch { get; set; }
         public double Total { get; set; }
+        public bool IsCompleted { get; set; }
         public DateTime DateTime { get; set; }
-        public Guid? TrackId { get; set; }
-        public string? TrackType { get; set; }
-        public string? State { get; set; }
+        public Guid? TaskId { get; set; }
+        public string? TaskType { get; set; }
+        public string? TaskStatus { get; set; }
+        public string? LastComment { get; set; }
     }
 }

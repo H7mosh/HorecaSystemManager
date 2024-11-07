@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
 	<!--Start Tasks Page-->
-	<!--Start Tasks Page-->
+
 	<data name="Tasks" xml:space="preserve">
     <value>Tasks</value>
   </data>
@@ -362,5 +362,77 @@
 	<data name="Dashboard" xml:space="preserve">
     <value>Dashboard</value>
   </data>
-<!--End Main Layout-->
+
+	<data name="HiddenCustomer" xml:space="preserve">
+    <value>Hidden Customer</value>
+</data>
+	<data name="Debtor" xml:space="preserve">
+    <value>Debtor</value>
+</data>
+	<data name="UnCompletedInvoice" xml:space="preserve">
+    <value>UnCompleted Invoice</value>
+</data>
+	<data name="Customer" xml:space="preserve">
+    <value>Customer</value>
+</data>
+	<data name="TasksForCustomerInvoice" xml:space="preserve">
+    <value>Tasks for Customer/Invoice</value>
+</data>
+	<data name="Title" xml:space="preserve">
+    <value>Title</value>
+</data>
+	<data name="Type" xml:space="preserve">
+    <value>Type</value>
+</data>
+	<data name="CreatedBy" xml:space="preserve">
+    <value>Created By</value>
+</data>
+	<data name="AssignedTo" xml:space="preserve">
+    <value>Assigned To</value>
+</data>
+	<data name="CreatedDate" xml:space="preserve">
+    <value>Created Date</value>
+</data>
+	<data name="NoDataAvailable" xml:space="preserve">
+    <value>No data available.</value>
+</data>
+	<data name="LoadingTasks" xml:space="preserve">
+    <value>Loading tasks, please wait...</value>
+</data>
+
+	<data name="CustomerInvoiceTasks" xml:space="preserve">
+    <value>Customer Invoice Tasks</value>
+</data>
+	<data name="HiddenCustomer" xml:space="preserve">
+    <value>Hidden Customer</value>
+</data>
+	<data name="Debtor" xml:space="preserve">
+    <value>Debtor</value>
+</data>
+	<data name="UnCompletedInvoice" xml:space="preserve">
+    <value>Uncompleted Invoice</value>
+</data>
+	<data name="Customer" xml:space="preserve">
+    <value>Customer</value>
+</data>
+	<data name="LoadingPleaseWait" xml:space="preserve">
+    <value>Loading, please wait...</value>
+</data>
+	<data name="NoDataAvailable" xml:space="preserve">
+    <value>No data available</value>
+</data>
+	<data name="TasksForCustomerOrInvoice" xml:space="preserve">
+    <value>Tasks for Customer/Invoice</value>
+</data>
+	<data name="LoadingTasksPleaseWait" xml:space="preserve">
+    <value>Loading tasks, please wait...</value>
+</data>
+	<data name="AddNewTask" xml:space="preserve">
+    <value>Add New Task</value>
+</data>
+	<data name="Close" xml:space="preserve">
+    <value>Close</value>
+</data>
+
+	<!--End Main Layout-->
 </root>

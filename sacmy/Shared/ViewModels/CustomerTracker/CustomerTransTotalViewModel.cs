@@ -12,6 +12,10 @@ namespace sacmy.Shared.ViewModels.CustomerTracker
         public string CustomerName { get; set; }
         public decimal TotalTransTotalN { get; set; }
         public string HasRecentReceipt { get; set; }
+        public Guid? TaskId { get; set; }
+        public string? TaskType { get; set; }
+        public string? TaskStatus { get; set; }
+        public string? LastComment { get; set; }
     }
 
 }

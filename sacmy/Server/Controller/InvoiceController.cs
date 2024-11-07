@@ -1,10 +1,15 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using PdfSharp;
+using PdfSharp.Drawing;
+using PdfSharp.Pdf;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 
 using sacmy.Shared.ViewModels.InvoiceViewModel;
 using sacmy.Shared.ViewModels.TrackViewModel;
+using System.Drawing;
+using System.Threading.Tasks;
 
 namespace sacmy.Server.Controller
 {
@@ -13,27 +18,84 @@ namespace sacmy.Server.Controller
     public class InvoiceController : ControllerBase
     {
         private readonly SafeenCompanyDbContext _context;
+       
 
         public InvoiceController(SafeenCompanyDbContext context)
         {
             _context = context;
+            
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<InvoiceViewModel>>> GetInvoice()
         {
-            var invoiceList = await _context.BuyFatoras.Select(e => new InvoiceViewModel
+            try
             {
-                Id = e.Id,
-                CustomerName = e.Customer,
-                CustomerType = e.CostType,
-                Address = e.Address,
-                InvoiceBranch = e.Subb,
-                Total = Convert.ToDouble(e.Tootal.ToString()),
-                DateTime = e.Now ?? DateTime.Today
-            }).OrderByDescending(e => e.Id).ToListAsync();
+                var invoices = await _context.BuyFatoras
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.Type)
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.TaskNotes)
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.Status)
+                    .OrderByDescending(e => e.Now)
+                    .ToListAsync();
 
-            return Ok(invoiceList);
+                var invoiceViewModels = new List<InvoiceViewModel>();
+
+
+                foreach (var invoice in invoices)
+                {
+
+                    var lastTask = invoice.Tasks?.LastOrDefault();
+
+                    if (lastTask != null)
+                    {
+                        var taskType = lastTask.Type?.TypeAr;
+                        var taskStatus = lastTask.Status?.StateEn;
+                        var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
+
+                        invoiceViewModels.Add(new InvoiceViewModel
+                        {
+                            Id = invoice.Id,
+                            CustomerName = invoice.Customer,
+                            CustomerType = invoice.CostType,
+                            Address = invoice.Address,
+                            InvoiceBranch = invoice.Subb,
+                            Total = Convert.ToDouble(invoice.Tootal.ToString()),
+                            IsCompleted = invoice.Checkeed??false,
+                            DateTime = invoice.Now ?? DateTime.Today,
+                            TaskId = lastTask.Id,
+                            TaskStatus = taskStatus,
+                            LastComment = lastTaskComment,
+                        });
+                    }
+
+                    else
+                    {
+                        invoiceViewModels.Add(new InvoiceViewModel
+                        {
+                            Id = invoice.Id,
+                            CustomerName = invoice.Customer,
+                            CustomerType = invoice.CostType,
+                            Address = invoice.Address,
+                            InvoiceBranch = invoice.Subb,
+                            Total = Convert.ToDouble(invoice.Tootal.ToString()),
+                            IsCompleted = invoice.Checkeed ?? false,
+                            DateTime = invoice.Now ?? DateTime.Today,
+                            TaskId = null,
+                            TaskStatus = null,
+                            LastComment = null,
+                        });
+                    }
+                }
+
+                return Ok(invoiceViewModels);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("InvoiceCounts")]
@@ -89,6 +151,179 @@ namespace sacmy.Server.Controller
 
             return Ok(invoiceItemsList);
         }
+
+        //[HttpPost("GenerateItemsPdf")]
+        //public async Task<IActionResult> GenerateItemsPdf([FromBody] InvoiceItemsPdfRequest request)
+        //{
+        //    using (var doc = new PdfDocument())
+        //    {
+        //        var page = doc.AddPage();
+        //        page.Size = PageSize.A4;
+        //        page.Orientation = PageOrientation.Landscape;
+
+        //        var gfx = XGraphics.FromPdfPage(page);
+
+        //        // Use the static fonts
+        //        var headerBlue = XColor.FromArgb(93, 158, 253);
+        //        var borderGrey = XColor.FromArgb(200, 200, 200);
+
+
+        //        const int startX = 50;  // Starting X position
+        //        const int marginTop = 50;
+        //        var pageWidth = page.Width.Point;
+
+        //        // Company header (bilingual)
+        //        gfx.DrawString("Company Name | اسم الشركة", TitleFont, XBrushes.Black, startX, marginTop);
+
+        //        // Report title (bilingual)
+        //        gfx.DrawString("Invoice Items Report | تقرير عناصر الفاتورة", ArabicBoldFont, XBrushes.Black,
+        //            new XRect(startX, marginTop - 10, pageWidth - 2 * startX, 30),
+        //            XStringFormats.Center);
+
+        //        // Header info section
+        //        var y = marginTop + 40;
+        //        var infoColumnWidth = (pageWidth - 2 * startX) / 2;
+
+        //        // Left column info (bilingual)
+        //        gfx.DrawString("Invoice Information | معلومات الفاتورة:", ArabicBoldFont, XBrushes.Black, startX, y);
+        //        y += 20;
+        //        gfx.DrawString($"Invoice ID | رقم الفاتورة: {request.InvoiceId}", ArabicRegularFont, XBrushes.Black, startX, y);
+        //        y += 15;
+        //        gfx.DrawString($"Customer | العميل: {request.CustomerName}", ArabicRegularFont, XBrushes.Black, startX, y);
+
+        //        // Right column info (bilingual)
+        //        var rightColumn = startX + infoColumnWidth;
+        //        y = marginTop + 40;
+        //        gfx.DrawString("Date Information | معلومات التاريخ:", ArabicBoldFont, XBrushes.Black, rightColumn, y);
+        //        y += 20;
+        //        gfx.DrawString($"Invoice Date | تاريخ الفاتورة: {request.InvoiceDate:dd/MM/yyyy}", ArabicRegularFont, XBrushes.Black, rightColumn, y);
+        //        y += 15;
+        //        gfx.DrawString($"Report Date | تاريخ التقرير: {request.GenerationDate:dd/MM/yyyy HH:mm}", ArabicRegularFont, XBrushes.Black, rightColumn, y);
+
+        //        // Table header
+        //        y += 40;
+        //        var startY = y;
+
+        //        // Define columns with bilingual headers and widths
+        //        var columns = new[]
+        //        {
+        //            ("Pattern Code | رمز النمط", 100),
+        //            ("SKU | رقم المنتج", 100),
+        //            ("Factory | المصنع", 120),
+        //            ("Price | السعر", 80),
+        //            ("Qty | الكمية", 60),
+        //            ("Total | المجموع", 80),
+        //            ("Check | تحقق", 60),
+        //            ("Notes | ملاحظات", 150)
+        //        };
+
+        //        // Draw table header
+        //        var headerHeight = 25;
+        //        var tableWidth = columns.Sum(c => c.Item2);
+        //        gfx.DrawRectangle(new XSolidBrush(headerBlue), startX, y, tableWidth, headerHeight);
+
+        //        // Draw header text
+        //        var currentX = startX;
+        //        foreach (var (title, width) in columns)
+        //        {
+        //            gfx.DrawString(title, ArabicBoldFont , XBrushes.White, currentX, y + 17);
+        //            currentX += width;
+        //        }
+
+        //        // Reset y position for data rows
+        //        y += headerHeight;
+
+        //        // Draw rows
+        //        var rowHeight = 20;
+        //        bool isAlternate = false;
+
+        //        foreach (var item in request.Items)
+        //        {
+        //            // Check for new page
+        //            if (y > page.Height.Point - 50)
+        //            {
+        //                page = doc.AddPage();
+        //                page.Orientation = PageOrientation.Landscape;
+        //                gfx = XGraphics.FromPdfPage(page);
+        //                y = marginTop;
+        //            }
+
+        //            // Alternate row background
+        //            if (isAlternate)
+        //            {
+        //                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(244, 249, 255)),
+        //                    startX, y, tableWidth, rowHeight);
+        //            }
+
+        //            var xPos = startX;
+
+        //            // Draw row data
+        //            DrawCell(gfx, item.PatternCode, ArabicRegularFont, xPos, y + 15); xPos += columns[0].Item2;
+        //            DrawCell(gfx, item.Sku, ArabicRegularFont, xPos, y + 15); xPos += columns[1].Item2;
+        //            DrawCell(gfx, item.Factory, ArabicRegularFont, xPos, y + 15); xPos += columns[2].Item2;
+        //            DrawCell(gfx, item.Price.ToString("C2"), ArabicRegularFont, xPos, y + 15); xPos += columns[3].Item2;
+        //            DrawCell(gfx, item.Quantity.ToString(), ArabicRegularFont, xPos, y + 15); xPos += columns[4].Item2;
+        //            DrawCell(gfx, item.Total.ToString("C2"), ArabicRegularFont, xPos, y + 15); xPos += columns[5].Item2;
+
+        //            // Checkbox
+        //            var checkboxSize = 10;
+        //            var checkboxY = y + 5;
+        //            gfx.DrawRectangle(XPens.Black, xPos + 25, checkboxY, checkboxSize, checkboxSize);
+        //            if (item.IsChecked)
+        //            {
+        //                gfx.DrawString("✓", ArabicBoldFont, XBrushes.Black, xPos + 25, y + 15);
+        //            }
+        //            xPos += columns[6].Item2;
+
+        //            // Notes
+        //            DrawCell(gfx, item.Notes, ArabicRegularFont, xPos, y + 15);
+
+        //            y += rowHeight;
+        //            isAlternate = !isAlternate;
+        //        }
+
+        //        // Table border
+        //        gfx.DrawRectangle(XPens.Gray, startX, startY, tableWidth, y - startY);
+
+        //        // Column dividers
+        //        var verticalX = startX;
+        //        foreach (var (_, width) in columns)
+        //        {
+        //            verticalX += width;
+        //            gfx.DrawLine(XPens.Gray, verticalX, startY, verticalX, y);
+        //        }
+
+        //        // Summary section (bilingual)
+        //        y += 20;
+        //        var totalItems = request.Items.Count;
+        //        var totalQuantity = request.Items.Sum(i => i.Quantity);
+        //        var totalAmount = request.Items.Sum(i => i.Total);
+
+        //        gfx.DrawString("Summary | الملخص:", ArabicBoldFont, XBrushes.Black, startX, y);
+        //        y += 20;
+        //        gfx.DrawString($"Total Items | إجمالي العناصر: {totalItems}", ArabicRegularFont, XBrushes.Black, startX, y);
+        //        gfx.DrawString($"Total Quantity | الكمية الإجمالية: {totalQuantity}", ArabicRegularFont, XBrushes.Black, startX + 200, y);
+        //        gfx.DrawString($"Total Amount | المبلغ الإجمالي: {totalAmount:C2}", ArabicRegularFont, XBrushes.Black, startX + 400, y);
+
+        //        using (var ms = new MemoryStream())
+        //        {
+        //            doc.Save(ms);
+        //            return File(ms.ToArray(), "application/pdf", $"invoice_{request.InvoiceId}_items.pdf");
+        //        }
+        //    }
+        //}
+
+        //private void DrawCell(XGraphics gfx, string text, XFont font, double x, double y, double maxWidth = 0)
+        //{
+        //    if (string.IsNullOrEmpty(text)) return;
+
+        //    if (maxWidth > 0 && text.Length > 20)
+        //    {
+        //        text = text.Substring(0, 17) + "...";
+        //    }
+
+        //    gfx.DrawString(text, font, XBrushes.Black, x, y);
+        //}
 
         [HttpGet("GetInvoiceTrack")]
         public async Task<IActionResult> GetCustomerTrack([FromQuery] int invoiceId)
@@ -470,36 +705,59 @@ namespace sacmy.Server.Controller
             {
                 var invoices = await _context.BuyFatoras
                     .Where(e => e.Checkeed == true)
-                    .Include(e => e.Tracks)
+                    .Include(c => c.Tasks)
                     .ThenInclude(t => t.Type)
-                    .Include(c => c.Tracks)
-                    .ThenInclude(t => t.TrackComments)
-                    .ThenInclude(tc => tc.TrackCommentStates)
-                    .ThenInclude(st => st.State)
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.TaskNotes)
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.Status)
+                    .OrderByDescending(e => e.Now)
                     .ToListAsync();
 
                 var invoiceViewModels = new List<InvoiceViewModel>();
 
+
                 foreach (var invoice in invoices)
                 {
-                    var lastTrack = invoice.Tracks.OrderByDescending(t => t.CreatedDate).FirstOrDefault();
-                    var lastTrackComment = lastTrack?.TrackComments.OrderByDescending(tc => tc.CreatedDate).FirstOrDefault();
-                    var lastTrackCommentState = lastTrackComment?.TrackCommentStates.OrderByDescending(tcs => tcs.Id).FirstOrDefault();
-                    var state = lastTrackCommentState?.State?.StateAr;
 
-                    invoiceViewModels.Add(new InvoiceViewModel
+                    var lastTask = invoice.Tasks?.LastOrDefault();
+
+                    if (lastTask != null)
                     {
-                        Id = invoice.Id,
-                        CustomerName = invoice.Customer,
-                        CustomerType = invoice.CostType,
-                        Address = invoice.Address,
-                        InvoiceBranch = invoice.Subb,
-                        Total = Convert.ToDouble(invoice.Tootal.ToString()),
-                        DateTime = invoice.Now ?? DateTime.Today,
-                        TrackId = lastTrack?.Id,
-                        TrackType = lastTrack?.Type?.TypeAr,
-                        State = state
-                    });
+                        var taskType = lastTask.Type?.TypeAr;
+                        var taskStatus = lastTask.Status?.StateEn;
+                        var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
+
+                        invoiceViewModels.Add(new InvoiceViewModel
+                        {
+                            Id = invoice.Id,
+                            CustomerName = invoice.Customer,
+                            CustomerType = invoice.CostType,
+                            Address = invoice.Address,
+                            InvoiceBranch = invoice.Subb,
+                            Total = Convert.ToDouble(invoice.Tootal.ToString()),
+                            DateTime = invoice.Now ?? DateTime.Today,
+                            TaskId = lastTask.Id,
+                            TaskStatus = taskStatus, 
+                            LastComment = lastTaskComment,
+                        });
+                    }
+
+                    else {
+                        invoiceViewModels.Add(new InvoiceViewModel
+                        {
+                            Id = invoice.Id,
+                            CustomerName = invoice.Customer,
+                            CustomerType = invoice.CostType,
+                            Address = invoice.Address,
+                            InvoiceBranch = invoice.Subb,
+                            Total = Convert.ToDouble(invoice.Tootal.ToString()),
+                            DateTime = invoice.Now ?? DateTime.Today,
+                            TaskId = null,
+                            TaskStatus = null,
+                            LastComment = null,
+                        });
+                    }
                 }
 
                 return Ok(invoiceViewModels);

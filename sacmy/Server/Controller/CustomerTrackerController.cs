@@ -9,6 +9,7 @@ using sacmy.Shared.ViewModel.HorecaViewModel;
 using sacmy.Shared.ViewModels.CustomerTracker;
 using sacmy.Shared.ViewModels.TrackViewModel;
 using System.Linq;
+using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
 namespace sacmy.Server.Controller
@@ -95,12 +96,12 @@ namespace sacmy.Server.Controller
         public async Task<IActionResult> GetCostumerTotalRemain()
         {
             var customers = await _context.Customers
-                .Include(c => c.Tracks)
-                    .ThenInclude(t => t.Type)
-                .Include(c => c.Tracks)
-                    .ThenInclude(t => t.TrackComments)
-                        .ThenInclude(tc => tc.TrackCommentStates)
-                            .ThenInclude(tcs => tcs.State)
+                .Include(c => c.Tasks)
+                .ThenInclude(t => t.Type)
+                .Include(c => c.Tasks)
+                .ThenInclude(t => t.TaskNotes)
+                .Include(c => c.Tasks)
+                .ThenInclude(t => t.Status)
                 .Where(c => !string.IsNullOrEmpty(c.Customer1)) // Filter out customers with null or empty Customer1
                 .GroupBy(x => x.Customer1)
                 .Select(g => g.FirstOrDefault())
@@ -113,32 +114,55 @@ namespace sacmy.Server.Controller
 
             // إيجاد العملاء الذين لديهم وصل قبض أو وصل قبض IQD خلال آخر 45 يومًا
             var customersWithRecentReceipt = costumerCountTRunnings
-                .Where(q => (q.EventId.ToLower().Contains("Bu".ToLower())) && q.Datee >= dateThreshold)
+                .Where(q => (q.EventId.ToLower().Contains("pfc".ToLower()) || q.EventId.ToLower().Contains("pf".ToLower())) && q.Datee >= dateThreshold)
                 .Select(q => q.Costumer)
                 .Distinct()
                 .ToHashSet();
 
-            var result = costumerCountTRunnings
-                .GroupBy(q => q.Costumer)
-                .Select(g =>
-                {
-                    var customer = customers.FirstOrDefault(e => e.Customer1.ToLower() == g.Key.ToLower());
+            var deptCustomerViewModel = new List<DeptCustomerViewModel>();
 
-                    if (customer != null)
+            foreach (var group in costumerCountTRunnings.GroupBy(q => q.Costumer))
+            {
+                var customer = customers.FirstOrDefault(e => e.Customer1.ToLower() == group.Key.ToLower());
+
+                if (customer != null)
+                {
+                    var lastTask = customer.Tasks?.LastOrDefault();
+                    if (lastTask != null)
                     {
-                        return new DeptCustomerViewModel
+                        var taskType = lastTask.Type?.TypeAr;
+                        var taskStatus = lastTask.Status?.StateEn;
+                        var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
+
+                        deptCustomerViewModel.Add(new DeptCustomerViewModel
                         {
                             Id = customer.Id,
-                            CustomerName = g.Key,
-                            TotalTransTotalN = g.Sum(q => q.TransTotalN ?? 0),
-                            HasRecentReceipt = customersWithRecentReceipt.Contains(g.Key) ? "نعم" : "لا"
-                        };
+                            CustomerName = group.Key,
+                            TotalTransTotalN = group.Sum(q => q.TransTotalN ?? 0),
+                            HasRecentReceipt = customersWithRecentReceipt.Contains(group.Key) ? "نعم" : "لا",
+                            TaskId = lastTask.Id,
+                            TaskStatus = taskStatus,
+                            LastComment = lastTaskComment,
+                        });
                     }
+                    else
+                    {
+                        deptCustomerViewModel.Add(new DeptCustomerViewModel
+                        {
+                            Id = customer.Id,
+                            CustomerName = group.Key,
+                            TotalTransTotalN = group.Sum(q => q.TransTotalN ?? 0),
+                            HasRecentReceipt = customersWithRecentReceipt.Contains(group.Key) ? "نعم" : "لا",
+                            TaskId = null,
+                            TaskStatus = null,
+                            LastComment = null,
+                        });
+                    }
+                }
+            }
 
-                    return null; // Handle case where customer is null
-                })
-                .Where(e => e != null && e.TotalTransTotalN > 200) // Filter out null results
-                .ToList();
+            // Filter results where TotalTransTotalN > 200
+            var result = deptCustomerViewModel.Where(e => e.TotalTransTotalN > 200).ToList();
 
             return Ok(result);
         }
@@ -151,16 +175,16 @@ namespace sacmy.Server.Controller
             try
             {
                 var customers = await _context.Customers
-                                    .Include(c => c.Tracks)
+                                    .Include(c => c.Tasks)
                                     .ThenInclude(t => t.Type)
-                                    .Include(c => c.Tracks)
-                                    .ThenInclude(t => t.TrackComments)
-                                    .ThenInclude(tc => tc.TrackCommentStates)
-                                    .ThenInclude(st => st.State)
+                                    .Include(c => c.Tasks)
+                                    .ThenInclude(t => t.TaskNotes)
+                                    .Include(c => c.Tasks)
+                                    .ThenInclude(t => t.Status)
                                     .GroupBy(x => x.Customer1)
                                     .Select(g => g.First())
                                     .ToListAsync();
-                
+
                 var invoices = await _context.BuyFatoras.ToListAsync();
 
                 var customerViewModels = new List<CustomerHiddenViewModel>();
@@ -174,13 +198,13 @@ namespace sacmy.Server.Controller
 
                     if (lastInvoice != null && lastInvoice.Datee < thresholdDate)
                     {
-                        var lastTrack = customer.Tracks.LastOrDefault();
-                        if (lastTrack != null)
+                        var lastTask = customer.Tasks?.LastOrDefault();
+
+                        if (lastTask != null)
                         {
-                            var trackType = lastTrack?.Type?.TypeAr;
-                            var lastTrackComment = lastTrack.TrackComments?.LastOrDefault();
-                            var lastTrackCommentState = lastTrackComment?.TrackCommentStates?.LastOrDefault();
-                            var state = lastTrackCommentState?.State?.StateAr;
+                            var taskType = lastTask.Type?.TypeAr; // Ensure null-safety with ?. operator
+                            var taskStatus = lastTask.Status?.StateEn; 
+                            var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note; // Added null checks
 
                             customerViewModels.Add(new CustomerHiddenViewModel
                             {
@@ -189,9 +213,9 @@ namespace sacmy.Server.Controller
                                 Location = customer.Address,
                                 Type = customer.CostType,
                                 LastDate = lastInvoice.Datee,
-                                TrackId = lastTrack.Id,
-                                TrackType = trackType ?? null,
-                                State = state ?? null,
+                                TaskId = lastTask.Id,
+                                TaskStatus = taskStatus, // Removed unnecessary null coalescing as ?. already ensures null safety
+                                LastComment = lastTaskComment, // Same here, ?. ensures null safety
                             });
                         }
                         else
@@ -203,16 +227,15 @@ namespace sacmy.Server.Controller
                                 Location = customer.Address,
                                 Type = customer.CostType,
                                 LastDate = lastInvoice.Datee,
-                                TrackId = null,
-                                TrackType = null,
-                                State = null,
+                                TaskId = null,
+                                TaskStatus = null,
+                                LastComment = null,
                             });
                         }
                     }
                 }
 
                 return Ok(customerViewModels);
-
             }
             catch (Exception ex)
             {

@@ -54,42 +54,62 @@
             </div>
             <hr>
             <ul class="nav nav-pills flex-column mb-auto">
-                <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/HomeScreen")" href="/HomeScreen" @onclick="() => ToggleDrawer()">
-                        <i class="bi bi-house-door me-2"></i>
-                        Home
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/Horeca")" href="/Horeca" @onclick="() => ToggleDrawer()">
-                        <i class="bi bi-shop me-2"></i>
-                        Horeca
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice" @onclick="() => ToggleDrawer()">
-                        <i class="bi bi-file-earmark-text me-2"></i>
-                        Invoice
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/CustomerTracker")" href="/CustomerTracker" @onclick="() => ToggleDrawer()">
-                        <i class="bi bi-people me-2"></i>
-                        Customer Tracker
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/Tasks")" href="/Tasks" @onclick="() => ToggleDrawer()">
-                        <i class="bi bi-list-task me-2"></i>
-                        Tasks
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link @GetNavLinkClass("/CustomerInvoiceTrack")" href="/CustomerInvoiceTrack" @onclick="() => ToggleDrawer()">
-                        <i class="bi bi-list-task me-2"></i>
-                        Customer Invoice Track
-                    </a>
-                </li>
+                @if (UserGlobal.User.Role == "admin" && UserGlobal.User.JobTitle == "storage manager")
+                {
+                    <!-- Show only the Invoice nav item -->
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Invoice
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <!-- Show all nav items -->
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/HomeScreen")" href="/HomeScreen" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-house-door me-2"></i>
+                            Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/Horeca")" href="/Horeca" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-shop me-2"></i>
+                            Horeca
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-file-earmark-text me-2"></i>
+                            Invoice
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/CustomerTracker")" href="/CustomerTracker" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-people me-2"></i>
+                            Customer Tracker
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/Tasks")" href="/Tasks" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-list-task me-2"></i>
+                            Tasks
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/CustomerInvoiceTrack")" href="/CustomerInvoiceTrack" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-list-task me-2"></i>
+                            Customer Invoice Track
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @GetNavLinkClass("/Products")" href="/Products" @onclick="() => ToggleDrawer()">
+                            <i class="bi bi-list-task me-2"></i>
+                            Products
+                        </a>
+                    </li>
+                }
             </ul>
         </div>
         <div class="main-content flex-grow-1 p-3" id="main-content">
@@ -125,6 +145,7 @@
             "Invoice" => "Invoice",
             "CustomerTracker" => "Customer Tracker",
             "CustomerInvoiceTrack" => "Customer Invoice Track",
+            "Products" => "Products",
             "Tasks" => "Tasks",
             _ => "Dashboard",
         };

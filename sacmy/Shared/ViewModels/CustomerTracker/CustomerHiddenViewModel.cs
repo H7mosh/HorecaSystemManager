@@ -13,9 +13,10 @@ namespace sacmy.Shared.ViewModels.CustomerTracker
         public string Type { get; set; }
         public string Location { get; set; }
         public DateTime? LastDate { get; set; }
-        public Guid? TrackId { get; set; }
-        public string? TrackType { get; set; }
-        public string? State { get; set; }
+        public Guid? TaskId { get; set; }
+        public string? TaskType { get; set; }
+        public string? TaskStatus{ get; set; }
+        public string? LastComment { get; set; }
 
     }
 }

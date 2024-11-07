@@ -363,5 +363,75 @@
     <value>Kontrol Paneli</value>
   </data>
 
+	<data name="HiddenCustomer" xml:space="preserve">
+    <value>Gizli Müşteri</value>
+</data>
+	<data name="Debtor" xml:space="preserve">
+    <value>Borçlu</value>
+</data>
+	<data name="UnCompletedInvoice" xml:space="preserve">
+    <value>Tamamlanmamış Fatura</value>
+</data>
+	<data name="Customer" xml:space="preserve">
+    <value>Müşteri</value>
+</data>
+	<data name="TasksForCustomerInvoice" xml:space="preserve">
+    <value>Müşteri/Fatura için Görevler</value>
+</data>
+	<data name="Title" xml:space="preserve">
+    <value>Başlık</value>
+</data>
+	<data name="Type" xml:space="preserve">
+    <value>Tür</value>
+</data>
+	<data name="CreatedBy" xml:space="preserve">
+    <value>Oluşturan</value>
+</data>
+	<data name="AssignedTo" xml:space="preserve">
+    <value>Atanan</value>
+</data>
+	<data name="CreatedDate" xml:space="preserve">
+    <value>Oluşturulma Tarihi</value>
+</data>
+	<data name="NoDataAvailable" xml:space="preserve">
+    <value>Veri yok.</value>
+</data>
+	<data name="LoadingTasks" xml:space="preserve">
+    <value>Görevler yükleniyor, lütfen bekleyin...</value>
+</data>
+	<data name="CustomerInvoiceTasks" xml:space="preserve">
+    <value>Müşteri Fatura Görevleri</value>
+</data>
+	<data name="HiddenCustomer" xml:space="preserve">
+    <value>Gizli Müşteri</value>
+</data>
+	<data name="Debtor" xml:space="preserve">
+    <value>Borçlu</value>
+</data>
+	<data name="UnCompletedInvoice" xml:space="preserve">
+    <value>Tamamlanmamış Fatura</value>
+</data>
+	<data name="Customer" xml:space="preserve">
+    <value>Müşteri</value>
+</data>
+	<data name="LoadingPleaseWait" xml:space="preserve">
+    <value>Yükleniyor, lütfen bekleyin...</value>
+</data>
+	<data name="NoDataAvailable" xml:space="preserve">
+    <value>Mevcut veri yok</value>
+</data>
+	<data name="TasksForCustomerOrInvoice" xml:space="preserve">
+    <value>Müşteri/Fatura için Görevler</value>
+</data>
+	<data name="LoadingTasksPleaseWait" xml:space="preserve">
+    <value>Görevler yükleniyor, lütfen bekleyin...</value>
+</data>
+	<data name="AddNewTask" xml:space="preserve">
+    <value>Yeni Görev Ekle</value>
+</data>
+	<data name="Close" xml:space="preserve">
+    <value>Kapat</value>
+</data>
+
 	<!--End Main Layout Page-->
 </root>
