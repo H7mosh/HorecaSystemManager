@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using sacmy.Server.DatabaseContext;
 using sacmy.Shared.ViewModels.CustomerViewModel;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace sacmy.Server.Controller
 {
@@ -13,10 +14,10 @@ namespace sacmy.Server.Controller
     {
         private SafeenCompanyDbContext _context;
         private readonly NotificationService _notificationService;
-        public CustomerController(SafeenCompanyDbContext context , NotificationService notificationService)
+        public CustomerController(SafeenCompanyDbContext context, IConfiguration configuration)
         {
             _context = context;
-            _notificationService = notificationService;
+            _notificationService = new NotificationService(configuration, "SafinAhmedNotificationKeys"); // Use customer notifications key
         }
 
         [HttpGet]
@@ -66,7 +67,5 @@ namespace sacmy.Server.Controller
 
             return Ok("Notification sent successfully.");
         }
-
-
     }
 }

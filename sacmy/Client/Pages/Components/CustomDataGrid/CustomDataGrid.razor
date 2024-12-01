@@ -325,20 +325,15 @@
 
 @code
 {
-    private string searchString;
+    private string searchString = string.Empty;
 
     [Parameter]
-    public string SearchString
+    public string SearchString { get; set; } = string.Empty;
+
+    protected override void OnParametersSet()
     {
-        get => searchString;
-        set
-        {
-            if (searchString != value)
-            {
-                searchString = value;
-                UpdateQuickFilter();
-            }
-        }
+        searchString = SearchString;
+        base.OnParametersSet();
     }
 
     // Switch Parameters
@@ -427,7 +422,5 @@
     };
 
 </script>
-
-
 
 

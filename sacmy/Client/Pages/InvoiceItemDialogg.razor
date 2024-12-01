@@ -29,7 +29,7 @@
                 <div class="d-flex justify-end mb-2">
                     @if (!IsNotificationSent)
                     {
-                        <button class="btn btn-warning mr-2" @onclick="SendNotification">Send Notification</button>
+                        @* <button class="btn btn-warning mr-2" @onclick="SendNotification">Send Notification</button> *@
                     }
                     <button class="btn btn-primary" @onclick="GeneratePdfReport" disabled="@(IsNotificationSent)">
                         <i class="bi bi-file-pdf-fill"></i> Export to PDF
@@ -43,6 +43,7 @@
                                  Filterable="true"
                                  SortMode="SortMode.Multiple"
                                  Hideable="true"
+                                 HorizontalScrollbar="true"
                                  Disabled="@(!IsNotificationSent)"
                                  Class="custom-data-grid">
                         <Columns>

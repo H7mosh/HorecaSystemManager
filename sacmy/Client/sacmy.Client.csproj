@@ -8,9 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazor.Bootstrap" Version="2.2.0" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
-    <PackageReference Include="ChartJs.Blazor.Fork" Version="2.0.2" />
     <PackageReference Include="ClosedXML" Version="0.102.2" />
     <PackageReference Include="EPPlus" Version="7.1.3" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.6" />

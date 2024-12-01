@@ -16,45 +16,50 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-builder.Services.AddHttpClient("sacmy.ServerAPI", client => client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress));
+// Configure HttpClient
+builder.Services.AddHttpClient("sacmy.ServerAPI", client => 
+{
+    client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
 
-var baseApiUrl = builder.Configuration["BaseApiUrl"] ?? "http://46.165.247.249:80";
+// Configure API URL
+var baseApiUrl = builder.Configuration["BaseApiUrl"] ?? builder.HostEnvironment.BaseAddress;
 builder.Services.AddSingleton(new AppConfig { BaseApiUrl = baseApiUrl });
 
+// Add Localization
 builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
 builder.Services.AddBlazoredLocalStorage();
 
-// Supply HttpClient instances that include access tokens when making requests to the server project
+// Add Services
 builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().CreateClient("sacmy.ServerAPI"));
 builder.Services.AddScoped<NotificationClientService>();
 builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<TaskService>();
 builder.Services.AddScoped<EmployeeService>();
-builder.Services.AddMudServices();
 builder.Services.AddSingleton<UserGlobalClass>();
 builder.Services.AddSingleton<AuthService>();
+
+// Configure MudBlazor
 builder.Services.AddMudServices(config =>
 {
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomLeft;
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomEnd;
     config.SnackbarConfiguration.PreventDuplicates = false;
     config.SnackbarConfiguration.NewestOnTop = false;
     config.SnackbarConfiguration.ShowCloseIcon = true;
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomEnd;
     config.SnackbarConfiguration.VisibleStateDuration = 5000;
     config.SnackbarConfiguration.HideTransitionDuration = 500;
     config.SnackbarConfiguration.ShowTransitionDuration = 500;
     config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
 });
-builder.Services.AddBlazorBootstrap();
 
 var host = builder.Build();
 
-// Set the default language
+// Set default culture
 var localStorage = host.Services.GetRequiredService<ILocalStorageService>();
-var language = await localStorage.GetItemAsync<string>("language") ?? "en";
-var culture = new CultureInfo(language);
-CultureInfo.DefaultThreadCurrentCulture = culture;
-CultureInfo.DefaultThreadCurrentUICulture = culture;
+var culture = await localStorage.GetItemAsync<string>("culture") ?? "en-US";
+CultureInfo.DefaultThreadCurrentCulture = new CultureInfo(culture);
+CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo(culture);
 
 await host.RunAsync();

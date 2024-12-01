@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.IO;
@@ -22,11 +22,13 @@ public class NotificationService
     private readonly string _clientEmail;
     private readonly string _tokenUri;
     private readonly string _projectId;
+    private readonly string _configKey;
 
-    public NotificationService(IConfiguration configuration)
+    public NotificationService(IConfiguration configuration, string configurationKey)
     {
-        _configuration = configuration; 
-        var firebaseConfig = _configuration.GetSection("SafinAhmedNotificationKeys");
+        _configuration = configuration;
+        _configKey = configurationKey;
+        var firebaseConfig = _configuration.GetSection(_configKey);
         _privateKey = firebaseConfig["private_key"];
         _clientEmail = firebaseConfig["client_email"];
         _tokenUri = firebaseConfig["token_uri"];
@@ -37,7 +39,7 @@ public class NotificationService
     public async Task<string> GetAccessTokenAsync()
     {
         // Read all necessary fields from appsettings.json
-        var firebaseConfig = _configuration.GetSection("SafinAhmedNotificationKeys"); // Retrieve configuration section
+        var firebaseConfig = _configuration.GetSection(_configKey); // Retrieve configuration section
         var type = firebaseConfig["type"];
         var projectId = firebaseConfig["project_id"];
         var privateKeyId = firebaseConfig["private_key_id"];
@@ -116,7 +118,6 @@ public class NotificationService
                 }
             };
 
-
             var jsonMessage = JsonConvert.SerializeObject(messagePayload);
 
             // Log the payload for debugging
@@ -153,8 +154,4 @@ public class NotificationService
     {
         await SendNotificationAsync(title, body, firebaseTokens, employeeNotification);
     }
-
 }
-
-
-

@@ -11,6 +11,7 @@
 @inject HttpClient httpClient
 @inject DashboardService dashboardService
 @inject UserGlobalClass userGlobalClass
+@inject IJSRuntime JS
 
 <style>
     .salesType {
@@ -23,6 +24,12 @@
         flex-direction: row;
         align-items: center;
         margin-top: 20px;
+    }
+
+    .chart-wrapper {
+        width: 450px;
+        height: 450px;
+        position: relative;
     }
 
     .legend-container {
@@ -92,7 +99,14 @@
         padding: 20px;
         border-radius: 10px;
         width: 300px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: transform 0.2s;
     }
+
+        .branch-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
 
     .branch-title {
         font-size: 24px;
@@ -116,6 +130,31 @@
         .stats .profit {
             color: #0a0;
         }
+
+    /* Responsive adjustments */
+    @@media (max-width: 768px) {
+        .input-row {
+            flex-direction: column;
+        }
+
+        .custom-input,
+        .custom-select {
+            width: 100%;
+        }
+
+        .branch-stats {
+            flex-direction: column;
+        }
+
+        .branch-card {
+            width: 100%;
+        }
+
+        .chart-wrapper {
+            width: 100%;
+            height: 300px;
+        }
+    }
 </style>
 
 <div class="salesType">
@@ -151,22 +190,21 @@
             }
         </div>
         <div class="chart-container">
-            <PieChart @ref="pieChart" Width="450" Class="mb-5" />
+            <div class="chart-wrapper">
+                <canvas id="salesChart"></canvas>
+            </div>
         </div>
     }
 </div>
 
 @code {
-
-    private List<InvoiceTypeViewModel> InvoiceCounts { get; set; } = new List<InvoiceTypeViewModel>();
-    private List<GetBranchSales> branchSales { get; set; } = new List<GetBranchSales>();
-    private PieChart pieChart = default!;
-    private PieChartOptions pieChartOptions = default!;
-    private BlazorBootstrap.ChartData chartData = default!;
+    private List<InvoiceTypeViewModel> InvoiceCounts { get; set; } = new();
+    private List<GetBranchSales> branchSales { get; set; } = new();
     private string[]? backgroundColors;
     private DateTime? startDate = null;
     private DateTime? endDate = null;
     private string selectedBranch = "All";
+    private bool chartInitialized = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -175,7 +213,7 @@
             if (firstRender)
             {
                 await LoadInvoiceCounts();
-                await pieChart.InitializeAsync(chartData, pieChartOptions);
+                await InitializeChartAsync();
             }
             await base.OnAfterRenderAsync(firstRender);
         }
@@ -183,26 +221,66 @@
 
     protected override void OnInitialized()
     {
-        backgroundColors = ColorBuilder.CategoricalTwelveColors;
-        chartData = new BlazorBootstrap.ChartData { Labels = new List<string>(), Datasets = new List<IChartDataset>() };
-        pieChartOptions = new PieChartOptions
-        {
-            Responsive = true,
-            Plugins = new PieChartPlugins
-            {
-                Legend = new ChartPluginsLegend
-                {
-                    Position = "right"
-                }
-            }
+        backgroundColors = new[] {
+            "rgba(255, 99, 132, 0.8)",
+            "rgba(54, 162, 235, 0.8)",
+            "rgba(255, 206, 86, 0.8)",
+            "rgba(75, 192, 192, 0.8)",
+            "rgba(153, 102, 255, 0.8)",
+            "rgba(255, 159, 64, 0.8)"
         };
-        
     }
 
     private async Task LoadInvoiceCounts()
     {
-        await dashboardService.LoadInvoiceCounts(startDate, endDate, selectedBranch, chartData, pieChartOptions, backgroundColors.ToList(), pieChart, async () => await InvokeAsync(StateHasChanged));
-        branchSales = await dashboardService.GetBranchSalesAsync(startDate, endDate, selectedBranch);
-        await InvokeAsync(StateHasChanged); // Update the UI
+        try
+        {
+            // Keep your existing service calls
+            branchSales = await dashboardService.GetBranchSalesAsync(startDate, endDate, selectedBranch);
+            await UpdateChartAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in LoadInvoiceCounts: {ex.Message}");
+        }
+    }
+
+    private async Task InitializeChartAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("initializeChart", "salesChart");
+            await UpdateChartAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in InitializeChartAsync: {ex.Message}");
+        }
+    }
+
+    private async Task UpdateChartAsync()
+    {
+        try
+        {
+            var chartData = new
+            {
+                labels = branchSales.Select(b => b.Branch).ToArray(),
+                datasets = new[]
+                {
+                    new
+                    {
+                        data = branchSales.Select(b => b.TotalSales).ToArray(),
+                        backgroundColor = backgroundColors
+                    }
+                }
+            };
+
+            await JS.InvokeVoidAsync("updateChart", "salesChart", chartData);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in UpdateChartAsync: {ex.Message}");
+        }
     }
 }
