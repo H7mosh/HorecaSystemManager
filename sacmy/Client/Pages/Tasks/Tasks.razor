@@ -1,4 +1,4 @@
-﻿@page "/Tasks"
+@page "/Tasks"
 @using Blazored.LocalStorage
 @using Microsoft.Extensions.Localization
 @using System.Globalization
@@ -17,18 +17,18 @@
 @inject ILocalStorageService LocalStorage
 @inject IStringLocalizer<SharedResource> Localizer
 
-
-
 <script>
     window.openFileDialog = function () {
         document.getElementById('fileInput').click();
     };
 
     window.openModal = function (modalId) {
+        console.log("Opening modal with ID:", modalId);
         $('#' + modalId).modal('show');
     };
 
     window.closeModal = function (modalId) {
+        console.log("Closing modal with ID:", modalId);
         $('#' + modalId).modal('hide');
     };
 </script>
@@ -272,107 +272,66 @@
         @if (tasks != null && tasks.Any())
         {
             <div class="scroll-container">
-                <MudDataGrid T="GetTaskViewModel" MultiSelection="true" Items="@filteredTasks" SortMode="SortMode.Multiple" Filterable="true" QuickFilter="@_quickFilter"
-                             Hideable="true" RowClick="OnTaskSelected" Class="custom-data-grid" Style="height: 100%;">
-                    <ToolBarContent>
-                        <MudSpacer />
-                        <MudTextField @bind-Value="_searchString" Placeholder="@Localizer["Search"]" Adornment="Adornment.Start" Immediate="true"
-                                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="MudBlazor.Size.Medium" Class="search-field" />
-                    </ToolBarContent>
-                    <Columns>
-                        <!-- Employee Column -->
-                        <TemplateColumn>
-                            <HeaderTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body1">@Localizer["Employee"]</MudText>
-                                </MudStack>
-                            </HeaderTemplate>
-                            <CellTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudAvatar Size="MudBlazor.Size.Small" Image="@context.Item.EmployeeImage" Alt="@Localizer["EmployeeAvatar"]" />
-                                    <MudText Typo="Typo.body2">@context.Item.AssignedToEmployee</MudText>
-                                </MudStack>
-                            </CellTemplate>
-                        </TemplateColumn>
-
-                        <!-- Type and CustomerName/InvoiceId Column -->
-                        <TemplateColumn>
-                            <HeaderTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body1">@Localizer["Type"]</MudText>
-                                </MudStack>
-                            </HeaderTemplate>
-                            <CellTemplate>
-                                <MudStack Spacing="2" AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body2" Align="Align.Center">@context.Item.TypeEn</MudText>
-                                    <MudDivider />
-                                    @if (!string.IsNullOrEmpty(context.Item.CutsomerName))
-                                    {
-                                        <MudText Class="detail-text" Align="Align.Center">@context.Item.CutsomerName</MudText>
-                                    }
-                                    else if (context.Item.InvoiceId.HasValue)
-                                    {
-                                        <MudText Class="detail-text" Align="Align.Center">@context.Item.InvoiceId.ToString()</MudText>
-                                    }
-                                </MudStack>
-                            </CellTemplate>
-                        </TemplateColumn>
-
-                        <!-- Task Title Column -->
-                        <TemplateColumn>
-                            <HeaderTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body1">@Localizer["Title"]</MudText>
-                                </MudStack>
-                            </HeaderTemplate>
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.Title</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-
-                        <!-- Task Status Column -->
-                        <TemplateColumn>
-                            <HeaderTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body1">@Localizer["Status"]</MudText>
-                                </MudStack>
-                            </HeaderTemplate>
-                            <CellTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <div class="status-dot" style="background: @GetStatusGradient(context.Item.StatusEn);"></div>
-                                    <MudText Typo="Typo.body2">@context.Item.StatusEn</MudText>
-                                </MudStack>
-                            </CellTemplate>
-                        </TemplateColumn>
-
-                        <!-- Start Date Column -->
-                        <TemplateColumn>
-                            <HeaderTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body1">@Localizer["CreatedDate"]</MudText>
-                                </MudStack>
-                            </HeaderTemplate>
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.CreatedDate.ToString("g")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-
-                        <!-- End Date Column -->
-                        <TemplateColumn>
-                            <HeaderTemplate>
-                                <MudStack Row AlignItems="AlignItems.Center">
-                                    <MudText Typo="Typo.body1">@Localizer["Deadline"]</MudText>
-                                </MudStack>
-                            </HeaderTemplate>
-                            <CellTemplate>
-                                <MudText Typo="Typo.body2">@context.Item.DeadlineDate?.ToString("g")</MudText>
-                            </CellTemplate>
-                        </TemplateColumn>
-                    </Columns>
-                    <PagerContent>
-                        <MudDataGridPager T="GetTaskViewModel" />
-                    </PagerContent>
-                </MudDataGrid>
+                <div class="table-responsive">
+                    <div class="d-flex justify-content-end mb-3">
+                        <div class="input-group" style="max-width: 250px;">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control" @bind="_searchString" @oninput="OnSearch" 
+                                   placeholder="@Localizer["Search"]" />
+                        </div>
+                    </div>
+                    <table class="table table-hover custom-data-grid">
+                        <thead>
+                            <tr>
+                                <th>@Localizer["Employee"]</th>
+                                <th>@Localizer["Type"]</th>
+                                <th>@Localizer["Title"]</th>
+                                <th>@Localizer["Status"]</th>
+                                <th>@Localizer["CreatedDate"]</th>
+                                <th>@Localizer["Deadline"]</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var task in filteredTasks)
+                            {
+                                <tr @onclick="() => OnTaskRowClick(task)" style="cursor: pointer;">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <img src="@task.EmployeeImage" class="rounded-circle me-2" alt="@Localizer["EmployeeAvatar"]" 
+                                                 style="width: 32px; height: 32px;" />
+                                            <span>@task.AssignedToEmployee</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column align-items-center">
+                                            <span>@task.TypeEn</span>
+                                            <hr class="w-100 my-1" />
+                                            @if (!string.IsNullOrEmpty(task.CutsomerName))
+                                            {
+                                                <small class="text-muted">@task.CutsomerName</small>
+                                            }
+                                            else if (task.InvoiceId.HasValue)
+                                            {
+                                                <small class="text-muted">@task.InvoiceId.ToString()</small>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>@task.Title</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="status-dot" style="background: @GetStatusGradient(task.StatusEn);"></div>
+                                            <span>@task.StatusEn</span>
+                                        </div>
+                                    </td>
+                                    <td>@task.CreatedDate.ToString("g")</td>
+                                    <td>@task.DeadlineDate?.ToString("g")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
         }
@@ -449,31 +408,33 @@
                     }
                 }
             </div>
-            <div class="message-box-container">
-                @if (!string.IsNullOrEmpty(selectedFileName))
-                {
-                    <div class="file-display">
-                        <div class="file-name">@Localizer["SelectedFile"] @selectedFileName</div>
-                        <button type="button" class="btn btn-secondary" @onclick="RemoveFile">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-trash3-fill" viewBox="0 0 16 16">
-                                <path d="M11 1.5v1h3.5a.5.5 0 0 1 0 1h-.538l-.853 10.66A2 2 0 0 1 11.115 16h-6.23a2 2 0 0 1-1.994-1.84L2.038 3.5H1.5a.5.5 0 0 1 0-1H5v-1A1.5 1.5 0 0 1 6.5 0h3A1.5 1.5 0 0 1 11 1.5m-5 0v1h4v-1a.5.5 0 0 0-.5-.5h-3a.5.5 0 0 0-.5.5M4.5 5.029l.5 8.5a.5.5 0 1 0 .998-.06l-.5-8.5a.5.5 0 1 0-.998.06m6.53-.528a.5.5 0 0 0-.528.47l-.5 8.5a.5.5 0 0 0 .998.058l.5-8.5a.5.5 0 0 0-.47-.528M8 4.5a.5.5 0 0 0-.5.5v8.5a.5.5 0 0 0 1 0V5a.5.5 0 0 0-.5-.5"></path>
-                            </svg>
-                        </button>
-                    </div>
-                }
-                <div class="message-box">
-                    <textarea @bind="noteText" placeholder="@Localizer["WriteYourMessageHere"]"></textarea>
-                    <div class="button-container">
-                        <button class="attach-button" @onclick="OpenFileDialog">@Localizer["Attach"]</button>
-                        <InputFile id="fileInput" style="display: none;" OnChange="OnFileSelected" />
-                        <button class="send-button" @onclick="SendNote">@Localizer["Send"]</button>
+            @if (CanAddComments())
+            {
+                <div class="message-box-container">
+                    @if (!string.IsNullOrEmpty(selectedFileName))
+                    {
+                        <div class="file-display">
+                            <div class="file-name">@Localizer["SelectedFile"] @selectedFileName</div>
+                            <button type="button" class="btn btn-secondary" @onclick="RemoveFile">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    }
+                    <div class="message-box">
+                        <textarea @bind="noteText" placeholder="@Localizer["WriteYourMessageHere"]"></textarea>
+                        <div class="button-container">
+                            <button type="button" class="btn btn-outline-primary" @onclick="OpenFileDialog">
+                                <i class="fas fa-paperclip"></i>
+                                @Localizer["Attach"]
+                            </button>
+                            <button type="button" class="btn btn-primary" @onclick="AddComment" disabled="@string.IsNullOrWhiteSpace(noteText)">
+                                @Localizer["Send"]
+                            </button>
+                            <InputFile id="fileInput" OnChange="OnFileSelected" class="d-none" />
+                        </div>
                     </div>
                 </div>
-                @if (!string.IsNullOrWhiteSpace(noteErrorMessage))
-                {
-                    <div class="text-danger">@noteErrorMessage</div>
-                }
-            </div>
+            }
             <div class="modal fade @(showModal ? "show d-block" : "")" id="descriptionModal" tabindex="-1" role="dialog" aria-labelledby="descriptionModalLabel" aria-hidden="true">
                 <div class="modal-dialog modal-dialog-centered" role="document">
                     <div class="modal-content">
@@ -701,7 +662,6 @@
     private string remindMessage;
     private string _searchString;
 
-
     private bool showScheduledNotificationModal = false;
     private string notificationTitle = "Reminder"; // Default value
     private string notificationBody;
@@ -709,18 +669,28 @@
     private string firebaseToken;
     private bool isSendingNotification = false;
 
-
     protected override async Task OnInitializedAsync()
     {
-        tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id) ?? new List<GetTaskViewModel>();
-        filteredTasks = tasks; // Initially show all tasks
-        taskStatuses = await TaskService.GetTaskStatusAsync() ?? new List<GetTaskStatus>();
-        employees = await EmployeeService.GetEmployeesAsync() ?? new List<GetEmployeeViewModel>();
-        taskTypes = await TaskService.GetTaskTypesAsync() ?? new List<GetTaskType>();
+        isLoading = true;
+        StateHasChanged();
 
-        if (taskTypes != null && taskTypes.Any())
+        try
         {
-            newTaskTypeId = taskTypes.Last().Id; // Set the last TaskType as the default value
+            tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id) ?? new List<GetTaskViewModel>();
+            filteredTasks = tasks; // Initially show all tasks
+            taskStatuses = await TaskService.GetTaskStatusAsync() ?? new List<GetTaskStatus>();
+            employees = await EmployeeService.GetEmployeesAsync() ?? new List<GetEmployeeViewModel>();
+            taskTypes = await TaskService.GetTaskTypesAsync() ?? new List<GetTaskType>();
+
+            if (taskTypes != null && taskTypes.Any())
+            {
+                newTaskTypeId = taskTypes.Last().Id; // Set the last TaskType as the default value
+            }
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
         }
     }
 
@@ -730,44 +700,12 @@
         showAddTaskModal = true;
     }
 
-    private async void OnTaskSelected(DataGridRowClickEventArgs<GetTaskViewModel> args)
+    private async void OnTaskRowClick(GetTaskViewModel task)
     {
-        selectedTask = args.Item;
+        selectedTask = task;
         comments = await TaskService.GetTaskNotesAsync(selectedTask.Id.ToString()); // Fetch comments for selected task
         StateHasChanged();
     }
-
-    private Func<GetTaskViewModel, bool> _quickFilter => x =>
-    {
-        if (string.IsNullOrWhiteSpace(_searchString))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.AssignedToEmployee) && x.AssignedToEmployee.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.TypeEn) && x.AssignedToEmployee.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.TypeAr) && x.AssignedToEmployee.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.TypeTr) && x.AssignedToEmployee.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrEmpty(x.Title) && x.Title.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.CreatedbyName) && x.CreatedbyName.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.StatusEn) && x.StatusEn.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        if (!string.IsNullOrWhiteSpace(x.CreatedDate.ToString()) && x.CreatedDate.ToString().Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-            return true;
-
-        return false;
-    };
 
     private async Task OnTaskStatusChanged(ChangeEventArgs e)
     {
@@ -783,7 +721,7 @@
                     showRescheduleModal = true;
                     JSRuntime.InvokeVoidAsync("openModal", "rescheduleModal");
                 }
-                else if (newStatusId == Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71")) // Replace with actual GUID for Re-Assigned
+                else if (newStatusId == Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71")) // Re-Assigned
                 {
                     showReassignModal = true;
                     JSRuntime.InvokeVoidAsync("openModal", "reassignModal");
@@ -829,7 +767,7 @@
             selectedTask.StatusId = Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"); // Re-Scheduled
             selectedTask.DeadlineDate = newTaskDeadline;
             var updateTaskModel = new UpdateTaskViewModel
-                {
+            {
                     Id = selectedTask.Id,
                     StatusId = selectedTask.StatusId,
                     AssignedToEmployeeId = selectedTask.AssignedToEmployeeId,
@@ -837,7 +775,7 @@
                     Description = selectedTask.Description,
                     DeadlineDate = selectedTask.DeadlineDate,
                     CreatedDate = selectedTask.CreatedDate
-                };
+            };
 
             await TaskService.UpdateTaskAsync(updateTaskModel);
             tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id);
@@ -863,7 +801,6 @@
         }
     }
 
-
     private void CloseRescheduleModal()
     {
         showRescheduleModal = false;
@@ -880,7 +817,7 @@
             selectedTask.StatusId = Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"); // Re-Assigned
             selectedTask.AssignedToEmployeeId = newTaskAssignedToEmployeeId;
             var updateTaskModel = new UpdateTaskViewModel
-                {
+            {
                     Id = selectedTask.Id,
                     StatusId = selectedTask.StatusId,
                     AssignedToEmployeeId = selectedTask.AssignedToEmployeeId,
@@ -888,7 +825,7 @@
                     Description = selectedTask.Description,
                     DeadlineDate = selectedTask.DeadlineDate,
                     CreatedDate = selectedTask.CreatedDate
-                };
+            };
 
             await TaskService.UpdateTaskAsync(updateTaskModel);
             tasks = await TaskService.GetTasksAsync(UserGlobal.User.Id);
@@ -899,14 +836,14 @@
 
             // **Add This Code to Create an Automatic Comment**
             var noteModel = new PostTaskNoteViewModel
-                {
+            {
                     Note = $"This task has been re-assigned to {employeeName}",
                     FileBase64 = null,
                     FileName = null,
                     ContentType = null,
                     EmployeeId = UserGlobal.User.Id,
                     TaskId = selectedTask.Id
-                };
+            };
 
             await TaskService.PostTaskNoteAsync(noteModel, selectedTask.Title);
 
@@ -933,7 +870,8 @@
 
     private async Task OpenFileDialog()
     {
-        await JSRuntime.InvokeVoidAsync("openFileDialog");
+        await JSRuntime.InvokeVoidAsync("document.querySelector", "#fileInput").AsTask();
+        await JSRuntime.InvokeVoidAsync("eval", "document.querySelector('#fileInput').click()");
     }
 
     private async Task OnFileSelected(InputFileChangeEventArgs e)
@@ -1030,7 +968,7 @@
                     Body = remindMessage,
                     employeeNotification = true,
                     ImageBase64 = null,
-                    FirebaseTokens = new List<string> { firebaseToken },
+                    FirebaseTokens = new List<string> { employeeFirebaseToken },
                 };
 
             await NotificationClientService.SendNotificationAsync(notificationRequestViewModel);
@@ -1046,9 +984,9 @@
     {
         var restrictedStatuses = new List<Guid>
         {
-            Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"), // Re-Scheduled
-            Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"), // Replace with actual GUID for Re-Assigned
-            Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0") // Replace with actual GUID for Closed
+            Guid.Parse("71B3DEAF-4C39-4F49-BF57-43F2E9CE6CBA"),  //  Re-Scheduled
+            Guid.Parse("A5F6C587-BF08-4C4A-8AB2-548065DB9C71"),  //  Re-Assigned
+            Guid.Parse("B582E253-5B36-4AF5-A758-9004CA5E54E0")   //  Closed
         };
 
         return selectedTask.CreatedBy == UserGlobal.User.Id || !restrictedStatuses.Contains(newStatusId);
@@ -1150,4 +1088,80 @@
         CloseScheduledNotificationModal();
     }
 
+    private bool CanAddComments()
+    {
+        if (selectedTask == null || UserGlobal?.User == null)
+            return false;
+
+        // Allow comments if the user is either the task creator or the assigned employee
+        return selectedTask.CreatedBy == UserGlobal.User.Id || 
+               selectedTask.AssignedToEmployeeId == UserGlobal.User.Id;
+    }
+
+    private async Task AddComment()
+    {
+        if (string.IsNullOrWhiteSpace(noteText))
+            return;
+
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+            var model = new PostTaskNoteViewModel
+            {
+                    Note = noteText,
+
+                    FileBase64 = fileBytes != null ? Convert.ToBase64String(fileBytes) : null,
+
+                    FileName = selectedFileName,
+
+                    ContentType = fileContentType,
+
+                    EmployeeId = UserGlobal.User.Id,
+
+                    TaskId = selectedTask.Id
+            };
+            await TaskService.PostTaskNoteAsync(model, selectedTask.Title);
+            // Clear the form
+            noteText = string.Empty;
+            selectedFileName = string.Empty;
+            fileBytes = null;
+            fileContentType = string.Empty;
+
+            // Refresh comments
+            comments = await TaskService.GetTaskNotesAsync(selectedTask.Id.ToString());
+        }
+        catch (Exception ex)
+        {
+            noteErrorMessage = ex.Message;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnSearch(ChangeEventArgs e)
+    {
+        _searchString = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(_searchString))
+        {
+            filteredTasks = tasks;
+        }
+        else
+        {
+            filteredTasks = tasks.Where(x =>
+                (x.AssignedToEmployee?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.TypeEn?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.TypeAr?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.TypeTr?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.Title?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.CreatedbyName?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.StatusEn?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                (x.CreatedDate.ToString()?.Contains(_searchString, StringComparison.OrdinalIgnoreCase) ?? false)
+            ).ToList();
+        }
+        StateHasChanged();
+    }
 }

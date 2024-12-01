@@ -2097,17 +2097,17 @@
       ]
     },
     {
-      "library": "bootstrap@5.3.3",
-      "destination": "wwwroot/bootstrap/css/bootstrap/",
-      "files": [
-        "css/bootstrap.rtl.min.css"
-      ]
-    },
-    {
       "library": "jspdf@2.5.1",
       "destination": "wwwroot/jspdf/",
       "files": [
         "jspdf.umd.min.js"
+      ]
+    },
+    {
+      "library": "bootstrap@5.3.3",
+      "destination": "wwwroot/bootstrap/js/bootstrap/",
+      "files": [
+        "js/bootstrap.bundle.min.js"
       ]
     }
   ]

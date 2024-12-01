@@ -15,7 +15,9 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
         public string Title { get; set; } = null!;
 
         public string Description { get; set; } = null!;
+
         public int? CustomerId { get; set; }
+
         public int? InvoiceId { get; set; }
 
         public Guid AssignedToEmployee { get; set; }
@@ -24,8 +26,9 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
 
         public Guid? StatusId { get; set; }
 
-        public DateTime Deadline { get; set; }
-
-
+        public DateTime Deadline
+        {
+            get; set;
+        }
     }
 }
