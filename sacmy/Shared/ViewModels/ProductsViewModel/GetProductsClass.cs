@@ -15,6 +15,7 @@ namespace sacmy.Shared.ViewModels.ProductsViewModel
         public string PatternNumber { get; set; }
         public int BoxCount { get; set; }
         public int PieceCount { get; set; }
+        public string Price { get; set; }
         public string Image { get; set; }
     }
 }

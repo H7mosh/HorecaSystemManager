@@ -5,6 +5,7 @@ using sacmy.Server.DatabaseContext;
 using sacmy.Shared.ViewModels.CustomerViewModel;
 using System.Text;
 using Microsoft.Extensions.Configuration;
+using sacmy.Shared.ViewModels.Notification;
 
 namespace sacmy.Server.Controller
 {
@@ -12,12 +13,27 @@ namespace sacmy.Server.Controller
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private SafeenCompanyDbContext _context;
-        private readonly NotificationService _notificationService;
-        public CustomerController(SafeenCompanyDbContext context, IConfiguration configuration)
+        private readonly SafeenCompanyDbContext _context;
+        private readonly NotificationService _managerNotificationService;
+        private readonly NotificationService _customerNotificationService;
+        
+        private readonly ILogger<NotificationService> _notificationLogger;
+
+        public CustomerController(SafeenCompanyDbContext dbContext , IConfiguration configuration, ILogger<NotificationService> notificationLogger)
         {
-            _context = context;
-            _notificationService = new NotificationService(configuration, "SafinAhmedNotificationKeys"); // Use customer notifications key
+            _context = dbContext ;
+            
+            _notificationLogger = notificationLogger ;
+
+            _managerNotificationService = new NotificationService(
+                configuration ?? throw new ArgumentNullException(nameof(configuration)),
+                "SafinAhmedManagerNotificationKeys",
+                _notificationLogger);
+
+            _customerNotificationService = new NotificationService(
+                configuration,
+                "SafinAhmedNotificationKeys",
+                _notificationLogger);
         }
 
         [HttpGet]
@@ -47,25 +63,39 @@ namespace sacmy.Server.Controller
         [HttpPost("SendNotification/{customerName}")]
         public async Task<IActionResult> SendNotificationToCustomer(string customerName)
         {
-            // Retrieve the customer's FirebaseToken based on customerId
-            var customer = await _context.Customers
-                .Where(e => e.Customer1 == customerName && e.FirebaseToken != null)
-                .Select(e => e.FirebaseToken)
-                .FirstOrDefaultAsync();
-
-            if (string.IsNullOrEmpty(customer))
+            try
             {
-                return NotFound($"Customer with ID {customerName} not found or does not have a FirebaseToken.");
+                // Retrieve the customer's FirebaseToken based on customerName
+                var customer = await _context.Customers
+                    .Where(e => e.Customer1 == customerName && e.FirebaseToken != null)
+                    .Select(e => e.FirebaseToken)
+                    .FirstOrDefaultAsync();
+
+                if (string.IsNullOrEmpty(customer))
+                {
+                    return NotFound($"Customer with name {customerName} not found or does not have a FirebaseToken.");
+                }
+
+                // Create notification payload
+                var payload = new NotificationPayload
+                {
+                    Title = "تحديث على حالة ألطلبيه",
+                    Body = "طلبيتك في ألمخزن الان",
+                    Type = "order_status",
+                    Message = customerName,
+                    IsEmployeeNotification = false
+                };
+
+                var firebaseTokens = new List<string> { customer };
+                await _customerNotificationService.SendNotificationAsync(payload, firebaseTokens);
+
+                return Ok("Notification sent successfully.");
             }
-
-            // Call the notification service to send the notification
-            var title = "تحديث على حالة ألطلبيه";
-            var body = "طلبيتك في ألمخزن الان";
-            var firebaseTokens = new List<string> { customer };
-
-            await _notificationService.SendNotificationAsync(title, body, firebaseTokens, false);
-
-            return Ok("Notification sent successfully.");
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to send notification to customer: {ex.Message}");
+                return StatusCode(500, "An error occurred while sending the notification.");
+            }
         }
     }
 }

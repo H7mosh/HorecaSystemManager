@@ -256,14 +256,14 @@
             {
 
 
-                var request = new NotificationRequestViewModel
-                    {
-                        Title = "مهمه جديده",
-                        Body = CurrentUser.FirstName + " " + CurrentUser.LastName + "أضافة مهمه على أسمك يرجى متابعتها",
-                        FirebaseTokens = employees.Where(e => e.Id == selectedEmployeeId).Select(e => e.FirebaseToken.ToString()).ToList(),
-                        ImageBase64 = null,
-                        employeeNotification = true
-                    };
+                var request = new NotificationRequest
+                {
+                    Title = "مهمه جديده",
+                    Description = CurrentUser.FirstName + " " + CurrentUser.LastName + "أضافة مهمه على أسمك يرجى متابعتها",
+                    UserIdAndTokenList = employees.Where(e => e.Id == selectedEmployeeId)
+                                        .Select( e =>new UserIdAndToken {Id = e.Id.ToString() , FirebaseToken= e.FirebaseToken.ToString() }).ToList(),
+                    Type = "task",
+                };
 
                 await notificationClientService.SendNotificationAsync(request);
             }

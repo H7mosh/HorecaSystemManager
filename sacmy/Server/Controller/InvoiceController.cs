@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PdfSharp;
 using PdfSharp.Drawing;
@@ -18,12 +18,12 @@ namespace sacmy.Server.Controller
     public class InvoiceController : ControllerBase
     {
         private readonly SafeenCompanyDbContext _context;
-       
+        private readonly ILogger<InvoiceController> _logger;
 
-        public InvoiceController(SafeenCompanyDbContext context)
+        public InvoiceController(SafeenCompanyDbContext context , ILogger<InvoiceController> logger)
         {
             _context = context;
-            
+            _logger = logger;
         }
 
         [HttpGet]
@@ -132,198 +132,130 @@ namespace sacmy.Server.Controller
             return Ok(invoiceCounts);
         }
 
+
         [HttpGet("GetInvoiceItems")]
-        public async Task<ActionResult<IEnumerable<InvoiceViewModel>>> GetInvoiceItems(int InvoiceId)
+        public async Task<ActionResult<IEnumerable<InvoiceItemsViewModel>>> GetInvoiceItems(int InvoiceId)
         {
-            var invoiceItemsList = await _context.BuyFatoraItems.Where(e => e.Id == InvoiceId).Select(e => new InvoiceItemsViewModel
+            try
             {
-                Id=e.Id,
-                PatternCode = e.CodIqd,
-                Sku = e.Codd,
-                Name = e.Itemm,
-                Factory = e.Factoryy,
-                Price = e.Prise??0,
-                Quantity = int.Parse(e.Quantity.ToString()),
-                Total = e.Total??0,
-                Cost = e.PurchasePrise??0,
-                Batch = e.Wajba
-            }).ToListAsync();
+                // Step 1: Validate input
+                _logger.LogInformation($"Starting GetInvoiceItems for InvoiceId: {InvoiceId}");
 
-            return Ok(invoiceItemsList);
+                if (InvoiceId <= 0)
+                {
+                    _logger.LogWarning($"Invalid Invoice ID provided: {InvoiceId}");
+                    return BadRequest("Invalid Invoice ID.");
+                }
+
+                // Step 2: Check if invoice exists
+                var invoiceExists = await _context.BuyFatoraItems
+                    .AnyAsync(i => i.Id == InvoiceId);
+
+                if (!invoiceExists)
+                {
+                    _logger.LogWarning($"No items found for Invoice ID: {InvoiceId}");
+                    return NotFound($"No items found for Invoice ID: {InvoiceId}");
+                }
+
+                // Step 3: Get base invoice items
+                var baseItems = await _context.BuyFatoraItems
+                    .Where(i => i.Id == InvoiceId)
+                    .ToListAsync();
+
+                _logger.LogInformation($"Found {baseItems.Count} base items for Invoice ID: {InvoiceId}");
+
+                // Debug information for base items
+                var debugBaseItems = baseItems.Select(i => new
+                {
+                    i.Id,
+                    i.Codd,
+                    i.Itemm,
+                    i.Quantity,
+                    i.Prise
+                }).ToList();
+
+                _logger.LogDebug($"Base items debug info: {System.Text.Json.JsonSerializer.Serialize(debugBaseItems)}");
+
+                // Step 4: Get related area information
+                var itemSkus = baseItems.Select(i => i.Codd).Distinct().ToList();
+                
+                // Step 4: Get related area information
+                var areaInfos = new Dictionary<string, Item>();
+
+                if (itemSkus.Any())
+                {
+                    // Load area info one by one instead of using Contains
+                    foreach (var sku in itemSkus)
+                    {
+                        var areaInfo = await _context.Items
+                            .FirstOrDefaultAsync(a => a.Cod == sku);
+
+                        if (areaInfo != null && !areaInfos.ContainsKey(sku))
+                        {
+                            areaInfos.Add(sku, areaInfo);
+                        }
+                    }
+                }
+
+                _logger.LogInformation($"Found {areaInfos.Count} area infos for {itemSkus.Count} distinct SKUs");
+
+                _logger.LogInformation($"Found {areaInfos.Count} area infos for {itemSkus.Count} distinct SKUs");
+
+                // Debug information for area infos
+                var debugAreaInfos = areaInfos.Select(a => new
+                {
+                    Sku = a.Key,
+                    Area = a.Value.Mkaab,
+                    Weight = a.Value.Mkaab
+                }).ToList();
+
+                _logger.LogDebug($"Area infos debug info: {System.Text.Json.JsonSerializer.Serialize(debugAreaInfos)}");
+
+                // Step 5: Build view models
+                var result = new List<InvoiceItemsViewModel>();
+
+                foreach (var item in baseItems)
+                {
+                    areaInfos.TryGetValue(item.Codd, out var areaInfo);
+
+                    var viewModel = new InvoiceItemsViewModel
+                    {
+                        Id = item.Id,
+                        PatternCode = item.CodIqd,
+                        Sku = item.Codd,
+                        Name = item.Itemm,
+                        Factory = item.Factoryy,
+                        Price = item.Prise ?? 0,
+                        Quantity = (int)(item.Quantity ?? 0),
+                        BoxContain = item.BoxContain,
+                        Total = item.Total ?? 0,
+                        Cost = item.PurchasePrise ?? 0,
+                        Batch = item.Wajba,
+                        Area = areaInfo != null ? (double?)areaInfo.Mkaab ?? 0 : 0,
+                        Weight = areaInfo?.Mkaab ?? 0
+                    };
+
+                    result.Add(viewModel);
+                }
+
+                _logger.LogInformation($"Successfully built {result.Count} view models");
+
+                // Step 6: Final validation
+                if (!result.Any())
+                {
+                    _logger.LogWarning("No view models were created despite finding base items");
+                    return NotFound("No items could be processed for the given Invoice ID");
+                }
+
+                // Step 7: Return success response
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error processing GetInvoiceItems for InvoiceId: {InvoiceId}");
+                return StatusCode(500, "An error occurred while processing your request. Please check the logs for more details.");
+            }
         }
-
-        //[HttpPost("GenerateItemsPdf")]
-        //public async Task<IActionResult> GenerateItemsPdf([FromBody] InvoiceItemsPdfRequest request)
-        //{
-        //    using (var doc = new PdfDocument())
-        //    {
-        //        var page = doc.AddPage();
-        //        page.Size = PageSize.A4;
-        //        page.Orientation = PageOrientation.Landscape;
-
-        //        var gfx = XGraphics.FromPdfPage(page);
-
-        //        // Use the static fonts
-        //        var headerBlue = XColor.FromArgb(93, 158, 253);
-        //        var borderGrey = XColor.FromArgb(200, 200, 200);
-
-
-        //        const int startX = 50;  // Starting X position
-        //        const int marginTop = 50;
-        //        var pageWidth = page.Width.Point;
-
-        //        // Company header (bilingual)
-        //        gfx.DrawString("Company Name | اسم الشركة", TitleFont, XBrushes.Black, startX, marginTop);
-
-        //        // Report title (bilingual)
-        //        gfx.DrawString("Invoice Items Report | تقرير عناصر الفاتورة", ArabicBoldFont, XBrushes.Black,
-        //            new XRect(startX, marginTop - 10, pageWidth - 2 * startX, 30),
-        //            XStringFormats.Center);
-
-        //        // Header info section
-        //        var y = marginTop + 40;
-        //        var infoColumnWidth = (pageWidth - 2 * startX) / 2;
-
-        //        // Left column info (bilingual)
-        //        gfx.DrawString("Invoice Information | معلومات الفاتورة:", ArabicBoldFont, XBrushes.Black, startX, y);
-        //        y += 20;
-        //        gfx.DrawString($"Invoice ID | رقم الفاتورة: {request.InvoiceId}", ArabicRegularFont, XBrushes.Black, startX, y);
-        //        y += 15;
-        //        gfx.DrawString($"Customer | العميل: {request.CustomerName}", ArabicRegularFont, XBrushes.Black, startX, y);
-
-        //        // Right column info (bilingual)
-        //        var rightColumn = startX + infoColumnWidth;
-        //        y = marginTop + 40;
-        //        gfx.DrawString("Date Information | معلومات التاريخ:", ArabicBoldFont, XBrushes.Black, rightColumn, y);
-        //        y += 20;
-        //        gfx.DrawString($"Invoice Date | تاريخ الفاتورة: {request.InvoiceDate:dd/MM/yyyy}", ArabicRegularFont, XBrushes.Black, rightColumn, y);
-        //        y += 15;
-        //        gfx.DrawString($"Report Date | تاريخ التقرير: {request.GenerationDate:dd/MM/yyyy HH:mm}", ArabicRegularFont, XBrushes.Black, rightColumn, y);
-
-        //        // Table header
-        //        y += 40;
-        //        var startY = y;
-
-        //        // Define columns with bilingual headers and widths
-        //        var columns = new[]
-        //        {
-        //            ("Pattern Code | رمز النمط", 100),
-        //            ("SKU | رقم المنتج", 100),
-        //            ("Factory | المصنع", 120),
-        //            ("Price | السعر", 80),
-        //            ("Qty | الكمية", 60),
-        //            ("Total | المجموع", 80),
-        //            ("Check | تحقق", 60),
-        //            ("Notes | ملاحظات", 150)
-        //        };
-
-        //        // Draw table header
-        //        var headerHeight = 25;
-        //        var tableWidth = columns.Sum(c => c.Item2);
-        //        gfx.DrawRectangle(new XSolidBrush(headerBlue), startX, y, tableWidth, headerHeight);
-
-        //        // Draw header text
-        //        var currentX = startX;
-        //        foreach (var (title, width) in columns)
-        //        {
-        //            gfx.DrawString(title, ArabicBoldFont , XBrushes.White, currentX, y + 17);
-        //            currentX += width;
-        //        }
-
-        //        // Reset y position for data rows
-        //        y += headerHeight;
-
-        //        // Draw rows
-        //        var rowHeight = 20;
-        //        bool isAlternate = false;
-
-        //        foreach (var item in request.Items)
-        //        {
-        //            // Check for new page
-        //            if (y > page.Height.Point - 50)
-        //            {
-        //                page = doc.AddPage();
-        //                page.Orientation = PageOrientation.Landscape;
-        //                gfx = XGraphics.FromPdfPage(page);
-        //                y = marginTop;
-        //            }
-
-        //            // Alternate row background
-        //            if (isAlternate)
-        //            {
-        //                gfx.DrawRectangle(new XSolidBrush(XColor.FromArgb(244, 249, 255)),
-        //                    startX, y, tableWidth, rowHeight);
-        //            }
-
-        //            var xPos = startX;
-
-        //            // Draw row data
-        //            DrawCell(gfx, item.PatternCode, ArabicRegularFont, xPos, y + 15); xPos += columns[0].Item2;
-        //            DrawCell(gfx, item.Sku, ArabicRegularFont, xPos, y + 15); xPos += columns[1].Item2;
-        //            DrawCell(gfx, item.Factory, ArabicRegularFont, xPos, y + 15); xPos += columns[2].Item2;
-        //            DrawCell(gfx, item.Price.ToString("C2"), ArabicRegularFont, xPos, y + 15); xPos += columns[3].Item2;
-        //            DrawCell(gfx, item.Quantity.ToString(), ArabicRegularFont, xPos, y + 15); xPos += columns[4].Item2;
-        //            DrawCell(gfx, item.Total.ToString("C2"), ArabicRegularFont, xPos, y + 15); xPos += columns[5].Item2;
-
-        //            // Checkbox
-        //            var checkboxSize = 10;
-        //            var checkboxY = y + 5;
-        //            gfx.DrawRectangle(XPens.Black, xPos + 25, checkboxY, checkboxSize, checkboxSize);
-        //            if (item.IsChecked)
-        //            {
-        //                gfx.DrawString("✓", ArabicBoldFont, XBrushes.Black, xPos + 25, y + 15);
-        //            }
-        //            xPos += columns[6].Item2;
-
-        //            // Notes
-        //            DrawCell(gfx, item.Notes, ArabicRegularFont, xPos, y + 15);
-
-        //            y += rowHeight;
-        //            isAlternate = !isAlternate;
-        //        }
-
-        //        // Table border
-        //        gfx.DrawRectangle(XPens.Gray, startX, startY, tableWidth, y - startY);
-
-        //        // Column dividers
-        //        var verticalX = startX;
-        //        foreach (var (_, width) in columns)
-        //        {
-        //            verticalX += width;
-        //            gfx.DrawLine(XPens.Gray, verticalX, startY, verticalX, y);
-        //        }
-
-        //        // Summary section (bilingual)
-        //        y += 20;
-        //        var totalItems = request.Items.Count;
-        //        var totalQuantity = request.Items.Sum(i => i.Quantity);
-        //        var totalAmount = request.Items.Sum(i => i.Total);
-
-        //        gfx.DrawString("Summary | الملخص:", ArabicBoldFont, XBrushes.Black, startX, y);
-        //        y += 20;
-        //        gfx.DrawString($"Total Items | إجمالي العناصر: {totalItems}", ArabicRegularFont, XBrushes.Black, startX, y);
-        //        gfx.DrawString($"Total Quantity | الكمية الإجمالية: {totalQuantity}", ArabicRegularFont, XBrushes.Black, startX + 200, y);
-        //        gfx.DrawString($"Total Amount | المبلغ الإجمالي: {totalAmount:C2}", ArabicRegularFont, XBrushes.Black, startX + 400, y);
-
-        //        using (var ms = new MemoryStream())
-        //        {
-        //            doc.Save(ms);
-        //            return File(ms.ToArray(), "application/pdf", $"invoice_{request.InvoiceId}_items.pdf");
-        //        }
-        //    }
-        //}
-
-        //private void DrawCell(XGraphics gfx, string text, XFont font, double x, double y, double maxWidth = 0)
-        //{
-        //    if (string.IsNullOrEmpty(text)) return;
-
-        //    if (maxWidth > 0 && text.Length > 20)
-        //    {
-        //        text = text.Substring(0, 17) + "...";
-        //    }
-
-        //    gfx.DrawString(text, font, XBrushes.Black, x, y);
-        //}
 
         [HttpGet("GetInvoiceTrack")]
         public async Task<IActionResult> GetCustomerTrack([FromQuery] int invoiceId)
@@ -768,26 +700,87 @@ namespace sacmy.Server.Controller
             }
         }
 
-
-        /*        [HttpPost("RemoveInvoice")]
-                public async Task<IActionResult> RemoveInvoice([FromBody]int InvoiceId)
+        [HttpPost("GetMultipleInvoicesItems")]
+        public async Task<ActionResult<IEnumerable<InvoiceItemsViewModel>>> GetMultipleInvoicesItems([FromBody] List<int> invoiceIds)
+        {
+            try
+            {
+                // Step 1: Validate input
+                if (invoiceIds == null || !invoiceIds.Any())
                 {
-                    try
-                    {
-                        BuyFatora buyFatora = await _context.BuyFatoras.FirstOrDefaultAsync(b => b.Id == InvoiceId);
-                        List<BuyFatoraItem> buyFatoraItems = await _context.BuyFatoraItems.Where(item => item.Id == InvoiceId).ToListAsync();
+                    return BadRequest("Please provide at least one Invoice ID.");
+                }
+                if (invoiceIds.Any(id => id <= 0))
+                {
+                    return BadRequest("Invalid Invoice ID detected. All IDs must be greater than 0.");
+                }
 
-                        _context.BuyFatoras.Remove(buyFatora);
-                        _context.BuyFatoraItems.RemoveRange(buyFatoraItems);
-                        await _context.SaveChangesAsync();
-                        return Ok();
-                    }
-                    catch (Exception ex)
-                    {
-                        return BadRequest(ex.ToString());
-                    }
+                // Step 2: Get base items using individual queries
+                var baseItems = new List<BuyFatoraItem>();
+                foreach (var invoiceId in invoiceIds)
+                {
+                    var items = await _context.BuyFatoraItems
+                        .Where(i => i.Id == invoiceId)
+                        .AsNoTracking()
+                        .ToListAsync();
+                    baseItems.AddRange(items);
+                }
 
-                }*/
+                if (!baseItems.Any())
+                {
+                    return NotFound($"No items found for the provided Invoice IDs: {string.Join(", ", invoiceIds)}");
+                }
+
+                // Step 3: Get unique SKUs
+                var itemSkus = baseItems.Select(i => i.Codd).Distinct().ToList();
+
+                // Step 4: Get area information
+                var areaInfos = new Dictionary<string, Item>();
+                foreach (var sku in itemSkus)
+                {
+                    var areaInfo = await _context.Items
+                        .AsNoTracking()
+                        .FirstOrDefaultAsync(a => a.Cod == sku);
+
+                    if (areaInfo != null && !areaInfos.ContainsKey(sku))
+                    {
+                        areaInfos.Add(sku, areaInfo);
+                    }
+                }
+
+                // Step 5: Build the result
+                var result = baseItems.Select(item =>
+                {
+                    areaInfos.TryGetValue(item.Codd, out var areaInfo);
+
+                    return new InvoiceItemsViewModel
+                    {
+                        Id = item.Id,
+                        PatternCode = item.CodIqd,
+                        Sku = item.Codd,
+                        Name = item.Itemm,
+                        Factory = item.Factoryy,
+                        Price = item.Prise ?? 0,
+                        Quantity = (int)(item.Quantity ?? 0),
+                        BoxContain = item.BoxContain,
+                        Total = item.Total ?? 0,
+                        Cost = item.PurchasePrise ?? 0,
+                        Batch = item.Wajba,
+                        Area = areaInfo != null ? (double?)areaInfo.Mkaab ?? 0 : 0,
+                        Weight = areaInfo?.Mkaab ?? 0
+                    };
+                }).ToList();
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetMultipleInvoicesItems for IDs: {InvoiceIds}",
+                    string.Join(", ", invoiceIds));
+                return StatusCode(500, "An error occurred while processing your request.");
+            }
+        }
+
 
     }
 

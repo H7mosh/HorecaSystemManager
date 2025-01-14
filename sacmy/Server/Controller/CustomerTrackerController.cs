@@ -2,15 +2,10 @@
 using DocumentFormat.OpenXml.Wordprocessing;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using sacmy.Client.Pages.Invoice;
-using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
-using sacmy.Shared.ViewModel.HorecaViewModel;
 using sacmy.Shared.ViewModels.CustomerTracker;
 using sacmy.Shared.ViewModels.TrackViewModel;
-using System.Linq;
-using System.Threading.Tasks;
-using static System.Net.WebRequestMethods;
+using sacmy.Server.DatabaseContext;
 
 namespace sacmy.Server.Controller
 {

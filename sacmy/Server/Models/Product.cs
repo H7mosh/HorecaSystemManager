@@ -27,7 +27,7 @@ public partial class Product
 
     public double Price { get; set; }
 
-    public string? Points { get; set; }
+    public int? Points { get; set; }
 
     public int? Quantity { get; set; }
 

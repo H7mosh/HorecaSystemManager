@@ -313,7 +313,7 @@
     private List<InvoiceViewModel> InvoiceList = new List<InvoiceViewModel>();
     private List<InvoiceViewModel> InvoiceData = new List<InvoiceViewModel>();
     private string _searchInvoiceString;
-    private bool _showUncompletedInvoice;
+    private bool _showUncompletedInvoice = true;
     private bool showUncompletedInvoice
     {
         get => _showUncompletedInvoice;
@@ -331,7 +331,7 @@
     {
         isLoading = true;
         InvoiceData = await httpClient.GetFromJsonAsync<List<InvoiceViewModel>>("api/Invoice");
-        InvoiceList = InvoiceData;
+        InvoiceList = InvoiceData.Where(e => e.IsCompleted == true).ToList();
         isLoading = false;
     }
 
@@ -417,16 +417,18 @@
     {
         var parameters = new DialogParameters
         {
-            { "Invoice", invoice }
+            { 
+                "Invoice", invoice 
+            }
         };
 
         var options = new DialogOptions
-            {
+        {
                 CloseButton = true,
                 MaxWidth = MaxWidth.Medium,
                 FullWidth = true,
                 DisableBackdropClick = true
-            };
+        };
 
         var dialog = await DialogService.ShowAsync<InvoiceItemDialogg>("Invoice Items", parameters, options);
         await dialog.Result;

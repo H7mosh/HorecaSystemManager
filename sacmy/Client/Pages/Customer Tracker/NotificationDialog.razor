@@ -1,7 +1,9 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.Notification
 @inject NotificationClientService notificationClientService
 @inject HttpClient Http
+@inject UserGlobalClass CurrentUser
 
 <MudDialog>
     <DialogContent>
@@ -10,7 +12,7 @@
 
         <MudFileUpload T="IBrowserFile" OnFilesChanged="HandleFileUpload" Accept=".png, .jpg">
             <ButtonTemplate>
-                <MudButton HtmlTag="label"
+             <MudButton HtmlTag="label"
                            Variant="Variant.Filled"
                            Color="Color.Primary"
                            StartIcon="@Icons.Material.Filled.CloudUpload"
@@ -41,7 +43,7 @@
 
 @code {
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
-    [Parameter] public List<string> SelectedCustomers { get; set; }
+    [Parameter] public List<UserIdAndToken> SelectedCustomers { get; set; }
 
     private string Title { get; set; }
     private string Description { get; set; }
@@ -70,16 +72,17 @@
         }
 
         ErrorMessage = string.Empty;
+        
 
         try
         {
-            var request = new NotificationRequestViewModel
+            var request = new NotificationRequest
                 {
-                    Title = Title,
-                    Body = Description,
-                    FirebaseTokens = SelectedCustomers,
-                    ImageBase64 = FileContent != null ? Convert.ToBase64String(FileContent) : null,
-                    employeeNotification = false
+                    Title = "مهمه جديده",
+                    Description = CurrentUser.User.FirstName + " " + CurrentUser.User.LastName + "  أضافة مهمه على أسمك يرجى متابعتها  ",
+                    UserIdAndTokenList = SelectedCustomers,
+                    Message = null,
+                    Type = "task"
                 };
 
             await notificationClientService.SendNotificationAsync(request);

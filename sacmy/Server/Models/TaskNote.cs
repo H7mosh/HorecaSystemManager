@@ -9,7 +9,7 @@ public partial class TaskNote
 
     public string Note { get; set; } = null!;
 
-    public string? FileLink { get; set; }
+    public string? FilelInk { get; set; }
 
     public Guid CreatedBy { get; set; }
 
@@ -17,9 +17,9 @@ public partial class TaskNote
 
     public DateTime? DeletedDate { get; set; }
 
-    public Guid TaskId { get; set; }
+    public Guid? TaskId { get; set; }
 
     public virtual Employee CreatedByNavigation { get; set; } = null!;
 
-    public virtual Task Task { get; set; } = null!;
+    public virtual Task? Task { get; set; }
 }

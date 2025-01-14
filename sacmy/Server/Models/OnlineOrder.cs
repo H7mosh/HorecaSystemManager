@@ -38,4 +38,6 @@ public partial class OnlineOrder
     public virtual Customer? Customer { get; set; }
 
     public virtual ICollection<OnlineOrderItem> OnlineOrderItems { get; set; } = new List<OnlineOrderItem>();
+
+    public virtual ICollection<OrderTracking> OrderTrackings { get; set; } = new List<OrderTracking>();
 }

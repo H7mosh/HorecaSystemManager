@@ -484,7 +484,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @onclick="CloseRemindModal">@Localizer["Close"]</button>
-                    <button type="button" class="btn btn-primary" @onclick="() => SendRemind(selectedTask.EmployeeFirebaseToken)" disabled="@isLoading">
+                    <button type="button" class="btn btn-primary" @onclick="() => SendRemind(selectedTask.EmployeeFirebaseToken , selectedTask.EmployeeId)" disabled="@isLoading">
                         @if (isLoading)
                         {
                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -663,9 +663,9 @@
     private string _searchString;
 
     private bool showScheduledNotificationModal = false;
-    private string notificationTitle = "Reminder"; // Default value
+    private string notificationTitle = "Reminder"; 
     private string notificationBody;
-    private DateTime scheduleTime = DateTime.Now.AddHours(1); // Default to 1 hour from now
+    private DateTime scheduleTime = DateTime.Now.AddHours(1); 
     private string firebaseToken;
     private bool isSendingNotification = false;
 
@@ -955,23 +955,30 @@
         JSRuntime.InvokeVoidAsync("closeModal", "remindModal");
     }
 
-    private async Task SendRemind(string employeeFirebaseToken)
+    private async Task SendRemind(string employeeFirebaseToken , string employeeId)
     {
         if (!string.IsNullOrWhiteSpace(remindMessage))
         {
             isLoading = true;
             StateHasChanged();
 
-            var notificationRequestViewModel = new NotificationRequestViewModel
-                {
-                    Title = "Reminder",
-                    Body = remindMessage,
-                    employeeNotification = true,
-                    ImageBase64 = null,
-                    FirebaseTokens = new List<string> { employeeFirebaseToken },
-                };
+            List<UserIdAndToken> userIdAndTokenList =new List<UserIdAndToken>();
 
-            await NotificationClientService.SendNotificationAsync(notificationRequestViewModel);
+            UserIdAndToken userIdAndToken =new UserIdAndToken { Id = employeeId , FirebaseToken = employeeFirebaseToken};
+
+            userIdAndTokenList.Add(userIdAndToken);
+
+            var request = new NotificationRequest
+            {
+                Title = "Reminder",
+                Description = remindMessage,
+                UserIdAndTokenList = userIdAndTokenList,
+                Type = "employee",
+                Message="",
+                ScheduleTime = DateTime.Now
+            };
+
+            await NotificationClientService.SendNotificationAsync(request);
 
             isLoading = false;
             Snackbar.Add("Reminder sent successfully!", Severity.Success);
@@ -1075,16 +1082,24 @@
 
     private async Task SendScheduledNotification()
     {
-        var request = new ScheduledNotificationRequestViewModel
+        List<UserIdAndToken> userIdAndTokenList = new List<UserIdAndToken>();
+
+        UserIdAndToken userIdAndToken = new UserIdAndToken { Id = UserGlobal.User.Id.ToString(), FirebaseToken = UserGlobal.User.FirebaseToken };
+
+        userIdAndTokenList.Add(userIdAndToken);
+
+        var request = new NotificationRequest
             {
                 Title = notificationTitle,
-                Body = notificationBody,
-                FirebaseTokens = new List<string> { UserGlobal.User.FirebaseToken },
-                employeeNotification = true,
+                Description = notificationBody,
+                UserIdAndTokenList = userIdAndTokenList,
+                Type = "employee",
+                Message = "",
                 ScheduleTime = scheduleTime
             };
 
-        await NotificationClientService.ScheduleNotificationAsync(request);
+        await NotificationClientService.SendNotificationAsync(request);
+
         CloseScheduledNotificationModal();
     }
 

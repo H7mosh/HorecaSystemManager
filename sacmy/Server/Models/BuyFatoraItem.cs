@@ -15,9 +15,6 @@ public partial class BuyFatoraItem
 
     public string? Factoryy { get; set; }
 
-    /// <summary>
-    /// Qtt_Remaining
-    /// </summary>
     public double? Quantity { get; set; }
 
     public float? Weznn { get; set; }

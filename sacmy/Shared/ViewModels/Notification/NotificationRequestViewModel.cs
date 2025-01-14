@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace sacmy.Shared.ViewModels.Notification
 {
-    public class NotificationRequestViewModel
+    public class NotificationRequest
     {
         public string Title { get; set; }
-        public string Body { get; set; }
-        public List<string> FirebaseTokens { get; set; }
-        public string? ImageBase64 { get; set; }
-        public bool employeeNotification { get; set; }
+        public string Description { get; set; }
+        public string Type { get; set; }
+        public string Message { get; set; }
+        public List<UserIdAndToken> UserIdAndTokenList { get; set; }
+        public DateTime? ScheduleTime { get; set; }
     }
 }

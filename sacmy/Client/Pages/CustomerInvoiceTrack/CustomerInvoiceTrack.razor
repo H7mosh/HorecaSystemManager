@@ -469,54 +469,7 @@
 
     private void SelectedInvoiceItemsChanged(HashSet<InvoiceViewModel> items) { }
 
-    // private Func<CustomerHiddenViewModel, bool> _quickFilter => x =>
-    // {
-    //     Console.WriteLine($"Filtering by search: {_searchString}");
-    //     if (x == null)
-    //     {
-    //         Console.WriteLine("Item is null");
-    //         return false;
-    //     }
-    //     Console.WriteLine($"Item type: {x.GetType().Name}");
-
-    //     if (string.IsNullOrWhiteSpace(_searchString)) return true;
-
-    //     if (!string.IsNullOrEmpty(x.Name) && x.Name.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-    //     {
-    //         Console.WriteLine($"Match found for Name: {x.Name}");
-    //         return true;
-    //     }
-    //     if (!string.IsNullOrEmpty(x.Type) && x.Type.Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-    //     {
-    //         Console.WriteLine($"Match found for Type: {x.Type}");
-    //         return true;
-    //     }
-    //     if (x.LastDate.HasValue && x.LastDate.Value.ToString("yyyy-MM-dd").Contains(_searchString, StringComparison.OrdinalIgnoreCase))
-    //     {
-    //         Console.WriteLine($"Match found for LastDate: {x.LastDate}");
-    //         return true;
-    //     }
-    //     return false;
-    // };
-
-    // private Func<DeptCustomerViewModel, bool> _quickFilterDebtor => x =>
-    // {
-    //     if (string.IsNullOrWhiteSpace(_searchDebtorString)) return true;
-    //     return (
-    //         !string.IsNullOrEmpty(x.CustomerName) && x.CustomerName.Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase))
-    //         || (x.TotalTransTotalN.ToString().Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase))
-    //         || (!string.IsNullOrWhiteSpace(x.HasRecentReceipt) && x.HasRecentReceipt.Contains(_searchDebtorString, StringComparison.OrdinalIgnoreCase));
-    // };
-
-    // private Func<InvoiceViewModel, bool> _quickFilterInvoice => x =>
-    // {
-    //     if (string.IsNullOrWhiteSpace(_searchInvoiceString)) return true;
-    //     return (!string.IsNullOrEmpty(x.CustomerName) && x.CustomerName.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-    //         || (!string.IsNullOrEmpty(x.CustomerType) && x.CustomerType.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-    //         || (x.Id.ToString().Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-    //         || (!string.IsNullOrWhiteSpace(x.InvoiceBranch) && x.InvoiceBranch.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase))
-    //         || (!string.IsNullOrWhiteSpace(x.TaskStatus) && x.TaskStatus.Contains(_searchInvoiceString, StringComparison.OrdinalIgnoreCase));
-    // };
+   
 
 
 } 
