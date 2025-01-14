@@ -1,12 +1,16 @@
 ﻿@page "/invoice-items-dialog"
 @inject IJSRuntime JSRuntime
+@using sacmy.Client.Services
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.InvoiceViewModel
+@using sacmy.Shared.ViewModels.Notification
 @namespace sacmy.Client.Pages.Components.Dialogs
 @inject ISnackbar Snackbar
 @inject UserGlobalClass UserGlobal
 @inject HttpClient Http
 @inject IDialogService DialogService
+@inject OrderService OrderService
+@inject NotificationClientService notificationClientService
 
 <MudDialog>
     <TitleContent>
@@ -31,7 +35,7 @@
                     {
                         @* <button class="btn btn-warning mr-2" @onclick="SendNotification">Send Notification</button> *@
                     }
-                    <button class="btn btn-primary" @onclick="GeneratePdfReport" disabled="@(IsNotificationSent)">
+                    <button class="btn btn-primary" @onclick="GeneratePdfReport" disabled="@(Invoice.IsPdfGenerated)">
                         <i class="bi bi-file-pdf-fill"></i> Export to PDF
                     </button>
                 </div>
@@ -91,13 +95,25 @@
     MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
-    public InvoiceViewModel Invoice { get; set; }
+    public BuyFatoraViewModel Invoice { get; set; }
+
+    [Parameter]
+    public string OrderId { get; set; }
+
+    [Parameter]
+    public string CustomerId { get; set; }
+
+    [Parameter]
+    public string CustomerFirebaseNotificaionKey { get; set; }
+
+    [Parameter]
+    public EventCallback OnSuccessfulPdfGeneration { get; set; }
 
     private bool IsLoading = true;
-    private bool IsNotificationSent = false;
+    private bool IsNotificationSent ;
     private List<InvoiceItemsViewModel> InvoiceItems { get; set; }
     private string CarName { get; set; }
-    
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -138,7 +154,7 @@
     {
         try
         {
-            var response = await Http.PostAsync($"api/Customer/SendNotification/{Invoice.CustomerName}", null);
+            var response = await Http.PostAsync($"api/Customer/SendNotification/{Invoice.Customer}", null);
 
             if (response.IsSuccessStatusCode)
             {
@@ -159,7 +175,6 @@
 
     private async Task GeneratePdfReport()
     {
-        
         var dialogParameters = new DialogParameters();
         var options = new DialogOptions
             {
@@ -171,6 +186,22 @@
 
         var dialog = DialogService.Show<UserPasswordAndCarNumberDialog>("Required Information", dialogParameters, options);
         var result = await dialog.Result;
+        
+        var notificationRequest = new NotificationRequest
+            {
+                Title = "order status changed",
+                Description = "there's new updated on you order",
+                Type = "tracking",
+                Message = OrderId.ToString(),
+                UserIdAndTokenList = new List<UserIdAndToken>
+                {
+                    new UserIdAndToken
+                    {
+                        Id = CustomerId.ToString(),
+                        FirebaseToken = CustomerFirebaseNotificaionKey,
+                    }
+                },
+            };
 
         if (!result.Canceled && result.Data != null)
         {
@@ -178,12 +209,13 @@
 
             try
             {
+                // Step 1: Generate PDF Report
                 await JSRuntime.InvokeVoidAsync("generateInvoiceItemsPDF",
                     new
                     {
                         id = Invoice.Id,
-                        customerName = Invoice.CustomerName,
-                        dateTime = Invoice.DateTime,
+                        customerName = Invoice.Customer,
+                        dateTime = Invoice.Date,
                         carNumber = carNumber,
                         createdBy = $"{UserGlobal.User.FirstName} {UserGlobal.User.LastName}"
                     },
@@ -199,17 +231,35 @@
                         notes = item.Notes
                     }).ToList());
 
-                // Mark the invoice as report generated
-                //await Http.PutAsync($"api/Invoice/MarkReportGenerated/{Invoice.Id}", null);
-                
                 Snackbar.Add("Report generated successfully", Severity.Success);
 
-                StateHasChanged();
+                
+                // Step 2: Update Order Stage
+                await OrderService.UpdateOrderStageAsync(int.Parse(OrderId), Guid.Parse("3EA54A69-1168-4641-B8CE-AC6E40D0556D"), Invoice.Id, Invoice.IsItTheMainOne);
+
+                if (Invoice.IsItTheMainOne)
+                {
+                    
+
+                    await notificationClientService.SendNotificationAsync(notificationRequest);
+
+                    Snackbar.Add("Order stage updated successfully", Severity.Success);
+
+                }
+
+
+                // Step 3: Notify parent component to refresh data
+                await OnSuccessfulPdfGeneration.InvokeAsync();
+
+                // Step 4: Close the Dialog
+                MudDialog.Close();
+
+                
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error generating PDF: {ex.Message}");
-                Snackbar.Add("Error generating PDF", Severity.Error);
+                Console.WriteLine($"Error generating PDF or updating order stage: {ex.Message}");
+                Snackbar.Add("An error occurred while generating the report or updating order stage.", Severity.Error);
             }
         }
     }

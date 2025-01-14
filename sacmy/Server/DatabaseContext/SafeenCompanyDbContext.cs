@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using sacmy.Server.Models;
-
+using sacmy.Server.Models; 
 namespace sacmy.Server.DatabaseContext;
 
 public partial class SafeenCompanyDbContext : DbContext
@@ -150,6 +149,18 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<IxraciName> IxraciNames { get; set; }
 
+    public virtual DbSet<KpItemsProd> KpItemsProds { get; set; }
+
+    public virtual DbSet<KpProductFirstImage> KpProductFirstImages { get; set; }
+
+    public virtual DbSet<KpPurchase> KpPurchases { get; set; }
+
+    public virtual DbSet<KpReturn> KpReturns { get; set; }
+
+    public virtual DbSet<KpSale> KpSales { get; set; }
+
+    public virtual DbSet<KpStore> KpStores { get; set; }
+
     public virtual DbSet<Leveel> Leveels { get; set; }
 
     public virtual DbSet<MandobName> MandobNames { get; set; }
@@ -193,6 +204,14 @@ public partial class SafeenCompanyDbContext : DbContext
     public virtual DbSet<OrderInvoice> OrderInvoices { get; set; }
 
     public virtual DbSet<OrderInvoiceItem> OrderInvoiceItems { get; set; }
+
+    public virtual DbSet<OrderStage> OrderStages { get; set; }
+
+    public virtual DbSet<OrderTracking> OrderTrackings { get; set; }
+
+    public DbSet<OrderTrackingAttachment> OrderTrackingAttachments { get; set; }
+
+    public DbSet<OrderTrackingInvoice> OrderTrackingInvoices{get; set;}
 
     public virtual DbSet<OtherBrand> OtherBrands { get; set; }
 
@@ -462,7 +481,7 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<ZzOrderOnlinePrint> ZzOrderOnlinePrints { get; set; }
 
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.UseCollation("Arabic_CI_AS");
@@ -782,6 +801,50 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Uuser)
                 .HasMaxLength(50)
                 .HasColumnName("uuser");
+            entity.Property(e => e.Notify)
+                .HasColumnName("Notify")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.IsDeleted)
+                .HasColumnName("IsDeleted")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.Hidee)
+                .HasColumnName("hidee")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.RemindAfter)
+                .HasColumnName("RemindAfter")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.NotifyMe)
+                .HasColumnName("NotifyMe")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.EditedUser)
+                .HasMaxLength(50)
+                .HasColumnName("Edited_User");
+
+            entity.Property(e => e.EditedDate)
+                .HasColumnType("datetime")
+                .HasColumnName("Edited_Date");
+
+            entity.Property(e => e.PaymentDate)
+                .HasColumnType("datetime")
+                .HasColumnName("Payment_Date");
+
+            entity.Property(e => e.NoteOther)
+                .HasColumnType("ntext")
+                .HasColumnName("noteOther");
+
+            entity.Property(e => e.Sender)
+                .HasMaxLength(550)
+                .HasColumnName("Sender");
+
+            entity.Property(e => e.Bankinfo)
+                .HasColumnType("ntext")
+                .HasColumnName("Bankinfo");
+
         });
 
         modelBuilder.Entity<BuyFatoraItem>(entity =>
@@ -2153,6 +2216,111 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasColumnName("uuser");
         });
 
+        modelBuilder.Entity<KpItemsProd>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("KP_Items_Prod");
+
+            entity.Property(e => e.BrandAr).HasMaxLength(80);
+            entity.Property(e => e.BrandEn).HasMaxLength(80);
+            entity.Property(e => e.BrandKr).HasMaxLength(80);
+            entity.Property(e => e.BrandTr).HasMaxLength(80);
+            entity.Property(e => e.CatalogAr).HasMaxLength(60);
+            entity.Property(e => e.CatalogEn).HasMaxLength(60);
+            entity.Property(e => e.CatalogKr).HasMaxLength(60);
+            entity.Property(e => e.CatalogTr).HasMaxLength(60);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Ean).HasMaxLength(50);
+            entity.Property(e => e.InnerType).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(80);
+            entity.Property(e => e.OuterType).HasMaxLength(50);
+            entity.Property(e => e.PatternNumber).HasMaxLength(50);
+            entity.Property(e => e.Sku).HasMaxLength(50);
+            entity.Property(e => e.StoreBranch)
+                .HasMaxLength(50)
+                .HasColumnName("Store_Branch");
+            entity.Property(e => e.StoreName).HasMaxLength(50);
+            entity.Property(e => e.Upc).HasMaxLength(50);
+        });
+
+        modelBuilder.Entity<KpProductFirstImage>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("KP_Product_First_Images");
+        });
+
+        modelBuilder.Entity<KpPurchase>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("KP_Purchase");
+
+            entity.Property(e => e.Codd)
+                .HasMaxLength(50)
+                .HasColumnName("codd");
+            entity.Property(e => e.QttyPurch).HasColumnName("Qtty_Purch");
+            entity.Property(e => e.Store).HasMaxLength(25);
+        });
+
+        modelBuilder.Entity<KpReturn>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("KP_Return");
+
+            entity.Property(e => e.Codd)
+                .HasMaxLength(50)
+                .HasColumnName("codd");
+            entity.Property(e => e.QttyReturn).HasColumnName("Qtty_Return");
+            entity.Property(e => e.Store).HasMaxLength(25);
+        });
+
+        modelBuilder.Entity<KpSale>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("KP_Sales");
+
+            entity.Property(e => e.Codd)
+                .HasMaxLength(50)
+                .HasColumnName("codd");
+            entity.Property(e => e.QttySales).HasColumnName("Qtty_Sales");
+            entity.Property(e => e.Store).HasMaxLength(25);
+        });
+
+        modelBuilder.Entity<KpStore>(entity =>
+        {
+            entity
+                .HasNoKey()
+                .ToView("KP_Store");
+
+            entity.Property(e => e.BrandAr).HasMaxLength(80);
+            entity.Property(e => e.BrandEn).HasMaxLength(80);
+            entity.Property(e => e.BrandKr).HasMaxLength(80);
+            entity.Property(e => e.BrandTr).HasMaxLength(80);
+            entity.Property(e => e.CatalogAr).HasMaxLength(60);
+            entity.Property(e => e.CatalogEn).HasMaxLength(60);
+            entity.Property(e => e.CatalogKr).HasMaxLength(60);
+            entity.Property(e => e.CatalogTr).HasMaxLength(60);
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+            entity.Property(e => e.Ean).HasMaxLength(50);
+            entity.Property(e => e.InnerType).HasMaxLength(50);
+            entity.Property(e => e.Name).HasMaxLength(80);
+            entity.Property(e => e.OuterType).HasMaxLength(50);
+            entity.Property(e => e.PatternNumber).HasMaxLength(50);
+            entity.Property(e => e.QttyPurch).HasColumnName("Qtty_Purch");
+            entity.Property(e => e.QttyReturn).HasColumnName("Qtty_Return");
+            entity.Property(e => e.QttySales).HasColumnName("Qtty_Sales");
+            entity.Property(e => e.Sku).HasMaxLength(50);
+            //entity.Property(e => e.Store).HasMaxLength(25);
+            entity.Property(e => e.StoreBranch)
+                .HasMaxLength(50)
+                .HasColumnName("Store_Branch");
+            entity.Property(e => e.Upc).HasMaxLength(50);
+        });
+
         modelBuilder.Entity<Leveel>(entity =>
         {
             entity
@@ -2560,7 +2728,7 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.CreatedDate).HasColumnType("datetime");
             entity.Property(e => e.DeletedDate).HasColumnType("datetime");
             entity.Property(e => e.Description).HasMaxLength(255);
-            entity.Property(e => e.Titel).HasMaxLength(255);
+            entity.Property(e => e.Title).HasMaxLength(255);
             entity.Property(e => e.Type).HasMaxLength(150);
             entity.Property(e => e.UpdatedDate).HasColumnType("datetime");
         });
@@ -2793,6 +2961,81 @@ public partial class SafeenCompanyDbContext : DbContext
             entity.Property(e => e.Typee)
                 .HasMaxLength(50)
                 .HasColumnName("typee");
+        });
+
+        modelBuilder.Entity<OrderStage>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__OrderSta__3214EC079D9388D9");
+
+            entity.ToTable("OrderStage");
+
+            entity.Property(e => e.Id).HasDefaultValueSql("(newid())");
+            entity.Property(e => e.DescriptionAr).HasMaxLength(355);
+            entity.Property(e => e.DescriptionEn).HasMaxLength(355);
+            entity.Property(e => e.DescriptionKr).HasMaxLength(355);
+            entity.Property(e => e.DescriptionTr).HasMaxLength(355);
+            entity.Property(e => e.StageNameAr).HasMaxLength(100);
+            entity.Property(e => e.StageNameEn).HasMaxLength(100);
+            entity.Property(e => e.StageNameKr).HasMaxLength(100);
+            entity.Property(e => e.StageNameTr).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<OrderTracking>(entity =>
+        {
+            entity.ToTable("OrderTracking");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderTrackings)
+                .HasForeignKey(d => d.OrderId)
+                .HasConstraintName("FK_OrderTracking_Online_Order");
+
+            entity.HasOne(d => d.Stage).WithMany(p => p.OrderTrackings)
+                .HasForeignKey(d => d.StageId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK_OrderTracking_OrderStage");
+        });
+
+        modelBuilder.Entity<OrderTrackingInvoice>(entity =>
+        {
+            entity.ToTable("OrderTrackingInvoice");
+
+            entity.HasKey(e => e.Id);
+
+            entity.Property(e => e.BuyFatoraId)
+                .HasColumnName("BuyFatoraId")
+                .IsRequired();
+
+            entity.HasOne(d => d.BuyFatora)
+                .WithMany(p => p.OrderTrackingInvoices)
+                .HasForeignKey(d => d.BuyFatoraId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.OrderTracking)
+                .WithMany(p => p.OrderTrackingInvoices)
+                .HasForeignKey(d => d.OrderTrackingId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<OrderTrackingAttachment>(entity =>
+        {
+            // Primary key
+            entity.HasKey(e => e.Id);
+
+            // Table name
+            entity.ToTable("OrderTrackingAttachments");
+
+            // Properties
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.CreatedDate).HasColumnType("datetime");
+
+            // Relationship: One OrderTracking -> Many OrderTrackingAttachments
+            entity.HasOne(d => d.OrderTracking)
+                .WithMany(p => p.OrderTrackingAttachments) // Indicates one-to-many
+                .HasForeignKey(d => d.OrderTrackingId)     // The FK property on OrderTrackingAttachment
+                .OnDelete(DeleteBehavior.Cascade)          // If desired, remove or adjust as needed
+                .HasConstraintName("FK_OrderTrackingAttachment_OrderTracking");
         });
 
         modelBuilder.Entity<OtherBrand>(entity =>

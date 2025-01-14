@@ -14,144 +14,178 @@ using Hangfire;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using sacmy.Server.Service;
+using sacmy.Shared.ViewModels.Notification;
 
 public class NotificationService
 {
     private readonly IConfiguration _configuration;
-    private readonly string _privateKey;
-    private readonly string _clientEmail;
-    private readonly string _tokenUri;
-    private readonly string _projectId;
     private readonly string _configKey;
+    private readonly string _projectId;
+    private readonly GoogleCredentialProvider _credentialProvider;
+    private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(IConfiguration configuration, string configurationKey)
+    public NotificationService(IConfiguration configuration,string configurationKey,ILogger<NotificationService> logger)
     {
         _configuration = configuration;
         _configKey = configurationKey;
-        var firebaseConfig = _configuration.GetSection(_configKey);
-        _privateKey = firebaseConfig["private_key"];
-        _clientEmail = firebaseConfig["client_email"];
-        _tokenUri = firebaseConfig["token_uri"];
-        _projectId = firebaseConfig["project_id"];
-    }
+        _logger = logger;
+        _credentialProvider = new GoogleCredentialProvider(configuration);
 
-    // Generate the OAuth2 Access Token for FCM HTTP v1 API
-    public async Task<string> GetAccessTokenAsync()
-    {
-        // Read all necessary fields from appsettings.json
-        var firebaseConfig = _configuration.GetSection(_configKey); // Retrieve configuration section
-        var type = firebaseConfig["type"];
-        var projectId = firebaseConfig["project_id"];
-        var privateKeyId = firebaseConfig["private_key_id"];
-        var privateKey = firebaseConfig["private_key"].Replace("\\n", "\n");
-        var clientEmail = firebaseConfig["client_email"];
-        var clientId = firebaseConfig["client_id"];
-        var authUri = firebaseConfig["auth_uri"];
-        var tokenUri = firebaseConfig["token_uri"];
-        var authProviderX509CertUrl = firebaseConfig["auth_provider_x509_cert_url"];
-        var clientX509CertUrl = firebaseConfig["client_x509_cert_url"];
-
-        // Build the complete JSON structure required by GoogleCredential
-        var credentialJson = $@"
-                {{
-                    ""type"": ""{type}"",
-                    ""project_id"": ""{projectId}"",
-                    ""private_key_id"": ""{privateKeyId}"",
-                    ""private_key"": ""{privateKey}"",
-                    ""client_email"": ""{clientEmail}"",
-                    ""client_id"": ""{clientId}"",
-                    ""auth_uri"": ""{authUri}"",
-                    ""token_uri"": ""{tokenUri}"",
-                    ""auth_provider_x509_cert_url"": ""{authProviderX509CertUrl}"",
-                    ""client_x509_cert_url"": ""{clientX509CertUrl}""
-                }}";
-
-        // Use GoogleCredential to create the credentials
-        var credential = GoogleCredential.FromJson(credentialJson)
-            .CreateScoped("https://www.googleapis.com/auth/firebase.messaging");
-
-        // Get the access token
-        var accessToken = await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
-
-        return accessToken;
-    }
-
-    // Method to send notification immediately
-    public async Task SendNotificationAsync(string title, string body, List<string> firebaseTokens, bool employeeNotification)
-    {
-        var accessToken = await GetAccessTokenAsync();
-
-        foreach (var token in firebaseTokens)
+        try
         {
-            var messagePayload = new
+            var firebaseConfig = configuration.GetSection(configurationKey);
+            _projectId = firebaseConfig["project_id"];
+
+            if (string.IsNullOrEmpty(_projectId))
             {
-                message = new
-                {
-                    token = token,
-                    notification = new
-                    {
-                        title = title,
-                        body = body,
-                    },
-                    android = new
-                    {
-                        notification = new
-                        {
-                            sound = "reminder.wav" // Set custom sound for Android
-                        }
-                    },
-                    apns = new
-                    {
-                        payload = new
-                        {
-                            aps = new
-                            {
-                                sound = "reminder.wav" // Set custom sound for iOS
-                            }
-                        }
-                    },
-                    data = new
-                    {
-                        type = employeeNotification ? "employee" : "regular",
-                        message = "Custom data based on employeeNotification"
-                    }
-                }
-            };
-
-            var jsonMessage = JsonConvert.SerializeObject(messagePayload);
-
-            // Log the payload for debugging
-            Console.WriteLine("Payload: " + jsonMessage);
-
-            using var client = new HttpClient();
-            var request = new HttpRequestMessage(HttpMethod.Post, $"https://fcm.googleapis.com/v1/projects/{_projectId}/messages:send")
-            {
-                Content = new StringContent(jsonMessage, Encoding.UTF8, "application/json")
-            };
-
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken);
-            var response = await client.SendAsync(request);
-
-            // Log the response for debugging
-            var responseContent = await response.Content.ReadAsStringAsync();
-            Console.WriteLine("Response: " + responseContent);
-
-            response.EnsureSuccessStatusCode();
+                _logger.LogError($"Project ID is null or empty for config key: {configurationKey}");
+                throw new InvalidOperationException($"Firebase project_id not found in configuration for key: {configurationKey}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error initializing NotificationService with key {configurationKey}");
+            throw;
         }
     }
 
-    // Schedule a notification using Hangfire
-    public async Task ScheduleNotification(string title, string body, List<string> firebaseTokens, bool employeeNotification, DateTime scheduledTime)
+    public async Task SendNotificationAsync(NotificationPayload payload, List<string> firebaseTokens)
     {
-        // Schedule the job to run at the specified time
-        BackgroundJob.Schedule(() => SendScheduledNotification(title, body, firebaseTokens, employeeNotification), scheduledTime);
+        _logger.LogInformation($"Starting to send notifications to {firebaseTokens.Count} recipients");
 
-        await Task.CompletedTask; // Since BackgroundJob.Schedule is non-blocking, just return a completed task.
+        try
+        {
+            var accessToken = await _credentialProvider.GetAccessTokenAsync(_configKey);
+            _logger.LogInformation("Successfully obtained access token");
+
+            foreach (var token in firebaseTokens)
+            {
+                try
+                {
+                    _logger.LogInformation($"Attempting to send notification to token: {token.Substring(0, 6)}...");
+                    await SendSingleNotificationAsync(token, payload, accessToken);
+                    _logger.LogInformation($"Successfully sent notification to token: {token.Substring(0, 6)}...");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"Failed to send notification to token {token.Substring(0, 6)}...");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SendNotificationAsync");
+            throw;
+        }
     }
 
-    // This method will be called by Hangfire when it's time to send the notification
-    public async Task SendScheduledNotification(string title, string body, List<string> firebaseTokens, bool employeeNotification)
+    private async Task SendSingleNotificationAsync(string token, NotificationPayload payload, string accessToken)
     {
-        await SendNotificationAsync(title, body, firebaseTokens, employeeNotification);
+        var messagePayload = new
+        {
+            message = new
+            {
+                token = token,
+                notification = new
+                {
+                    title = payload.Title,
+                    body = payload.Body
+                },
+                android = new
+                {
+                    notification = new
+                    {
+                        sound = payload.Sound ?? "default"
+                    }
+                },
+                apns = new
+                {
+                    payload = new
+                    {
+                        aps = new
+                        {
+                            sound = payload.Sound ?? "default"
+                        }
+                    }
+                },
+                data = new
+                {
+                    type = payload.Type,
+                    message = payload.Message,
+                    isEmployee = payload.IsEmployeeNotification.ToString()
+                }
+            }
+        };
+
+        using var client = new HttpClient();
+        var url = $"https://fcm.googleapis.com/v1/projects/{_projectId}/messages:send";
+
+        _logger.LogInformation($"Sending FCM request to: {url}");
+
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = new StringContent(
+                JsonConvert.SerializeObject(messagePayload),
+                Encoding.UTF8,
+                "application/json"
+            )
+        };
+
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+        var response = await client.SendAsync(request);
+        var content = await response.Content.ReadAsStringAsync();
+
+        if (!response.IsSuccessStatusCode)
+        {
+            _logger.LogError($"FCM request failed with status {response.StatusCode}: {content}");
+            throw new Exception($"FCM request failed: {content}");
+        }
+
+        _logger.LogInformation($"FCM request successful: {content}");
+    }
+
+    public async Task<string> ScheduleNotification(NotificationPayload payload, List<string> firebaseTokens, DateTime scheduledTime)
+    {
+        try
+        {
+            if (scheduledTime <= DateTime.Now)
+            {
+                throw new ArgumentException("Scheduled time must be in the future");
+            }
+
+            // Create a job with retry attempts
+            var jobId = BackgroundJob.Schedule(
+                () => SendNotificationWithRetry(payload, firebaseTokens),
+                scheduledTime
+            );
+
+            _logger.LogInformation($"Notification scheduled. JobId: {jobId}, ScheduledTime: {scheduledTime}, Recipients: {firebaseTokens.Count}");
+
+            return jobId;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to schedule notification");
+            throw;
+        }
+    }
+
+    [AutomaticRetry(Attempts = 3)]
+    public async Task SendNotificationWithRetry(NotificationPayload payload, List<string> firebaseTokens)
+    {
+        try
+        {
+            _logger.LogInformation("Starting scheduled notification send with retry");
+            await SendNotificationAsync(payload, firebaseTokens);
+            _logger.LogInformation("Successfully completed scheduled notification send");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error in SendNotificationWithRetry");
+            throw; // Rethrowing to allow Hangfire to retry
+        }
     }
 }
+

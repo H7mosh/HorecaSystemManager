@@ -15,7 +15,7 @@ public partial class TaskType
 
     public string? TypeKr { get; set; }
 
-    public DateTime CreatedDate { get; set; }
+    public DateTime? CreatedDate { get; set; }
 
     public bool IsDeleted { get; set; }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace sacmy.Server.Models;
@@ -76,6 +76,20 @@ public partial class BuyFatora
     public int? RemindAfter { get; set; }
 
     public bool? NotifyMe { get; set; }
+
+    public string? EditedUser { get; set; }
+
+    public DateTime? EditedDate { get; set; }
+
+    public DateTime? PaymentDate { get; set; }
+
+    public string? NoteOther { get; set; }
+
+    public string? Sender { get; set; }
+
+    public string? Bankinfo { get; set; }
+
+    public virtual ICollection<OrderTrackingInvoice> OrderTrackingInvoices { get; set; } = new List<OrderTrackingInvoice>();
 
     public virtual ICollection<Task> Tasks { get; set; } = new List<Task>();
 

@@ -1,0 +1,322 @@
+@using System.Collections.ObjectModel
+@using sacmy.Client.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.Notification
+@using sacmy.Shared.ViewModels.OrdersViewModel
+@inject OrderService orderService
+@inject UserGlobalClass _userGlobalClass
+@inject NotificationClientService NotificationClientService
+
+<div class="modal fade @(_isOpen ? "show d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title">Processing Results</h5>
+                <button type="button" class="btn-close" @onclick="OnCloseClick"></button>
+            </div>
+            <div class="modal-body p-0">
+                @if (_isLoading)
+
+                {
+                    <div class="position-absolute w-100 h-100 d-flex justify-content-center align-items-center"
+                         style="background: rgba(255,255,255,0.8); z-index: 1000;">
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <div class="mt-2">Processing Orders...</div>
+                        </div>
+                    </div>
+                }
+
+                <div class="accordion">
+                    @foreach (var branch in Results ?? new Dictionary<string, List<OrderViewerViewModel>>())
+
+                    {
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#branch-@branch.Key.Replace(" ", "-")">
+                                    @(string.IsNullOrEmpty(branch.Key) ? "Un-available" : branch.Key)
+                                    <span class="badge bg-primary ms-2">@branch.Value.Count items</span>
+                                </button>
+                            </h2>
+                            <div id="branch-@branch.Key.Replace(" ", "-")" class="accordion-collapse collapse show">
+                                <div class="accordion-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>SKU</th>
+                                                    <th>Item Name</th>
+                                                    <th>Pattern</th>
+                                                    <th>Batch</th>
+                                                    <th class="text-end">Quantity</th>
+                                                    <th class="text-end">Price</th>
+                                                    <th class="text-center">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var item in branch.Value)
+
+                                                {
+                                                    <tr>
+                                                        <td>@item.Sku</td>
+                                                        <td>@item.ItemName</td>
+                                                        <td>@item.PattrenNumber</td>
+                                                        <td>@item.Batch</td>
+                                                        <td class="text-end">@item.Quantity.ToString("N0")</td>
+                                                        <td class="text-end">$@item.Price</td>
+                                                        <td class="text-center">
+                                                            <span class="@GetAvailabilityClass(item.IsAvailable)">
+                                                                @(item.IsAvailable ? "Available" : "Unavailable")
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                            <tfoot class="table-light">
+                                                <tr>
+                                                    <td colspan="4"><strong>Summary</strong></td>
+                                                    <td class="text-end"><strong>@branch.Value.Sum(x => x.Quantity).ToString("N0")</strong></td>
+                                                    <td class="text-end"><strong>$@branch.Value.Sum(x => double.Parse(x.Price.ToString()) * x.Quantity).ToString("N2")</strong></td>
+                                                    <td class="text-center">
+                                                        <span class="badge bg-info">
+                                                            @branch.Value.Count(x => x.IsAvailable) Available
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-success" @onclick="CreateAllInvoices" disabled="@_isLoading">
+                    @if (_isLoading)
+
+                    {
+                        <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                    }
+                    Create All Invoices
+                </button>
+                <button type="button" class="btn btn-light" @onclick="OnCloseClick" disabled="@_isLoading">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (_showSuccessMessage)
+
+{
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+        <div class="toast show bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" @onclick="() => _showSuccessMessage = false"></button>
+            </div>
+            <div class="toast-body">
+                All invoices have been created successfully!
+            </div>
+        </div>
+    </div>
+}
+
+@if (_showErrorMessage)
+
+{
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+        <div class="toast show bg-danger text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-danger text-white">
+                <strong class="me-auto">Error</strong>
+                <button type="button" class="btn-close btn-close-white" @onclick="() => _showErrorMessage = false"></button>
+            </div>
+            <div class="toast-body">
+                @_errorMessage
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+
+    [Parameter]
+    public int CustomerId { get; set; }
+
+    [Parameter]
+    public string CustomerFirebaseToken { get; set; }
+
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter]
+    public Dictionary<string, List<OrderViewerViewModel>> Results { get; set; }
+
+    [Parameter]
+    public EventCallback OnRefreshOrders { get; set; }
+
+    private bool _isOpen => Visible;
+
+    private bool _isLoading;
+
+    private bool _showSuccessMessage;
+
+    private bool _showErrorMessage;
+
+    private string _errorMessage;
+
+    private async Task OnCloseClick()
+    {
+        if (!_isLoading)
+        {
+            await VisibleChanged.InvokeAsync(false);
+        }
+    }
+
+    private string GetAvailabilityClass(bool isAvailable)
+    {
+        return isAvailable ? "text-success" : "text-danger";
+    }
+
+    private async Task CreateAllInvoices()
+    {
+        if (Results == null || !Results.Any())
+            return;
+        try
+        {
+            _isLoading = true;
+            _showSuccessMessage = false;
+            _showErrorMessage = false;
+            _errorMessage = string.Empty;
+            var successCount = 0;
+            var totalCount = Results.Count;
+
+            foreach (var branch in Results)
+            {
+                var invoiceModel = new InvoiceFromOrderViewModel
+                    {
+                        OrderId = OrderId,
+                        CustomerId = CustomerId,
+                        UserId = _userGlobalClass.User.Id.ToString(),
+
+                        Sub = branch.Key,
+
+                        Payed = 0,
+
+                        Remain = 0,
+
+                        Total = branch.Value.Sum(x => x.Quantity * double.Parse(x.Price.ToString())),
+
+                        Hamalya = 0,
+
+                        FatoraDate = DateTime.Now,
+
+                        Note = "",
+
+                        Checked = false,
+
+                        invoiceFromOrderItemsViewModel = new Collection<InvoiceFromOrderItemsViewModel>(
+                            branch.Value.Select(item => new InvoiceFromOrderItemsViewModel
+                            {
+
+                                Sku = item.Sku,
+
+                                ItemId = item.Id,
+
+                                Secode = item.Secode,
+
+                                OrderItemId = OrderId,
+
+                                Quantity = item.Quantity,
+
+                                Price = double.Parse(item.Price.ToString()),
+
+                                Storage = branch.Key,
+
+                                Wajba = item.Batch,
+
+                                Point = 0,
+
+                            }).ToList())
+                    };
+
+
+
+                var result = await orderService.CreateInvoiceAsync(invoiceModel);
+               
+                if (result)
+                successCount++;
+            }
+
+            if (successCount == totalCount)
+            {
+                var notificationRequest = new NotificationRequest
+                    {
+                        Title = "order status changed",
+                        Description = "there's new updated on you order",
+                        Type = "tracking",
+                        Message = OrderId.ToString(),
+                        UserIdAndTokenList = new List<UserIdAndToken>
+                        {
+                            new UserIdAndToken
+                            {
+                                Id = CustomerId.ToString(),
+                                FirebaseToken = CustomerFirebaseToken,
+                            }
+                        },
+                    };
+
+                await NotificationClientService.SendNotificationAsync(notificationRequest);
+
+                _showSuccessMessage = true;
+
+                await Task.Delay(2000);
+
+                await OnRefreshOrders.InvokeAsync(); // Notify parent to refresh orders
+
+                await OnCloseClick(); // Close the modal
+            }
+
+            else
+            {
+                _errorMessage = $"Created {successCount} out of {totalCount} invoices. Some failed.";
+
+                _showErrorMessage = true;
+            }
+
+        }
+
+        catch (Exception)
+        {
+            _errorMessage = "An error occurred while processing the invoices.";
+            _showErrorMessage = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+
+        _showSuccessMessage = false;
+
+        _showErrorMessage = false;
+
+        _errorMessage = string.Empty;
+
+        _isLoading = false;
+
+    }
+}

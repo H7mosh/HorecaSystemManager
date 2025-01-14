@@ -14,15 +14,12 @@ public class NotificationClientService
         _httpClient = httpClient;
     }
 
-    // This method sends the notification request to the server-side API
-    public async Task SendNotificationAsync(NotificationRequestViewModel request)
+    public async Task SendNotificationAsync(NotificationRequest request)
     {
         try
         {
             var jsonRequest = JsonConvert.SerializeObject(request);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // This URL is relative to the server-side API
             var response = await _httpClient.PostAsync("api/Notification/sendOrSchedule", content);
             response.EnsureSuccessStatusCode();
         }
@@ -32,15 +29,12 @@ public class NotificationClientService
         }
     }
 
-    // This method sends the scheduled notification request to the server-side API
     public async Task ScheduleNotificationAsync(ScheduledNotificationRequestViewModel request)
     {
         try
         {
             var jsonRequest = JsonConvert.SerializeObject(request);
             var content = new StringContent(jsonRequest, Encoding.UTF8, "application/json");
-
-            // This URL is relative to the server-side API
             var response = await _httpClient.PostAsync("api/Notification/sendOrSchedule", content);
             response.EnsureSuccessStatusCode();
         }

@@ -1,6 +1,7 @@
 using Hangfire;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Service;
 
@@ -13,20 +14,17 @@ builder.Services.AddRazorPages();
 // Add database context
 builder.Services.AddDbContext<SafeenCompanyDbContext>(
     options => options.UseSqlServer(
-        builder.Configuration.GetConnectionString("productionConnectionString")
+        builder.Configuration.GetConnectionString("onlineConnectionString")
     )
 );
 
 // Add Hangfire
-builder.Services.AddHangfire(x => x.UseSqlServerStorage(builder.Configuration.GetConnectionString("productionConnectionString")));
+builder.Services.AddHangfire(x => x.UseSqlServerStorage(builder.Configuration.GetConnectionString("onlineConnectionString")));
 builder.Services.AddHangfireServer();
 
 // Add custom services
 builder.Services.AddScoped<FileService>();
-builder.Services.AddScoped<NotificationService>(provider => {
-    var configuration = provider.GetRequiredService<IConfiguration>();
-    return new NotificationService(configuration, "SafinAhmedManagerNotificationKeys");
-});
+
 
 // Add CORS
 builder.Services.AddCors(options =>
@@ -37,6 +35,27 @@ builder.Services.AddCors(options =>
                .AllowAnyMethod()
                .AllowAnyHeader();
     });
+});
+
+
+builder.Services.AddLogging(loggingBuilder =>
+{
+    loggingBuilder.AddConsole();
+    loggingBuilder.AddDebug();
+});
+
+builder.Services.AddScoped(serviceProvider =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var logger = serviceProvider.GetRequiredService<ILogger<NotificationService>>();
+    return new NotificationService(configuration, "SafinAhmedManagerNotificationKeys" ,logger);
+});
+
+builder.Services.AddScoped(serviceProvider =>
+{
+    var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+    var logger = serviceProvider.GetRequiredService<ILogger<NotificationService>>();
+    return new NotificationService(configuration, "SafinAhmedNotificationKeys", logger);
 });
 
 var app = builder.Build();

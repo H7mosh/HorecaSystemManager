@@ -13,7 +13,11 @@ public partial class CustomerProductRelation
 
     public decimal? DiscountPercentage { get; set; }
 
+    public bool IsDiscounted { get; set; }
+
     public decimal? RaisePercentage { get; set; }
+
+    public bool IsRaised { get; set; }
 
     public bool IsDeleted { get; set; }
 

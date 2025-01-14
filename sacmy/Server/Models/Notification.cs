@@ -7,7 +7,7 @@ public partial class Notification
 {
     public Guid Id { get; set; }
 
-    public string Titel { get; set; } = null!;
+    public string Title { get; set; } = null!;
 
     public string? Description { get; set; }
 

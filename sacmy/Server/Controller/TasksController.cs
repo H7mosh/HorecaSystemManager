@@ -5,6 +5,7 @@ using sacmy.Client.Pages.Invoice;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
+using sacmy.Shared.ViewModels.Notification;
 using sacmy.Shared.ViewModels.TasksViewModel;
 using static System.Net.WebRequestMethods;
 
@@ -17,12 +18,14 @@ namespace sacmy.Server.Controller
         private readonly FileService _fileService;
         private readonly SafeenCompanyDbContext _context;
         private readonly NotificationService _notificationService;
+        private readonly ILogger<NotificationService> _notificationLogger;
 
-        public TasksController(SafeenCompanyDbContext context, FileService fileService, IConfiguration configuration)
+        public TasksController(SafeenCompanyDbContext context, FileService fileService, IConfiguration configuration , ILogger<NotificationService> notificationLogger)
         {
             _context = context;
             _fileService = fileService;
-            _notificationService = new NotificationService(configuration, "SafinAhmedManagerNotificationKeys"); // Use manager notifications key for employee tasks
+            _notificationLogger = notificationLogger;
+            _notificationService = new NotificationService(configuration, "SafinAhmedManagerNotificationKeys" , _notificationLogger); // Use manager notifications key for employee tasks
         }
 
         [HttpGet]
@@ -51,12 +54,13 @@ namespace sacmy.Server.Controller
                     CutsomerId = e.CustomerId,
                     AssignedToEmployee = e.AssignedToEmployeeNavigation.FirstName + " " + e.AssignedToEmployeeNavigation.LastName,
                     AssignedToEmployeeId = e.AssignedToEmployeeNavigation.Id,
+                    EmployeeId = e.AssignedToEmployeeNavigation.Id.ToString(),
                     EmployeeImage = e.AssignedToEmployeeNavigation.Image,
                     EmployeeFirebaseToken = e.AssignedToEmployeeNavigation.FirebaseToken,
                     CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
                     CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
                     CreatedbyImage = e.CreatedByNavigation.Image,
-                    CreatedDate = e.CreatedDate,
+                    CreatedDate = (DateTime)e.CreatedDate,
                     DeadlineDate = e.Deadline
                 }).OrderByDescending(e => e.CreatedDate).ToListAsync();
 
@@ -108,7 +112,7 @@ namespace sacmy.Server.Controller
                    CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
                    CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
                    CreatedbyImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
-                   CreatedDate = e.CreatedDate,
+                   CreatedDate = (DateTime)e.CreatedDate,
                    DeadlineDate = e.Deadline
                }).OrderByDescending(e => e.CreatedDate).ToListAsync();
 
@@ -154,7 +158,7 @@ namespace sacmy.Server.Controller
                     CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
                     CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
                     CreatedbyImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
-                    CreatedDate = e.CreatedDate,
+                    CreatedDate = (DateTime)e.CreatedDate,
                     DeadlineDate = e.Deadline
                 }).OrderByDescending(e => e.CreatedDate).ToListAsync();
 
@@ -197,9 +201,21 @@ namespace sacmy.Server.Controller
                 task.CreatedDate = DateTime.Now;
                 task.IsDeleted = false;
 
+                NotificationPayload notificationPayload = new NotificationPayload
+                {
+                    Title = "New Task Assigned",
+                    Body = $"You have been assigned a new task: {task.Title}",
+                    Type = "task",
+                    IsEmployeeNotification = true ,
+                };
+
+                
+
+
                 await _context.Tasks.AddAsync(task);
                 await _context.SaveChangesAsync();
-                await _notificationService.SendNotificationAsync("New Task Assigned", $"You have been assigned a new task: {task.Title}", [employee.FirebaseToken], true);
+
+                await _notificationService.SendNotificationAsync(notificationPayload, [employee.FirebaseToken]);
                 return Ok();
             }
             catch (Exception ex)
@@ -219,7 +235,7 @@ namespace sacmy.Server.Controller
                             {
                                 Id = e.Id,
                                 Note = e.Note,
-                                FileLink = e.FileLink,
+                                FileLink = e.FilelInk,
                                 CreatedBy = e.CreatedBy,
                                 EmployeeName = e.CreatedByNavigation.FirstName + e.CreatedByNavigation.LastName,
                                 EmployeeImage = e.CreatedByNavigation.Image,
@@ -264,17 +280,16 @@ namespace sacmy.Server.Controller
                 try
                 {
                     var fileBytes = Convert.FromBase64String(model.FileBase64);
-                    var uploadDirectory = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "assets", "TaskAttachment");
-                    
-                    // Create directory if it doesn't exist
-                    if (!Directory.Exists(uploadDirectory))
-                    {
-                        Directory.CreateDirectory(uploadDirectory);
-                    }
+                    var uploadDirectory = @"C:\assets\TaskAttachment";
 
-                    var filePath = Path.Combine(uploadDirectory, model.FileName);
-                    await System.IO.File.WriteAllBytesAsync(filePath, fileBytes);
-                    fileLink = $"/assets/TaskAttachment/{model.FileName}";
+                    
+                    var fileName = await _fileService.UploadFileAsync(
+                        new FormFile(new MemoryStream(fileBytes), 0, fileBytes.Length, "file", model.FileName),
+                        taskTitle,
+                        uploadDirectory
+                    );
+
+                    fileLink = $"https://api.safinahmedtech.com/assets/TaskAttachment/{fileName}";
                 }
                 catch (Exception ex)
                 {
@@ -286,7 +301,7 @@ namespace sacmy.Server.Controller
             {
                 Id = Guid.NewGuid(),
                 Note = model.Note,
-                FileLink = fileLink,
+                FilelInk = fileLink,
                 CreatedBy = model.EmployeeId,
                 CreatedDate = DateTime.Now,
                 TaskId = model.TaskId

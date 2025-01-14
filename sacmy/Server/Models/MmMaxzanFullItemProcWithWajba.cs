@@ -23,7 +23,7 @@ public partial class MmMaxzanFullItemProcWithWajba
 
     public string? CodIqd { get; set; }
 
-    public string? Wajba { get; set; }
+    public string? Wajba { get; set; } // means batch
 
     public double? QttyPurch { get; set; }
 

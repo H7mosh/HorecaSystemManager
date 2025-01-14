@@ -1,0 +1,250 @@
+@using System.Threading.Tasks
+@using System.Collections.Generic
+@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.OrdersViewModel
+@using sacmy.Client.Shared.Enums
+@inject OrderService orderService
+
+<div class="modal fade @(_isOpen ? "show d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title">Order Details #@OrderId</h5>
+                <button type="button" class="btn-close" @onclick="OnCloseClick"></button>
+            </div>
+            <div class="modal-body p-0">
+                @if (_isLoading || _isProcessing)
+                {
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="text-muted mt-2">
+                            @(_isProcessing ? "Processing order..." : "Loading order items...")
+                        </p>
+                    </div>
+                }
+                else if (_orderItems?.Any() == true)
+                {
+                    <div class="px-3">
+                        <div class="row g-3 align-items-start mb-3">
+                            <div class="col">
+                                <select class="form-select form-select-sm" @bind="_selectedStorage">
+                                    <option value="">Add Storage Location...</option>
+                                    @foreach (var location in _availableStorages.Except(_storageOrder.Select(s => s.Name)))
+                                    {
+                                        <option value="@location">@location</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-auto">
+                                <button class="btn btn-sm btn-primary" @onclick="AddStorage" disabled="@string.IsNullOrEmpty(_selectedStorage)">Add</button>
+                            </div>
+                        </div>
+                        @if (_storageOrder.Any())
+                        {
+                            <div class="mb-3">
+                                <div class="d-flex flex-wrap gap-2">
+                                    @foreach (var storage in _storageOrder.OrderBy(s => s.order))
+                                    {
+                                        <div class="border rounded p-2 d-flex align-items-center gap-2 bg-light">
+                                            <span class="badge bg-secondary">@storage.order</span>
+                                            <span>@storage.Name</span>
+                                            <button class="btn btn-link btn-sm text-danger p-0 ms-2" @onclick="(() => RemoveStorage(storage))">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                            <div class="btn-group btn-group-sm ms-2">
+                                                <button class="btn btn-outline-secondary" @onclick="(() => UpdateStorageOrder(storage, new ChangeEventArgs { Value = (storage.order - 1).ToString() }))" disabled="@(storage.order <= 1)">
+                                                    <i class="bi bi-arrow-up"></i>
+                                                </button>
+                                                <button class="btn btn-outline-secondary" @onclick="(() => UpdateStorageOrder(storage, new ChangeEventArgs { Value = (storage.order+ 1).ToString() }))" disabled="@(storage.order >= _storageOrder.Count)">
+                                                    <i class="bi bi-arrow-down"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="sticky-top bg-white">
+                                    <tr class="text-uppercase small text-muted">
+                                        <th class="fw-normal">SKU</th>
+                                        <th class="fw-normal">Pattern Code</th>
+                                        <th class="fw-normal text-end">Quantity</th>
+                                        <th class="fw-normal text-end">Price</th>
+                                        <th class="fw-normal text-end">Total</th>
+                                        <th class="fw-normal text-end">Points</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in _orderItems)
+                                    {
+                                        <tr>
+                                            <td>@item.Sku</td>
+                                            <td>@item.PatternCode</td>
+                                            <td class="text-end">@item.Quantity.ToString("N0")</td>
+                                            <td class="text-end">$@item.Price.ToString("N2")</td>
+                                            <td class="text-end">$@item.Total.ToString("N2")</td>
+                                            <td class="text-end">@item.Point</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="border-top bg-light p-2">
+                            <div class="row g-0">
+                                <div class="col-6">
+                                    <span class="fw-bold">Total</span>
+                                </div>
+                                <div class="col-2 text-end">
+                                    <span class="fw-bold">@_orderItems.Sum(x => x.Quantity).ToString("N0")</span>
+                                </div>
+                                <div class="col-2"></div>
+                                <div class="col-1 text-end">
+                                    <span class="fw-bold">$@_orderItems.Sum(x => x.Total).ToString("N2")</span>
+                                </div>
+                                <div class="col-1 text-end">
+                                    <span class="fw-bold">@_orderItems.Sum(x => x.Point)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox text-muted" style="font-size: 2rem;"></i>
+                        <p class="text-muted mt-2">No items found for this order</p>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary" @onclick="ProcessOrder" disabled="@(!_storageOrder.Any())">Process Order</button>
+                <button type="button" class="btn btn-light" @onclick="OnCloseClick">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<OrderProcessingResultsDialog 
+    Visible="@_showResults" 
+    VisibleChanged="@((bool value) => _showResults = value)" 
+    Results="@_processingResults" />
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+
+    [Parameter]
+    public int CustomerId { get; set; }
+
+    [Parameter]
+    public string CustomerFirebaseToken { get; set; }
+
+    [Parameter]
+    public bool Visible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> VisibleChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<Dictionary<string, List<OrderViewerViewModel>>> OnProcessingComplete { get; set; }
+
+    private List<OrderItemViewModel> _orderItems = new List<OrderItemViewModel>();
+
+    private List<StorageOrder> _storageOrder = new List<StorageOrder>();
+
+    private Dictionary<string, List<OrderViewerViewModel>> _processingResults;
+
+    private readonly List<string> _availableStorages = new List<string> { "Erbil", "zakho", "Baghdad" };
+
+
+    private bool _isOpen => Visible;
+    private bool _isLoading;
+    private bool _isProcessing;
+    
+    private string _selectedStorage = "";
+    private bool _showResults = false;
+    
+
+    protected override async Task OnParametersSetAsync() {
+        if (Visible && OrderId > 0) {
+            await LoadOrderItems();
+        }
+    }
+
+    private async Task LoadOrderItems() {
+        try {
+            _isLoading = true;
+            StateHasChanged();
+            _orderItems = await orderService.GetOrderItemsAsync(OrderId);
+        } catch (Exception ex) {
+            // TODO: Add error handling/notification
+        } finally {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void AddStorage() {
+        if (!string.IsNullOrEmpty(_selectedStorage) && !_storageOrder.Any(s => s.Name == _selectedStorage)) {
+            _storageOrder.Add(new StorageOrder {
+                Name = _selectedStorage,
+                order = _storageOrder.Count + 1
+            });
+            _selectedStorage = "";
+        }
+    }
+
+    private void RemoveStorage(StorageOrder storage) {
+        _storageOrder.Remove(storage);
+        // Reorder remaining items
+        for (int i = 0; i < _storageOrder.Count; i++) {
+            _storageOrder[i].order = i + 1;
+        }
+    }
+
+    private void UpdateStorageOrder(StorageOrder storage, ChangeEventArgs e) {
+        if (int.TryParse(e.Value?.ToString(), out int newOrder) && newOrder > 0) {
+            storage.order = newOrder;
+            _storageOrder = _storageOrder.OrderBy(s => s.order).ToList();
+        }
+    }
+
+    private async Task ProcessOrder()
+    {
+        if (_storageOrder.Any())
+        {
+            try
+            {
+                _isProcessing = true;
+                StateHasChanged();
+                _processingResults = await orderService.FilterOrderAsync(OrderId, _storageOrder, _orderItems);
+                if (_processingResults != null)
+                {
+                    await OnProcessingComplete.InvokeAsync(_processingResults);
+                }
+                await VisibleChanged.InvokeAsync(false);
+            }
+            catch (Exception ex)
+            {
+                // TODO: Add error handling/notification
+                //_logger.LogError(ex, "Error processing order {OrderId}: {Message}", OrderId, ex.Message);
+            }
+            finally
+            {
+                _isProcessing = false;
+                StateHasChanged();
+            }
+
+        }
+    }
+
+    private async Task OnCloseClick() {
+        await VisibleChanged.InvokeAsync(false);
+        _orderItems.Clear();
+        _storageOrder.Clear();
+    }
+}

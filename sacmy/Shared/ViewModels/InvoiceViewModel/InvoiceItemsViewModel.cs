@@ -14,9 +14,12 @@ namespace sacmy.Shared.ViewModels.InvoiceViewModel
         public string Name { get; set; }
         public string? Factory { get; set; }
         public int Quantity { get; set; }
+        public string BoxContain {  get; set; }
         public decimal Price { get; set; }
         public decimal Total { get; set; }
         public decimal Cost { get; set; }
+        public double Area { get; set; } 
+        public double Weight { get; set; }
         public string? Batch { get; set; }
         public bool IsChecked { get; set; }
         public string Notes { get; set; }

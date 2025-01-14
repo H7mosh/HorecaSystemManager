@@ -38,23 +38,25 @@ builder.Services.AddScoped<PurchaseService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<TaskService>();
 builder.Services.AddScoped<EmployeeService>();
+builder.Services.AddScoped<OrderService>();
 builder.Services.AddSingleton<UserGlobalClass>();
 builder.Services.AddSingleton<AuthService>();
 
 // Configure MudBlazor
 builder.Services.AddMudServices(config =>
 {
-    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomEnd;
+    config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;
     config.SnackbarConfiguration.PreventDuplicates = false;
     config.SnackbarConfiguration.NewestOnTop = false;
     config.SnackbarConfiguration.ShowCloseIcon = true;
-    config.SnackbarConfiguration.VisibleStateDuration = 5000;
+    config.SnackbarConfiguration.VisibleStateDuration = 10000;
     config.SnackbarConfiguration.HideTransitionDuration = 500;
     config.SnackbarConfiguration.ShowTransitionDuration = 500;
     config.SnackbarConfiguration.SnackbarVariant = Variant.Filled;
 });
 
 var host = builder.Build();
+
 
 // Set default culture
 var localStorage = host.Services.GetRequiredService<ILocalStorageService>();

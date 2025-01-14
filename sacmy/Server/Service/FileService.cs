@@ -4,8 +4,17 @@
     {
         private const string TargetPath = @"C:\assets\TaskAttachment";
 
-        public async Task<string> UploadFileAsync(IFormFile file, string taskTitle, int? fileNumber = null)
+        public async Task<string> UploadFileAsync(IFormFile file, string taskTitle, string targetPath, int? fileNumber = null)
         {
+            if (file == null)
+                throw new ArgumentNullException(nameof(file));
+
+            if (string.IsNullOrWhiteSpace(taskTitle))
+                throw new ArgumentNullException(nameof(taskTitle));
+
+            if (string.IsNullOrWhiteSpace(targetPath))
+                throw new ArgumentNullException(nameof(targetPath));
+
             string filename = "";
             try
             {
@@ -21,13 +30,13 @@
                 filename = $"{baseFilename}{extension}";
 
                 // Ensure the directory exists
-                if (!Directory.Exists(TargetPath))
+                if (!Directory.Exists(targetPath))
                 {
-                    Directory.CreateDirectory(TargetPath);
+                    Directory.CreateDirectory(targetPath);
                 }
 
                 // Combine the directory path with the filename to get the exact path
-                var exactPath = Path.Combine(TargetPath, filename);
+                var exactPath = Path.Combine(targetPath, filename);
 
                 // Create and copy the file to the specified path
                 using (var stream = new FileStream(exactPath, FileMode.Create))
@@ -37,9 +46,8 @@
             }
             catch (Exception ex)
             {
-                // Handle the exception as needed
-                // For debugging, you can log the exception message
                 Console.WriteLine(ex.Message);
+                throw;
             }
 
             return filename;

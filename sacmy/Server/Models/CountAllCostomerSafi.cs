@@ -5,6 +5,8 @@ namespace sacmy.Server.Models;
 
 public partial class CountAllCostomerSafi
 {
+    public int Id { get; set; }
+
     public string? Customer { get; set; }
 
     public string? Address { get; set; }

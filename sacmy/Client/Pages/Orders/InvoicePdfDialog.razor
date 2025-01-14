@@ -1,0 +1,341 @@
+@page "/InvoicePdfDialog"
+@using System.Net.Http.Headers
+@using sacmy.Client.Pages.Components.Dialogs
+@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.InvoiceViewModel
+@using sacmy.Shared.ViewModels.Notification
+@using sacmy.Shared.ViewModels.OrdersViewModel
+@using System.Globalization
+@inject OrderService OrderService
+@inject IDialogService DialogService
+@inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@inject NotificationClientService NotificationClientService
+
+
+@if (Invoices != null)
+{
+    <div class="modal fade" id="invoicePdfModal" tabindex="-1" aria-labelledby="invoicePdfModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                @if (_isLoading)
+                {
+                    <div class="d-flex justify-content-center p-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Invoice Details #@MainInvoice?.Id</h5>
+                        <button type="button" class="btn-close btn-close-white" @onclick="Cancel" aria-label="Close"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <!-- Invoice Information and Payment Summary -->
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">Invoice Information</h6>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block">Customer</small>
+                                    <div>@MainInvoice?.Customer</div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block">Date</small>
+                                    <div>@MainInvoice?.Date?.ToString("MM/dd/yyyy")</div>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Branch</small>
+                                    <div>@MainInvoice?.branch</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">Payment Summary</h6>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block">Total Amount</small>
+                                    <div class="text-primary">$@(MainInvoice?.Tootal?.ToString("N2") ?? "0.00")</div>
+                                </div>
+                                <div class="mb-2">
+                                    <small class="text-muted d-block">Paid Amount</small>
+                                    <div class="text-success">$@(MainInvoice?.Payed?.ToString("N2") ?? "0.00")</div>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Remaining</small>
+                                    <div class="@(MainInvoice?.Remaing > 0 ? "text-warning" : "")">
+                                        $@(MainInvoice?.Remaing?.ToString("N2") ?? "0.00")
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Invoice Items -->
+                        <h6 class="text-primary mb-3">Invoice Items</h6>
+                        <div class="table-responsive" style="max-height: 300px;">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead class="sticky-top bg-light">
+                                    <tr>
+                                        <th>SKU</th>
+                                        <th>Name</th>
+                                        <th>Factory</th>
+                                        <th>Price</th>
+                                        <th>Qty</th>
+                                        <th>Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (_invoiceItems != null)
+                                    {
+                                        @foreach (var item in _invoiceItems)
+                                        {
+                                            <tr>
+                                                <td>@item.Sku</td>
+                                                <td>@item.Name</td>
+                                                <td>@item.Factory</td>
+                                                <td>$@item.Price.ToString("N2")</td>
+                                                <td>@item.Quantity</td>
+                                                <td>$@item.Total.ToString("N2")</td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Summary Section -->
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div class="text-muted">
+                                        Items Count: @(_invoiceItems?.Count ?? 0)<br />
+                                        Total Quantity: @(_invoiceItems?.Sum(i => i.Quantity) ?? 0)
+                                    </div>
+                                </div>
+                                <div class="col-md-6 text-md-end">
+                                    <h6 class="mb-0">
+                                        Total Amount:
+                                        <span class="text-primary">$@(_invoiceItems?.Sum(i => i.Total).ToString("N2") ?? "0.00")</span>
+                                    </h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-light" @onclick="Cancel" disabled="@_isGeneratingPdf">Close</button>
+                        <button type="button" class="btn btn-primary d-flex align-items-center gap-2"
+                                @onclick="GeneratePdf"
+                                disabled="@_isGeneratingPdf">
+                            @if (_isGeneratingPdf)
+                            {
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span>Processing...</span>
+                            }
+                            else
+                            {
+                                <i class="fas fa-file-pdf"></i>
+                                <span>Generate PDF</span>
+                            }
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}   
+
+@if (_showSuccessMessage)
+{
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1100">
+        <div class="toast show bg-success text-white" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="toast-header bg-success text-white">
+                <strong class="me-auto">Success</strong>
+                <button type="button" class="btn-close btn-close-white" @onclick="() => _showSuccessMessage = false"></button>
+            </div>
+            <div class="toast-body">
+                Invoice has been generated and uploaded successfully!
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int OrderId { get; set; }
+
+    [Parameter]
+    public List<BuyFatoraViewModel> Invoices { get; set; }
+
+    private BuyFatoraViewModel MainInvoice => Invoices?.FirstOrDefault(i => i.IsItTheMainOne);
+
+    private List<InvoiceItemsViewModel> _invoiceItems;
+    private bool _isLoading = true;
+    private bool _isGeneratingPdf = false;
+    private bool _showSuccessMessage = false;
+
+    protected override void OnInitialized()
+    {
+        base.OnInitialized();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Invoices != null && Invoices.Any())
+        {
+            try
+            {
+                _isLoading = true;
+                StateHasChanged();
+
+                var invoiceIds = Invoices.Select(i => i.Id).ToList();
+                _invoiceItems = await OrderService.GetMultipleOrderItemsAsync(invoiceIds);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading invoice items: {ex.Message}");
+            }
+            finally
+            {
+                _isLoading = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await JSRuntime.InvokeVoidAsync("closeModal", "invoicePdfModal");
+    }
+
+
+
+    private async Task GeneratePdf()
+    {
+        try
+        {
+
+            
+            if (MainInvoice == null)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "No invoice data available");
+                return;
+            }
+
+            _isGeneratingPdf = true;
+            
+            StateHasChanged();
+            
+            var base64String = await JSRuntime.InvokeAsync<string>(
+                "generateInvoicePdf",
+                MainInvoice,
+                _invoiceItems
+            );
+
+            // Convert base64 to byte array
+            var pdfBytes = Convert.FromBase64String(base64String);
+            
+            var fileName = $"Invoice_{MainInvoice.Id}.pdf";
+            // Create FormData with the PDF file
+
+            await JSRuntime.InvokeVoidAsync("downloadPdf", base64String, fileName);
+
+            // var content = new MultipartFormDataContent();
+
+            // var fileContent = new ByteArrayContent(pdfBytes);
+
+            // fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+
+            // content.Add(fileContent, "file", fileName);
+
+            // content.Add(new StringContent(OrderId.ToString()), "orderId");
+
+
+
+            // // Upload the file
+
+            // var response = await Http.PostAsync($"api/Orders/upload-invoice-attachment", content);
+
+            // if (response.IsSuccessStatusCode)
+            // {
+            //     // Send notification
+            //     var notificationRequest = new NotificationRequest
+
+            //         {
+
+            //             Title = "order status changed",
+
+            //             Description = "there's new updated on you order",
+
+            //             Type = "tracking",
+
+            //             Message = OrderId.ToString(),
+
+            //             UserIdAndTokenList = new List<UserIdAndToken>
+            //             {
+            //                 new UserIdAndToken
+            //                 {
+            //                     Id = MainInvoice.CustomerId,
+            //                     FirebaseToken = MainInvoice.CustomerFirebaseToken
+            //                 }
+            //             }
+
+            //         };
+
+            //     await NotificationClientService.SendNotificationAsync(notificationRequest);
+
+
+
+            //     // Download the PDF
+
+            //     await JSRuntime.InvokeVoidAsync("downloadPdf", base64String, fileName);
+
+
+            //     _showSuccessMessage = true;
+
+            //     StateHasChanged();
+
+
+            //     // Auto-hide the success message after 3 seconds
+
+            //     await Task.Delay(300);
+
+            //     _showSuccessMessage = false;
+
+            //     await Cancel();
+
+            // }
+
+            // else
+            // {
+
+            //     var errorMessage = await response.Content.ReadAsStringAsync();
+
+            //     throw new Exception($"Failed to upload invoice: {errorMessage}");
+
+            // }
+
+        }
+
+        catch (Exception ex)
+
+        {
+
+            await JSRuntime.InvokeVoidAsync("alert", $"Error processing invoice: {ex.Message}");
+
+        }
+
+        finally
+
+        {
+
+            _isGeneratingPdf = false;
+
+            StateHasChanged();
+
+        }
+
+    }
+}

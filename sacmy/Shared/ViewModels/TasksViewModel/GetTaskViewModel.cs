@@ -24,6 +24,7 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
         public int? InvoiceId { get; set; }
         public string AssignedToEmployee { get; set; }
         public Guid AssignedToEmployeeId { get; set; }
+        public string EmployeeId { get; set; }
         public string EmployeeFirebaseToken { get; set; }
         public string EmployeeImage { get; set; }
         public Guid CreatedBy { get; set; }

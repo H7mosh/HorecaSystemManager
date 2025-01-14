@@ -13,16 +13,15 @@ namespace sacmy.Server.Controller
     public class ProductController : ControllerBase
     {
         private readonly SafeenCompanyDbContext _context;
-
         public ProductController(SafeenCompanyDbContext context)
         {
             _context = context;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetProducts()
+        public async Task<IActionResult> GetProducts([FromQuery] ProductsPaginationRequest request)
         {
-            var items = await _context.Products
+            var query = _context.Products
                 .Where(e => e.BrandId == Guid.Parse("63459fb9-37cd-4119-ba73-8e614e5f308b"))
                 .Select(x => new GetProductsViewModel
                 {
@@ -33,17 +32,35 @@ namespace sacmy.Server.Controller
                     PatternNumber = x.PatternNumber,
                     BoxCount = x.OuterTypeCount,
                     PieceCount = x.InnerTypeCount,
+                    Price = x.Price.ToString(),
                     Image = x.ProductImages.FirstOrDefault().ImageLink.Replace("https://api.safinahmedtech.com", "http://46.165.247.249"),
-                })
-                .Take(1000)
+                });
+
+            var totalCount = await query.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
+
+            var items = await query
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
                 .ToListAsync();
 
             if (items is null || !items.Any())
             {
-                return Ok("There's No Items Yet !");
+                return Ok("There's No Items Yet!");
             }
 
-            return Ok(items);
+            var response = new ProductsPaginatedResponse<GetProductsViewModel>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                TotalPages = totalPages,
+                CurrentPage = request.PageNumber,
+                HasNext = request.PageNumber < totalPages,
+                HasPrevious = request.PageNumber > 1
+            };
+
+            return Ok(response);
         }
     }
+
 }

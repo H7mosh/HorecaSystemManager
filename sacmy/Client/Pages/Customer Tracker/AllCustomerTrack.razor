@@ -1,9 +1,4 @@
-﻿@using sacmy.Shared.ViewModels.CustomerTracker
-@using sacmy.Shared.ViewModels.TrackViewModel
-@inject HttpClient Http
-@inject IDialogService DialogService
-
-<style>
+﻿<style>
     .customer-tracks-container {
         display: flex;
         flex-direction: column;
@@ -141,7 +136,7 @@
                     {
                         <MudAlert Severity="Severity.Warning" Dense="true" Class="my-2">
                             هل يوجد اي تتبع على هذا لزبون . من فضلك اضغط على جديد لاضافة تتبع
-                    </MudAlert>
+                        </MudAlert>
                     }
                 }
                 else
@@ -258,9 +253,10 @@
 
     private void OpenTrackCommentsDialog(Guid trackId)
     {
-        var parameters = new DialogParameters { 
-            ["TrackId"] = trackId ,
-        };
+        var parameters = new DialogParameters
+            {
+                ["TrackId"] = trackId,
+            };
         var options = new DialogOptions { CloseButton = true, MaxWidth = MaxWidth.Medium };
 
         var dialog = DialogService.Show<CheckTrackDialog>("Check Track Dialog", parameters, options);
@@ -268,6 +264,3 @@
 
     private void Cancel() => _dialog.Cancel();
 }
-
-
-
