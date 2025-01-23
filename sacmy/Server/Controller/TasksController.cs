@@ -307,7 +307,17 @@ namespace sacmy.Server.Controller
                 TaskId = model.TaskId
             };
 
+
+            NotificationPayload notificationPayload = new NotificationPayload
+            {
+                Title = "New Comment Added",
+                Body = $"{model.Note}",
+                Type = "comment",
+                IsEmployeeNotification = true,
+            };
+
             _context.Set<TaskNote>().Add(taskNote);
+            await _notificationService.SendNotificationAsync(notificationPayload, [model.Employeefirebasetoken]);
             await _context.SaveChangesAsync();
 
             return Ok(taskNote);

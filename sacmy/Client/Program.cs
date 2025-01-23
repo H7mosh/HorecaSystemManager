@@ -41,6 +41,8 @@ builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddSingleton<UserGlobalClass>();
 builder.Services.AddSingleton<AuthService>();
+builder.Services.AddScoped<ProductsService>();
+builder.Services.AddScoped<BrandService>();
 
 // Configure MudBlazor
 builder.Services.AddMudServices(config =>

@@ -242,80 +242,80 @@
 
             await JSRuntime.InvokeVoidAsync("downloadPdf", base64String, fileName);
 
-            // var content = new MultipartFormDataContent();
+            var content = new MultipartFormDataContent();
 
-            // var fileContent = new ByteArrayContent(pdfBytes);
+            var fileContent = new ByteArrayContent(pdfBytes);
 
-            // fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
 
-            // content.Add(fileContent, "file", fileName);
+            content.Add(fileContent, "file", fileName);
 
-            // content.Add(new StringContent(OrderId.ToString()), "orderId");
-
-
-
-            // // Upload the file
-
-            // var response = await Http.PostAsync($"api/Orders/upload-invoice-attachment", content);
-
-            // if (response.IsSuccessStatusCode)
-            // {
-            //     // Send notification
-            //     var notificationRequest = new NotificationRequest
-
-            //         {
-
-            //             Title = "order status changed",
-
-            //             Description = "there's new updated on you order",
-
-            //             Type = "tracking",
-
-            //             Message = OrderId.ToString(),
-
-            //             UserIdAndTokenList = new List<UserIdAndToken>
-            //             {
-            //                 new UserIdAndToken
-            //                 {
-            //                     Id = MainInvoice.CustomerId,
-            //                     FirebaseToken = MainInvoice.CustomerFirebaseToken
-            //                 }
-            //             }
-
-            //         };
-
-            //     await NotificationClientService.SendNotificationAsync(notificationRequest);
+            content.Add(new StringContent(OrderId.ToString()), "orderId");
 
 
 
-            //     // Download the PDF
+            // Upload the file
 
-            //     await JSRuntime.InvokeVoidAsync("downloadPdf", base64String, fileName);
+            var response = await Http.PostAsync($"api/Orders/upload-invoice-attachment", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Send notification
+                var notificationRequest = new NotificationRequest
+
+                    {
+
+                        Title = "order status changed",
+
+                        Description = "there's new updated on you order",
+
+                        Type = "tracking",
+
+                        Message = OrderId.ToString(),
+
+                        UserIdAndTokenList = new List<UserIdAndToken>
+                        {
+                            new UserIdAndToken
+                            {
+                                Id = MainInvoice.CustomerId,
+                                FirebaseToken = MainInvoice.CustomerFirebaseToken
+                            }
+                        }
+
+                    };
+
+                await NotificationClientService.SendNotificationAsync(notificationRequest);
 
 
-            //     _showSuccessMessage = true;
 
-            //     StateHasChanged();
+                // Download the PDF
+
+                await JSRuntime.InvokeVoidAsync("downloadPdf", base64String, fileName);
 
 
-            //     // Auto-hide the success message after 3 seconds
+                _showSuccessMessage = true;
 
-            //     await Task.Delay(300);
+                StateHasChanged();
 
-            //     _showSuccessMessage = false;
 
-            //     await Cancel();
+                // Auto-hide the success message after 3 seconds
 
-            // }
+                await Task.Delay(300);
 
-            // else
-            // {
+                _showSuccessMessage = false;
 
-            //     var errorMessage = await response.Content.ReadAsStringAsync();
+                await Cancel();
 
-            //     throw new Exception($"Failed to upload invoice: {errorMessage}");
+            }
 
-            // }
+            else
+            {
+
+                var errorMessage = await response.Content.ReadAsStringAsync();
+
+                throw new Exception($"Failed to upload invoice: {errorMessage}");
+
+            }
 
         }
 

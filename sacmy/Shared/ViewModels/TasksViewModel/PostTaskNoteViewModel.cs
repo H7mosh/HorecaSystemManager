@@ -15,6 +15,7 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
         public string? FileName { get; set; } // For sending the file name to the server
         public string? ContentType { get; set; } // For sending the content type to the server
         public Guid EmployeeId { get; set; }
+        public string Employeefirebasetoken { get; set; }
         public Guid TaskId { get; set; }
     }
 }

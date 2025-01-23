@@ -1,0 +1,355 @@
+﻿@page "/InvoiceItems"
+@inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@inject ISnackbar Snackbar
+@using sacmy.Client.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.InvoiceViewModel
+@using sacmy.Shared.ViewModels.Notification
+@inject UserGlobalClass UserGlobal
+@inject IDialogService DialogService
+@inject NavigationManager NavigationManager
+
+<script>
+    window.showToast = function (message, type) {
+        // First check and create toast container if it doesn't exist
+        let toastContainer = document.getElementById('toast-container');
+        if (!toastContainer) {
+            toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            document.body.appendChild(toastContainer);
+        }
+
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-white bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.setAttribute('aria-live', 'assertive');
+        toast.setAttribute('aria-atomic', 'true');
+        toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        ${message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+</script>
+
+
+
+@if (IsVisible)
+{
+    <div class="modal fade show"
+         style="display: block;"
+         tabindex="-1"
+         role="dialog">
+
+        <div class="modal-dialog modal-xl"
+             role="document">
+
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-white border-bottom border-light px-4 pb-0 pt-4">
+                    <div class="w-100">
+                        <div class="d-flex align-items-start justify-content-between mb-1">
+                            <h4 class="modal-title fw-semibold">Invoice Items</h4>
+                            <button type="button"
+                                    class="btn-close opacity-75"
+                                    style="margin: 4px 0 0 8px;"
+                                    @onclick="Close">
+                            </button>
+                        </div>
+
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
+                                Invoice #@Invoice.Id
+                            </span>
+                            <span class="text-secondary">@Invoice.CustomerName</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-body p-4">
+                    @if (IsLoading)
+                    {
+                        <div class="d-flex justify-content-center align-items-center min-vh-50"
+                             style="height: 400px;">
+                            <div class="spinner-border text-primary spinner-border-sm opacity-50"
+                                 role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (InvoiceItems != null && InvoiceItems.Any())
+                    {
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <span class="badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill">
+                                <i class="bi bi-box-seam me-2"></i>
+                                @InvoiceItems.Count() items
+                            </span>
+
+                            <button class="btn btn-primary px-4 py-2 d-inline-flex align-items-center gap-2"
+                                    @onclick="GeneratePdfReport">
+                                <i class="bi bi-file-pdf"></i>
+                                Export PDF
+                            </button>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 align-middle">
+                                    <thead>
+                                        <tr class="bg-light">
+                                            <th class="px-4 py-3 text-secondary fw-semibold small border-0">
+                                                Pattern Code
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small border-0">
+                                                SKU
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small border-0">
+                                                Name
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small border-0">
+                                                Factory
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small text-end border-0">
+                                                Price
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small text-end border-0">
+                                                Quantity
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small text-end border-0">
+                                                Total
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small text-end border-0">
+                                                Cost
+                                            </th>
+                                            <th class="px-4 py-3 text-secondary fw-semibold small border-0">
+                                                Batch
+                                            </th>
+                                            
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var item in InvoiceItems)
+                                        {
+                                            <tr class="border-bottom">
+                                                <td class="px-4 py-3 font-monospace small text-secondary">
+                                                    @item.PatternCode
+                                                </td>
+                                                <td class="px-4 py-3 font-monospace small text-secondary">
+                                                    @item.Sku
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    @item.Name
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    @item.Factory
+                                                </td>
+                                                <td class="px-4 py-3 text-end font-monospace">
+                                                    @item.Price.ToString("$#,##0.00")
+                                                </td>
+                                                <td class="px-4 py-3 text-end font-monospace">
+                                                    @item.Quantity
+                                                </td>
+                                                <td class="px-4 py-3 text-end font-monospace">
+                                                    @item.Total.ToString("$#,##0.00")
+                                                </td>
+                                                <td class="px-4 py-3 text-end font-monospace">
+                                                    @item.Cost.ToString("$#,##0.00")
+                                                </td>
+                                                <td class="px-4 py-3 font-monospace small text-secondary">
+                                                    @item.Batch
+                                                </td>
+                                                
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="bi bi-inbox display-1 text-secondary opacity-25 mb-3"></i>
+                            <p class="text-secondary mb-0">No items found for this invoice</p>
+                        </div>
+                    }
+                </div>
+
+                <div class="modal-footer border-0 py-4">
+                    <button type="button"
+                            class="btn btn-secondary px-4"
+                            @onclick="Close">
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style>
+    .table > :not(caption) > * > * {
+        background-color: transparent;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+    }
+
+    .modal-xl {
+        max-width: 1200px;
+    }
+
+    .form-control:focus {
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.1);
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    .spinner-border-sm {
+        width: 1.25rem;
+        height: 1.25rem;
+        border-width: 0.15em;
+    }
+
+    .badge {
+        font-weight: 500;
+    }
+
+    .min-vh-50 {
+        min-height: 50vh;
+    }
+</style>
+
+
+@code {
+    [Parameter]
+    public InvoiceViewModel Invoice { get; set; }
+
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private bool IsLoading = true;
+    private bool IsNotificationSent;
+    private List<InvoiceItemsViewModel> InvoiceItems { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && Invoice != null)
+        {
+            await LoadInvoiceItems();
+        }
+    }
+
+    private async Task LoadInvoiceItems()
+    {
+        try
+        {
+            IsLoading = true;
+            var response = await Http.GetFromJsonAsync<List<InvoiceItemsViewModel>>(
+                $"api/Invoice/GetInvoiceItems?InvoiceId={Invoice.Id}");
+
+            if (response != null)
+            {
+                InvoiceItems = response.Select(item => new InvoiceItemsViewModel
+                    {
+                        PatternCode = item.PatternCode,
+                        Sku = item.Sku,
+                        Name = item.Name,
+                        Factory = item.Factory,
+                        Price = item.Price,
+                        Quantity = item.Quantity,
+                        Total = item.Total,
+                        Cost = item.Cost,
+                        Batch = item.Batch,
+                        IsChecked = false,
+                        Notes = string.Empty
+                    }).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("showToast", "Error loading invoice items", "danger");
+        }
+        finally
+        {
+            IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GeneratePdfReport()
+    {
+        var dialogParameters = new DialogParameters();
+        var options = new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+                DisableBackdropClick = true
+            };
+
+        var dialog = await DialogService.ShowAsync<UserPasswordAndCarNumberDialog>("Required Information", dialogParameters, options);
+        var result = await dialog.Result;
+
+        if (!result.Canceled && result.Data != null)
+        {
+            string carNumber = result.Data.ToString();
+
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("generateInvoiceItemsPDF",
+                    new
+                    {
+                        id = Invoice.Id,
+                        customerName = Invoice.CustomerName,
+                        dateTime = Invoice.DateTime,
+                        carNumber = carNumber,
+                        createdBy = $"{UserGlobal.User.FirstName} {UserGlobal.User.LastName}"
+                    },
+                    InvoiceItems.Select(item => new
+                    {
+                        patternCode = item.PatternCode,
+                        sku = item.Sku,
+                        factory = item.Factory,
+                        price = item.Price,
+                        quantity = item.Quantity,
+                        total = item.Total,
+                        isChecked = item.IsChecked,
+                        notes = item.Notes
+                    }).ToList());
+
+                await JSRuntime.InvokeVoidAsync("showToast", "Report generated successfully", "success");
+                await Close();
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("showToast", "An error occurred while generating the report", "danger");
+            }
+        }
+    }
+
+    private async Task Close()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+}
+
+
+

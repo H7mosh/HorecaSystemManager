@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace sacmy.Shared.ViewModels.ProductsViewModel
 {
-    public class GetProductsViewModel
+    public class GetProductsForReportViewModel
     {
         public Guid Id { get; set; }
         public string? BrandName { get; set; }

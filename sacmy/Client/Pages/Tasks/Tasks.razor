@@ -661,7 +661,7 @@
     private string remindTitle;
     private string remindMessage;
     private string _searchString;
-
+    
     private bool showScheduledNotificationModal = false;
     private string notificationTitle = "Reminder"; 
     private string notificationBody;
@@ -788,6 +788,7 @@
                     FileName = null,
                     ContentType = null,
                     EmployeeId = UserGlobal.User.Id,
+                    Employeefirebasetoken = UserGlobal.User.FirebaseToken,
                     TaskId = selectedTask.Id
                 };
 
@@ -842,6 +843,7 @@
                     FileName = null,
                     ContentType = null,
                     EmployeeId = UserGlobal.User.Id,
+                    Employeefirebasetoken = UserGlobal.User.FirebaseToken,
                     TaskId = selectedTask.Id
             };
 
@@ -912,6 +914,7 @@
             FileBase64 = fileBytes != null ? Convert.ToBase64String(fileBytes) : null,
             FileName = selectedFileName,
             ContentType = fileContentType,
+            Employeefirebasetoken = UserGlobal.User.FirebaseToken,
             EmployeeId = UserGlobal.User.Id,
             TaskId = selectedTask.Id
         };
@@ -1131,6 +1134,8 @@
                     FileName = selectedFileName,
 
                     ContentType = fileContentType,
+
+                    Employeefirebasetoken = UserGlobal.User.FirebaseToken,
 
                     EmployeeId = UserGlobal.User.Id,
 
