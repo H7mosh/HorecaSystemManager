@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace sacmy.Shared.ViewModels.ProductsViewModel
 {
 
-    public class ProductsPaginationRequest
+    public class ProductsForReportPaginationRequest
     {
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 1000;

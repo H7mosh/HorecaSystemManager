@@ -1,30 +1,793 @@
 ﻿@page "/Products"
-@inject HttpClient Http
-@inject ISnackbar Snackbar
+@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.BrandViewModel
+@using sacmy.Shared.ViewModels.Products
+@inject ProductsService ProductsService
+@inject BrandService BrandService
 @inject IJSRuntime JS
-@using sacmy.Shared.ViewModels.ProductsViewModel
-@using static MudBlazor.Icons.Material
-@using Microsoft.AspNetCore.Components.Forms
-@using static MudBlazor.CategoryTypes
 
 
-<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadProducts">Load Products</MudButton>
-<MudButton Variant="Variant.Outlined" Color="Color.Secondary" OnClick="GeneratePDF">Generate PDF</MudButton>
 
-<!-- Bootstrap Modal for Progress Bar -->
-<div class="modal fade" id="progressModal" tabindex="-1" aria-labelledby="progressModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="progressModalLabel">Generating PDF</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<style>
+    /* Original styles */
+    .product-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+        .table-header th {
+            padding: 0.75rem;
+            font-weight: 500;
+            text-align: left;
+        }
+
+    .product-row {
+        border-bottom: 1px solid #eee;
+    }
+
+        .product-row td {
+            padding: 0.75rem;
+            vertical-align: middle;
+        }
+
+    .product-image {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+    }
+
+    .pagination {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        padding: 1rem 0;
+    }
+
+    .page-number {
+        min-width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #dee2e6;
+        background: white;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #666;
+    }
+
+        .page-number.active {
+            background: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+        }
+
+        .page-number:hover:not(.active) {
+            background: #f8f9fa;
+        }
+
+    .category-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 999px;
+        background: #f8f9fa;
+        color: #666;
+    }
+
+    .stock-status {
+        font-size: 0.875rem;
+    }
+
+        .stock-status.in-stock {
+            color: #198754;
+        }
+
+        .stock-status.out-of-stock {
+            color: #dc3545;
+        }
+
+    /* New overview styles */
+    .overview-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        height: 100%;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .stat-header {
+        color: #6B7280;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.875rem;
+        font-weight: 600;
+        line-height: 2.25rem;
+        margin-top: 0.25rem;
+        color: #1a56db;
+    }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #6B7280;
+        font-size: 0.875rem;
+    }
+
+    .stat-number {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 0.5rem;
+        background: #F3F4F6;
+        border-radius: 9999px;
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 9999px;
+        transition: width 0.3s ease;
+    }
+
+        .progress-fill.available {
+            background: #10B981;
+        }
+
+        .progress-fill.out-of-stock {
+            background: #EF4444;
+        }
+
+    .hot-products {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #E5E7EB;
+    }
+
+    .hot-header {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .hot-icon {
+        color: #EF4444;
+    }
+
+    .hot-stats {
+        background: #F9FAFB;
+        border-radius: 0.5rem;
+        padding: 1rem;
+    }
+
+    .views-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+    }
+
+    .views-label {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .views-sublabel {
+        font-size: 0.75rem;
+        color: #6B7280;
+    }
+
+    .views-number {
+        font-size: 1.25rem;
+        font-weight: 600;
+        text-align: right;
+    }
+
+.expanded-row {
+        background-color: #EFF6FF;  /* Light blue background */
+    }
+
+    .quick-edit-form {
+        padding: 1.5rem;
+        background: #F8FAFC;  /* Slightly different background than the row */
+        border-radius: 0.5rem;
+        margin: 0.5rem 1rem;
+        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
+        border: 1px solid #E0E7FF;  /* Light blue border */
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-row.three-columns {
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .form-group label {
+        font-size: 0.875rem;
+        font-weight: 500;
+        color: #1E40AF;  /* Darker blue for labels */
+        margin-bottom: 0.5rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        height: 2.5rem;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #BFDBFE;  /* Light blue border */
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        color: #1E293B;
+        background-color: white;
+        transition: all 0.15s ease-in-out;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus {
+        outline: none;
+        border-color: #60A5FA;  /* Medium blue */
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .form-group input:hover,
+    .form-group select:hover {
+        border-color: #93C5FD;  /* Light blue hover */
+    }
+
+    .form-group input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
+    .form-group input[type="number"]::-webkit-outer-spin-button,
+    .form-group input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #E0E7FF;
+        margin-top: 1rem;
+    }
+
+    .form-actions .btn-secondary {
+        background-color: #F3F4F6;
+        color: #374151;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: 1px solid #D1D5DB;
+        transition: all 0.15s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-actions .btn-secondary:hover {
+        background-color: #E5E7EB;
+        border-color: #9CA3AF;
+    }
+
+    .form-actions .btn-secondary i {
+        font-size: 0.875rem;
+    }
+
+    /* Push Save/Cancel buttons to the right */
+    .form-actions .btn-primary,
+    .form-actions .btn-link {
+        margin-left: auto;
+    }
+    
+    /* Remove margin from Cancel button when next to Save */
+    .form-actions .btn-primary + .btn-link {
+        margin-left: 0;
+    }
+
+    .form-actions .btn-primary {
+        background-color: #2563EB;  /* Slightly darker blue */
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        border: none;
+        transition: background-color 0.15s ease-in-out;
+    }
+
+    .form-actions .btn-primary:hover {
+        background-color: #1D4ED8;  /* Even darker blue on hover */
+    }
+
+    .form-actions .btn-link {
+        color: #6B7280;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: color 0.15s ease-in-out;
+    }
+
+    .form-actions .btn-link:hover {
+        color: #1E40AF;  /* Dark blue on hover */
+    }
+
+    @@media (max-width: 768px) {
+        .form-row,
+        .form-row.three-columns {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .quick-edit-form {
+            padding: 1rem;
+            margin: 0.5rem;
+        }
+    }
+
+    #progressModal .modal-content {
+        border-radius: 1rem;
+    }
+
+    #progressModal .progress {
+        border-radius: 0.5rem;
+        background-color: #e9ecef;
+        overflow: hidden;
+    }
+
+    #progressModal .progress-bar {
+        border-radius: 0.5rem;
+        transition: width 0.3s ease;
+        min-width: 0%;
+    }
+
+    #progressModal .bi-file-pdf {
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+</style>
+
+
+<div class="container-fluid py-3">
+    <div class="row">
+        <!-- Brand Selection -->
+
+        <div class="col-12">
+            <div class="d-flex align-items-center">
+                <select class="form-select bg-white border rounded-3" style="width: 180px;" @bind="selectedBrandId" @oninput="OnBrandSelected">
+                    <option value="">All Brands</option>
+                    @if (brands != null)
+                    {
+                        @foreach (var brand in brands)
+                        {
+                            <option value="@brand.Id">@brand.NameEn</option>
+                        }
+                    }
+                </select>
             </div>
-            <div class="modal-body">
-                <div class="progress">
-                    <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
-                         role="progressbar" style="width: 0%;" aria-valuenow="0"
-                         aria-valuemin="0" aria-valuemax="100">
-                        0%
+        </div>
+
+        <div class="col-xl-9">
+            <!-- Header Section -->
+            <div class="bg-white p-3 rounded-3 shadow-sm mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="text-dark mb-0 fw-semibold">IN STOCK</h5>
+
+                    <div class="d-flex align-items-center gap-4">
+                        <!-- Category Filter -->
+                        <select class="form-select bg-white border" style="width: 180px;" @bind="SelectedCategory">
+                            <option value="">All Categories</option>
+                            @foreach (var category in brandResponse?.Data?.Categories ?? new List<Category>())
+                            {
+                                <option value="@category.Id">@category.NameEn</option>
+                            }
+                        </select>
+
+                        <!-- Search Box -->
+                        <div class="position-relative" style="width: 280px;">
+                            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                            <input type="text"
+                                   class="form-control ps-5 border"
+                                   placeholder="Search SKU, Name..."
+                                   @bind="searchString"
+                                   @bind:event="oninput" />
+                        </div>
+
+                        <!-- Add Product Button -->
+                        <div class="d-flex align-items-center gap-2">
+                            <button class="btn btn-primary d-flex align-items-center gap-2 px-3">
+                                <i class="bi bi-plus-lg"></i>
+                                <span>Add product</span>
+                            </button>
+
+                            <button class="btn btn-secondary d-flex align-items-center gap-2 px-3" @onclick="GeneratePDF">
+                                <i class="bi bi-file-pdf"></i>
+                                <span>Generate PDF</span>
+                            </button>
+                        </div>
+
+                        <!-- Progress Modal -->
+                        <div class="modal" id="pdfProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content border-0 shadow">
+                                    <div class="modal-body p-4">
+                                        <!-- Price Adjustment Modal Content -->
+                                        <div id="price-adjustment-section">
+                                            <div class="text-center mb-4">
+                                                <h5 class="modal-title">PDF Generation Options</h5>
+                                                <p class="text-muted mb-3">Configure range and price adjustment</p>
+
+                                                <!-- Range Selection -->
+                                                <div class="mb-4">
+                                                    <h6 class="text-start mb-2">Select Range</h6>
+                                                    <p class="text-muted small mb-2 text-start">
+                                                        Total items: <span id="totalItemsCount">0</span>
+                                                        <br>
+                                                        Maximum 999 items per range
+                                                    </p>
+                                                    <div class="row g-2">
+                                                        <div class="col">
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">From</span>
+                                                                <input type="number"
+                                                                       class="form-control"
+                                                                       id="rangeFrom"
+                                                                       min="1"
+                                                                       value="1"
+                                                                       required>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col">
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">To</span>
+                                                                <input type="number"
+                                                                       class="form-control"
+                                                                       id="rangeTo"
+                                                                       min="1"
+                                                                       value="999"
+                                                                       required>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Price Adjustment -->
+                                                <div class="mb-4">
+                                                    <h6 class="text-start mb-2">Price Adjustment</h6>
+                                                    <div class="input-group" style="max-width: 200px; margin: 0 auto;">
+                                                        <span class="input-group-text">$</span>
+                                                        <input type="number"
+                                                               class="form-control"
+                                                               id="priceIncrease"
+                                                               step="0.1"
+                                                               min="0"
+                                                               placeholder="0.00">
+                                                    </div>
+                                                </div>
+
+                                                <button class="btn btn-primary" onclick="startPdfGeneration()">
+                                                    Generate PDF
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Progress Section (unchanged) -->
+                                        <div id="progress-section" style="display: none;">
+                                            <div class="text-center mb-4">
+                                                <i class="bi bi-file-pdf text-primary" style="font-size: 3rem;"></i>
+                                                <h5 class="modal-title mt-3 mb-1">Generating PDF</h5>
+                                                <p class="text-muted mb-0 progress-status">Processing items...</p>
+                                            </div>
+
+                                            <div class="progress mb-3" style="height: 10px;">
+                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                                     role="progressbar"
+                                                     style="width: 0%">
+                                                </div>
+                                            </div>
+
+                                            <div class="d-flex justify-content-between text-muted small">
+                                                <span class="progress-count">0 of 0 items</span>
+                                                <span class="progress-percentage">0%</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            @if (isLoading)
+            {
+                <div class="d-flex justify-content-center my-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+            }
+            else if (FilteredProducts?.Any() == true)
+            {
+                <div class="table-responsive">
+                    <table class="product-table">
+                        <thead class="table-header">
+                            <tr>
+                                <th style="width: 40px;">
+                                    <input type="checkbox" class="form-check-input" />
+                                </th>
+                                <th style="width: 60px;"></th>
+                                <th style="width: 150px;">SKU</th>
+                                <th style="width: 200px;">Name</th>
+                                <th style="width: 150px;">Category</th>
+                                <th style="width: 120px;" class="text-end">Price</th>
+                                <th style="width: 120px;" class="text-center">Stock</th>
+                                <th style="width: 40px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var product in PaginatedProducts)
+                            {
+                                <tr class="product-row">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input" />
+                                    </td>
+                                    <td>
+                                        <img src="@product.Image" class="product-image" alt="@product.Name" />
+                                    </td>
+                                    <td>
+                                        <div>@product.Sku</div>
+                                        <small class="text-muted">@product.PatternNumber</small>
+                                    </td>
+                                    <td>@product.Name</td>
+                                    <td>
+                                        <span class="category-badge">
+                                            @GetCategoryName(product.CategoryId)
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div>$@product.Price.ToString("F2")</div>
+                                        <small class="text-success">@product.DinarPrice.ToString("N0") IQD</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="stock-status @(product.Quantity > 0 ? "in-stock" : "out-of-stock")">
+                                            @product.Quantity in stock
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm p-0" @onclick="() => ToggleProductExpand(product.Id)">
+                                            <i class="bi @(IsProductExpanded(product.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                @if (IsProductExpanded(product.Id))
+                                {
+                                    <tr class="expanded-row">
+                                        <td colspan="8">
+                                            <div class="quick-edit-form">
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Display Name</label>
+                                                        <input type="text" @bind="@product.Name" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Pattern Number</label>
+                                                        <input type="text" @bind="@product.PatternNumber" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Price ($)</label>
+                                                        <input type="number" step="0.01" @bind="@product.Price" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Dinar Price</label>
+                                                        <input type="number" step="0.01" @bind="@product.DinarPrice" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Category</label>
+                                                        <select @bind="@product.CategoryId">
+                                                            @foreach (var category in brandResponse?.Data?.Categories ?? new List<Category>())
+                                                            {
+                                                                <option value="@category.Id">@category.NameEn</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Series/Collection</label>
+                                                        <select @bind="@product.SeriesOrCollectionId">
+                                                            @foreach (var collection in brandResponse?.Data?.Collections ?? new List<Collection>())
+                                                            {
+                                                                <option value="@collection.Id">@collection.NameEn</option>
+                                                            }
+                                                        </select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-row three-columns">
+                                                    <div class="form-group">
+                                                        <label>Quantity</label>
+                                                        <input type="number" @bind="@product.Quantity" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Box Count</label>
+                                                        <input type="number" @bind="@product.BoxCount" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Piece Count</label>
+                                                        <input type="number" @bind="@product.PieceCount" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Volume</label>
+                                                        <input type="number" step="0.01" @bind="@product.Volume" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Points</label>
+                                                        <input type="number" @bind="@product.Points" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-actions">
+                                                    <button class="btn btn-secondary">
+                                                        <i class="bi bi-sliders"></i> Advanced Edit
+                                                    </button>
+                                                    <button class="btn btn-primary" @onclick="() => SaveChanges(product)">Save Changes</button>
+                                                    <button class="btn btn-link" @onclick="() => ToggleProductExpand(product.Id)">Cancel</button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                    </table>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="text-muted small">
+                            Showing @(((CurrentPage - 1) * PageSize) + 1) to @Math.Min(CurrentPage * PageSize, FilteredProducts.Count())
+                            of @FilteredProducts.Count() items
+                        </div>
+                        <div class="pagination">
+                            @{
+                                var totalPages = (int)Math.Ceiling(FilteredProducts.Count() / (double)PageSize);
+                                var windowStart = Math.Max(1, Math.Min(CurrentPage - 5, totalPages - 9));
+                                var windowEnd = Math.Min(totalPages, windowStart + 9);
+
+                                if (CurrentPage > 1)
+                                {
+                                    <button class="page-number" @onclick="() => NavigateToPage(CurrentPage - 1)">
+                                        <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                }
+
+                                @for (int i = windowStart; i <= windowEnd; i++)
+                                {
+                                    var pageNumber = i;
+                                    <button class="page-number @(CurrentPage == pageNumber ? "active" : "")"
+                                            @onclick="() => NavigateToPage(pageNumber)">
+                                        @pageNumber
+                                    </button>
+                                }
+
+                                if (CurrentPage < totalPages)
+                                {
+                                    <button class="page-number" @onclick="() => NavigateToPage(CurrentPage + 1)">
+                                        <i class="bi bi-chevron-right"></i>
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info">
+                    No products found matching your criteria.
+                </div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(successMessage))
+            {
+                <div class="alert alert-success">@successMessage</div>
+            }
+
+            @if (!string.IsNullOrWhiteSpace(errorMessage))
+            {
+                <div class="alert alert-danger">@errorMessage</div>
+            }
+        </div>
+
+        <div class="col-xl-3">
+            <div class="overview-card">
+                <h2 class="stat-header">Overview</h2>
+
+                <div>
+                    <div class="stat-label">SKU Total</div>
+                    <div class="stat-value">@(FilteredProducts?.Count() ?? 0)</div>
+                </div>
+
+                <div style="margin-top: 1.5rem;">
+                    <div class="stat-row">
+                        <span class="stat-label">Available</span>
+                        <span class="stat-number" style="color: #10B981;">
+                            @(FilteredProducts?.Count(p => p.Quantity > 0) ?? 0)
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill available" style="width: @(GetAvailablePercentage())%"></div>
+                    </div>
+
+                    <div class="stat-row">
+                        <span class="stat-label">Out of Stock</span>
+                        <span class="stat-number" style="color: #EF4444;">
+                            @(FilteredProducts?.Count(p => p.Quantity == 0) ?? 0)
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill out-of-stock" style="width: @(GetOutOfStockPercentage())%"></div>
+                    </div>
+                </div>
+
+                <div class="hot-products">
+                    <div class="hot-header">
+                        <i class="bi bi-arrow-up-right hot-icon"></i>
+                        <span class="views-label">Hot Products</span>
+                    </div>
+
+                    <div class="hot-stats">
+                        <div class="views-row">
+                            <div>
+                                <div class="views-label">Top SKU Performance</div>
+                                <div class="views-sublabel">Last 7 days</div>
+                            </div>
+                            <div>
+                                <div class="views-number">349</div>
+                                <div class="views-sublabel">Views This Week</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -32,57 +795,219 @@
     </div>
 </div>
 
-<MudDataGrid T="GetProductsViewModel" Items="@currentPageProducts" Dense="true" Bordered="true">
-    <Columns>
-        <PropertyColumn Property="x => x.PatternNumber" />
-        <PropertyColumn Property="x => x.Sku" />
-        <PropertyColumn Property="x => x.BrandName" />
-        <PropertyColumn Property="x => x.CollectionName" />
-        <PropertyColumn Property="x => x.BoxCount" />
-        <PropertyColumn Property="x => x.PieceCount" />
-    </Columns>
-</MudDataGrid>
-
-<MudPagination Count="@totalPages" SelectedChanged="OnPageChanged" Class="mt-4" />
-
 @code {
-    private List<GetProductsViewModel> currentPageProducts = new();
-    private int currentPage = 1;
-    private int totalPages = 1;
-    private const int PageSize = 500;
+    private List<BrandViewModel> brands;
+    private string selectedBrandId;
+    private bool isLoading = true;
+    private string searchString = "";
+    private string SelectedCategory = "";
+    private HashSet<string> expandedProductIds = new();
+    private BrandResponse brandResponse;
+    private const string PASABHACE_DEFAULT_ID = "63459FB9-37CD-4119-BA73-8E614E5F308B";
+    private int CurrentPage = 1;
+    private const int PageSize = 10;
+    private bool isUpdating = false;
+    private string successMessage = null;
+    private string errorMessage = null;
+    private IJSObjectReference _jsModule;
 
-    private async Task LoadProducts()
+
+    protected override async Task OnInitializedAsync()
     {
         try
         {
-            var response = await Http.GetFromJsonAsync<ProductsPaginatedResponse<GetProductsViewModel>>($"api/product?PageNumber={currentPage}&PageSize={PageSize}");
-            if (response != null)
-            {
-                currentPageProducts = response.Items;
-                totalPages = response.TotalPages;
-                Snackbar.Add("Products Loaded Successfully", Severity.Success);
-            }
+            await LoadBrands();
+            await SetDefaultBrandAndLoadProducts();
+            isLoading = false;
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Error loading products: {ex.Message}", Severity.Error);
+            Console.WriteLine($"Error loading data: {ex.Message}");
         }
-    }
-
-    private async Task OnPageChanged(int page)
-    {
-        currentPage = page;
-        await LoadProducts();
     }
 
     private async Task GeneratePDF()
     {
-        // Call the JavaScript function to generate the PDF
-        await JS.InvokeVoidAsync("generatePDF", currentPageProducts);
+        try
+        {
+            var productsToExport = FilteredProducts?.Select(p => new
+            {
+                sku = p.Sku,
+                patternNumber = p.PatternNumber,
+                price = p.Price,
+                image = p.Image,
+                boxCount = p.BoxCount,
+                pieceCount = p.PieceCount
+            }).ToList();
+
+            if (productsToExport == null || !productsToExport.Any())
+            {
+                errorMessage = "No products available to generate PDF.";
+                StateHasChanged();
+                return;
+            }
+
+            // Show modal with price adjustment option
+            await JS.InvokeVoidAsync("showPdfModal", productsToExport);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error generating PDF: {ex.Message}";
+            StateHasChanged();
+        }
     }
+
+    private async Task LoadBrands()
+    {
+        try
+        {
+            brands = await BrandService.GetBrandsAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading brands: {ex.Message}");
+        }
+    }
+
+    private async Task SetDefaultBrandAndLoadProducts()
+    {
+        try
+        {
+            selectedBrandId = PASABHACE_DEFAULT_ID;
+            brandResponse = await ProductsService.GetProductsByBrandAsync(selectedBrandId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching default brand products: {ex.Message}");
+        }
+    }
+
+    private async Task OnBrandSelected(ChangeEventArgs e)
+    {
+        try
+        {
+            selectedBrandId = e.Value.ToString();
+            if (!string.IsNullOrEmpty(selectedBrandId))
+            {
+                isLoading = true;
+                brandResponse = await ProductsService.GetProductsByBrandAsync(selectedBrandId);
+                isLoading = false;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error fetching products by brand: {ex.Message}");
+        }
+    }
+
+    private IEnumerable<Product> FilteredProducts =>
+        brandResponse?.Data?.Products?
+            .Where(p =>
+                (string.IsNullOrEmpty(SelectedCategory) || p.CategoryId == SelectedCategory) &&
+                (string.IsNullOrEmpty(searchString) ||
+                 p.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                 p.Sku.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
+                 p.PatternNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+            )
+            .OrderByDescending(p => p.IsNew)
+            .ThenBy(p => p.Name) ?? Enumerable.Empty<Product>();
+
+    private IEnumerable<Product> PaginatedProducts =>
+        FilteredProducts
+            .Skip((CurrentPage - 1) * PageSize)
+            .Take(PageSize);
+
+    private void NavigateToPage(int page)
+    {
+        var totalPages = (int)Math.Ceiling((FilteredProducts?.Count() ?? 0) / (double)PageSize);
+
+        if (page >= 1 && page <= totalPages)
+        {
+            CurrentPage = page;
+            StateHasChanged();
+        }
+    }
+
+    private string GetCategoryName(string categoryId) =>
+        brandResponse?.Data?.Categories
+            .FirstOrDefault(c => c.Id == categoryId)?.NameEn ?? "Unknown";
+
+    private void ToggleProductExpand(string productId)
+    {
+        if (expandedProductIds.Contains(productId))
+            expandedProductIds.Remove(productId);
+        else
+            expandedProductIds.Add(productId);
+
+        StateHasChanged();
+    }
+
+    private bool IsProductExpanded(string productId) =>
+        expandedProductIds.Contains(productId);
+
+    private double GetAvailablePercentage()
+    {
+        var total = FilteredProducts?.Count() ?? 0;
+        if (total == 0) return 0;
+        var available = FilteredProducts?.Count(p => p.Quantity > 0) ?? 0;
+        return (double)available / total * 100;
+    }
+
+    private double GetOutOfStockPercentage()
+    {
+        var total = FilteredProducts?.Count() ?? 0;
+        if (total == 0) return 0;
+        var outOfStock = FilteredProducts?.Count(p => p.Quantity == 0) ?? 0;
+        return (double)outOfStock / total * 100;
+    }
+
+    private async Task SaveChanges(Product product)
+    {
+        isUpdating = true;
+        successMessage = null;
+        errorMessage = null;
+
+        try
+        {
+            var updateModel = new UpdateProductViewModel
+            {
+                ProductId = Guid.Parse(product.Id),
+                Name = product.Name,
+                PatternNumber = product.PatternNumber,
+                Price = product.Price,
+                CategoryId = product.CategoryId,
+                CollectionId = product.SeriesOrCollectionId,
+                Quantity = product.Quantity,
+                OuterTypeCount = product.BoxCount,
+                InnerTypeCount = product.PieceCount,
+                Points = product.Points,
+                Volume = product.Volume
+            };
+
+            var response = await ProductsService.UpdateProductAsync(updateModel);
+
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = "Product updated successfully!";
+                errorMessage = null;
+            }
+            else
+            {
+                errorMessage = $"Failed to update product. Status Code: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error updating product: {ex.Message}";
+        }
+        finally
+        {
+            isUpdating = false;
+        }
+
+        ToggleProductExpand(product.Id);
+        StateHasChanged();
+    }
+
 }
-
-
-
-
-

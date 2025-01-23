@@ -5,9 +5,10 @@
 @using sacmy.Client.Pages.Components.CustomDataGrid
 @using sacmy.Client.Pages.Components.Dialogs
 @using sacmy.Shared.ViewModels.InvoiceViewModel
+
 @using static MudBlazor.CategoryTypes
 @inject NavigationManager NavigationManager
-@inject IJSRuntime JS
+@inject IJSRuntime JSRuntime
 @inject HttpClient httpClient
 @inject IDialogService DialogService
 @inject AppConfig appConfig
@@ -288,6 +289,22 @@
 }
 </style>
 
+<script>
+        window.openFileDialog = function () {
+        document.getElementById('fileInput').click();
+    };
+
+    window.openModal = function (modalId) {
+            console.log("Opening modal with ID:", modalId);
+        $('#' + modalId).modal('show');
+    };
+
+    window.closeModal = function (modalId) {
+            console.log("Closing modal with ID:", modalId);
+        $('#' + modalId).modal('hide');
+    };
+</script>
+
 <sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
                                                              Items="@InvoiceList"
                                                              SearchString="@_searchInvoiceString"
@@ -302,9 +319,9 @@
                                                              ShowSwitch="true"
                                                              SwitchLabel="Show UnCompleted Invoice"
                                                              @bind-SwitchValue="showUncompletedInvoice" />
-
-
-
+<Invoiceitems Invoice="@selectedInvoice"
+        IsVisible="@isModalVisible"
+        IsVisibleChanged="@HandleModalVisibilityChanged" />
 @code
 {
     int selectedId = -1;
@@ -326,6 +343,8 @@
             }
         }
     }
+    private InvoiceViewModel selectedInvoice;
+    private bool isModalVisible;
 
     protected override async Task OnInitializedAsync()
     {
@@ -415,23 +434,19 @@
 
     private async Task ShowInvoiceItems(InvoiceViewModel invoice)
     {
-        var parameters = new DialogParameters
-        {
-            { 
-                "Invoice", invoice 
-            }
-        };
+        selectedInvoice = invoice;
+        isModalVisible = true;
+        StateHasChanged();
+    }
 
-        var options = new DialogOptions
+    private void HandleModalVisibilityChanged(bool visible)
+    {
+        isModalVisible = visible;
+        if (!visible)
         {
-                CloseButton = true,
-                MaxWidth = MaxWidth.Medium,
-                FullWidth = true,
-                DisableBackdropClick = true
-        };
-
-        var dialog = await DialogService.ShowAsync<InvoiceItemDialogg>("Invoice Items", parameters, options);
-        await dialog.Result;
+            selectedInvoice = null;
+        }
+        StateHasChanged();
     }
 }
 

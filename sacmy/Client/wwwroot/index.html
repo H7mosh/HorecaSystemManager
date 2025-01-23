@@ -34,7 +34,9 @@
         <a href="" class="reload">Reload</a>
         <a class="dismiss">🗙</a>
     </div>
+
     <script src="_framework/blazor.webassembly.js"></script>
+
     <script>
         function saveAsFile(filename, byteBase64) {
             var link = document.createElement('a');
@@ -70,174 +72,378 @@
         }
     </script>
     <script>
-        window.generatePDF = async function (products) {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4'); // PDF setup in portrait, millimeters, A4 size
+        function updateProgress(processed, total) {
+            const percentComplete = Math.round((processed / total) * 100);
 
-            // Total items and progress calculation
+            // Update progress bar
+            const progressBar = document.querySelector('.progress-bar');
+            progressBar.style.width = `${percentComplete}%`;
+
+            // Update status text
+            const statusText = document.querySelector('.progress-status');
+            if (percentComplete < 100) {
+                statusText.textContent = `Processing items...`;
+            } else {
+                statusText.textContent = 'Finalizing PDF...';
+            }
+
+            // Update count and percentage
+            document.querySelector('.progress-count').textContent =
+                `${processed} of ${total} items`;
+            document.querySelector('.progress-percentage').textContent =
+                `${percentComplete}%`;
+        }
+    </script>
+    <script>
+        window.startPdfGeneration = function () {
+            const priceIncrease = parseFloat(document.getElementById('priceIncrease').value) || 0;
+            const products = window.productsToExport;
+
+            if (!products) {
+                console.error('No products available for PDF generation');
+                return;
+            }
+
+            // Get selected range
+            const range = getSelectedRange();
+
+            // Slice products array according to range and adjust prices
+            const selectedProducts = products
+                .slice(range.from, range.to)
+                .map(product => ({
+                    ...product,
+                    price: (parseFloat(product.price) + priceIncrease).toFixed(2)
+                }));
+
+            if (selectedProducts.length === 0) {
+                alert('No products selected in the specified range');
+                return;
+            }
+
+            // Hide price adjustment, show progress
+            const modalEl = document.getElementById('pdfProgressModal');
+            const priceAdjustmentSection = modalEl.querySelector('#price-adjustment-section');
+            const progressSection = modalEl.querySelector('#progress-section');
+
+            if (priceAdjustmentSection) priceAdjustmentSection.style.display = 'none';
+            if (progressSection) progressSection.style.display = 'block';
+
+            // Start PDF generation
+            window.generatePDF(selectedProducts);
+        };
+    </script>
+    <script>
+        window.showPdfModal = function (productsToExport) {
+            const modalEl = document.getElementById('pdfProgressModal');
+            if (!modalEl) return;
+
+            // Remove any existing close button first
+            const existingCloseBtn = modalEl.querySelector('.modal-close-btn');
+            if (existingCloseBtn) {
+                existingCloseBtn.remove();
+            }
+
+            // Add close button
+            const closeBtn = document.createElement('div');
+            closeBtn.className = 'modal-close-btn';
+            closeBtn.innerHTML = '×';
+            closeBtn.style.cssText = `
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        font-size: 20px;
+        color: #666;
+        cursor: pointer;
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        background: transparent;
+        border-radius: 50%;
+        z-index: 1000;
+    `;
+
+            closeBtn.onmouseover = () => {
+                closeBtn.style.backgroundColor = '#f5f5f5';
+            };
+
+            closeBtn.onmouseout = () => {
+                closeBtn.style.backgroundColor = 'transparent';
+            };
+
+            closeBtn.onclick = () => modalEl.style.display = 'none';
+
+            // Insert close button as the first child of the modal content
+            const modalContent = modalEl.querySelector('.modal-content') || modalEl;
+            modalContent.style.position = 'relative';  // Ensure positioning context
+            modalContent.insertBefore(closeBtn, modalContent.firstChild);
+
+            // Show price adjustment section, hide progress section
+            const priceAdjustmentSection = modalEl.querySelector('#price-adjustment-section');
+            const progressSection = modalEl.querySelector('#progress-section');
+            if (priceAdjustmentSection) {
+                priceAdjustmentSection.style.display = 'block';
+                // Update the total items count
+                const totalItemsSpan = modalEl.querySelector('#totalItemsCount');
+                if (totalItemsSpan) {
+                    totalItemsSpan.textContent = productsToExport.length;
+                }
+                // Set max values for range inputs
+                const fromInput = modalEl.querySelector('#rangeFrom');
+                const toInput = modalEl.querySelector('#rangeTo');
+                if (fromInput && toInput) {
+                    fromInput.max = productsToExport.length;
+                    toInput.max = productsToExport.length;
+                    toInput.value = Math.min(999, productsToExport.length);
+                    // Add event listeners for range validation
+                    fromInput.addEventListener('change', function () {
+                        const from = parseInt(this.value) || 1;
+                        const to = parseInt(toInput.value) || 999;
+                        if (from < 1) this.value = 1;
+                        if (from > to) toInput.value = Math.min(from + 998, productsToExport.length);
+                    });
+                    toInput.addEventListener('change', function () {
+                        const from = parseInt(fromInput.value) || 1;
+                        const to = parseInt(this.value) || 999;
+                        if (to < from) this.value = Math.min(from + 998, productsToExport.length);
+                        if (to > productsToExport.length) this.value = productsToExport.length;
+                    });
+                }
+            }
+            if (progressSection) progressSection.style.display = 'none';
+            // Show modal
+            modalEl.style.display = 'block';
+            // Store products for later use
+            window.productsToExport = productsToExport;
+        };
+    </script>
+    <script>
+        window.generatePDF = async function (products) {
+            if (products.length > 999) {
+                alert('Maximum 999 items allowed per report');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+            const modalEl = document.getElementById('pdfProgressModal');
+            if (!modalEl) return;
+
             const totalItems = products.length;
             let processedItems = 0;
 
-            // Show progress modal before PDF generation
-            var progressModal = new bootstrap.Modal(document.getElementById('progressModal'));
-            progressModal.show();
+            
+            async function downloadAndProcessImage(imageUrl) {
+                try {
+                    // Replace the domain in the image URL
+                    const newImageUrl = imageUrl.replace('https://api.safinahmedtech.com', 'http://46.165.247.249');
+                    console.log('Modified image URL:', newImageUrl);
+                    const response = await fetch(newImageUrl);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            // Function to update the progress bar
-            function updateProgressBar(percentComplete) {
-                const progressBar = document.getElementById('progress-bar');
-                progressBar.style.width = percentComplete + "%";
-                progressBar.setAttribute("aria-valuenow", percentComplete);
-                progressBar.textContent = percentComplete + "%";
+                    const blob = await response.blob();
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            // Create a temporary image to get dimensions
+                            const img = new Image();
+                            img.onload = () => {
+                                // Create a canvas to potentially resize and control quality
+                                const canvas = document.createElement('canvas');
+                                const ctx = canvas.getContext('2d');
+
+                                // Set reasonable dimensions
+                                const MAX_WIDTH = 300;
+                                const MAX_HEIGHT = 300;
+                                let width = img.width;
+                                let height = img.height;
+
+                                // Calculate new dimensions
+                                if (width > height) {
+                                    if (width > MAX_WIDTH) {
+                                        height *= MAX_WIDTH / width;
+                                        width = MAX_WIDTH;
+                                    }
+                                } else {
+                                    if (height > MAX_HEIGHT) {
+                                        width *= MAX_HEIGHT / height;
+                                        height = MAX_HEIGHT;
+                                    }
+                                }
+
+                                canvas.width = width;
+                                canvas.height = height;
+
+                                // Draw and get the data
+                                ctx.drawImage(img, 0, 0, width, height);
+                                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                resolve(dataUrl);
+                            };
+                            img.onerror = () => reject(new Error('Error loading image'));
+                            img.src = reader.result;
+                        };
+                        reader.onerror = () => reject(new Error('Error reading image'));
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error('Error processing image:', imageUrl, error);
+                    // Return base64 of a simple placeholder image
+                    return 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCABAAEADASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//Z';
+                }
             }
 
-            // Page settings
-            const itemsPerRow = 2;
-            const itemsPerPage = 10;
-            const itemHeight = 40;
-            const imageHeight = 36;
-            const itemWidth = 90;
-            const lineSpacing = 4;
-            const marginLeft = 15;
-            const headerHeight = 40;
-            const footerHeight = 15;
-            const pageHeight = doc.internal.pageSize.getHeight();
-            const pageWidth = doc.internal.pageSize.getWidth();
+            try {
+                // Page settings
+                const itemsPerRow = 2;
+                const itemsPerPage = 10;
+                const itemHeight = 40;
+                const imageHeight = 36;
+                const itemWidth = 90;
+                const lineSpacing = 4;
+                const marginLeft = 15;
+                const headerHeight = 40;
+                const footerHeight = 15;
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const pageWidth = doc.internal.pageSize.getWidth();
 
-            // Calculate available height for content
-            const contentHeight = pageHeight - headerHeight - footerHeight;
-
-            // Draw the header (only on the first page)
-            function drawHeader() {
-                doc.setFontSize(16);
-                doc.text("SAFIN AHMED COMPANY", marginLeft, 20);
-                doc.setFontSize(12);
-                doc.text("IRAQ - ERBIL - KOYA ROAD", marginLeft, 28);
-                doc.text("Mob.No. : +964750 930 0606", pageWidth - marginLeft - 60, 20);
-                doc.text("Website : www.safinahmed.krd", pageWidth - marginLeft - 60, 28);
-                const logoUrl = "https://m.media-amazon.com/images/S/aplus-media-library-service-media/d30e0c5e-7e80-45d0-b021-255726f1ae14.__CR107,195,1067,330_PT0_SX970_V1___.jpg";
-                doc.addImage(logoUrl, 'JPEG', (pageWidth / 2) - 25, 10, 50, 20);
-            }
-
-            // Draw the footer
-            function drawFooter() {
-                doc.setFontSize(10);
-                doc.text("SAFIN AHMED TECH.", marginLeft, pageHeight - footerHeight + 10);
-                doc.text(new Date().toISOString().split('T')[0], pageWidth - marginLeft - 30, pageHeight - footerHeight + 10);
-            }
-
-            // Function to compress image
-            function compressImage(blob) {
-                return new Promise((resolve) => {
-                    const img = new Image();
-                    const url = URL.createObjectURL(blob);
-                    img.src = url;
-
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-
-                        ctx.drawImage(img, 0, 0, img.width, img.height);
-
-                        const quality = 0.7;
-                        const dataURL = canvas.toDataURL('image/jpeg', quality);
-
-                        URL.revokeObjectURL(url);
-                        resolve(dataURL);
-                    };
-
-                    img.onerror = () => {
-                        console.error('Image failed to load for compression.');
-                        resolve(null);
-                    };
-                });
-            }
-
-            // Function to render products on the current page asynchronously
-            async function renderPageItems(productsToRender, marginTop) {
-                let x = marginLeft;
-                let y = marginTop;
-
-                for (let i = 0; i < productsToRender.length; i++) {
-                    const product = productsToRender[i];
-
-                    // Fetch and compress the image on-the-fly
-                    const imageUrl = product.image || "https://via.placeholder.com/100";
-                    let imageBase64;
-
-                    try {
-                        const response = await fetch(imageUrl);
-                        const blob = await response.blob();
-                        imageBase64 = await compressImage(blob);
-                    } catch (error) {
-                        console.error(`Failed to load image for product ${product.patternNumber}: ${error}`);
-                        imageBase64 = "https://via.placeholder.com/100";
-                    }
-
-                    // Draw product image
-                    if (imageBase64) {
-                        doc.addImage(imageBase64, 'JPEG', x, y, 30, imageHeight);
-                    } else {
-                        doc.addImage("https://via.placeholder.com/100", 'JPEG', x, y, 30, imageHeight);
-                    }
-
-                    // Product information with price
+                // Draw header
+                function drawHeader() {
+                    doc.setFontSize(16);
+                    doc.text("SAFIN AHMED COMPANY", marginLeft, 20);
                     doc.setFontSize(12);
-                    doc.text(`Pattern Number: ${product.patternNumber || 'N/A'}`, x + 35, y + 5);
-                    doc.text(`Sku: ${product.sku}`, x + 35, y + 12);
-                    doc.text(`In: ${product.boxCount} - Out: ${product.pieceCount}`, x + 35, y + 19);
-                    doc.text(`Price: $${parseFloat(product.price).toFixed(2)}`, x + 35, y + 26);
+                    doc.text("IRAQ - ERBIL - KOYA ROAD", marginLeft, 28);
+                    doc.text("Mob.No. : +964750 930 0606", pageWidth - marginLeft - 60, 20);
+                    doc.text("Website : www.safinahmed.krd", pageWidth - marginLeft - 60, 28);
+                }
 
-                    // Adjust x position for the next item in the row
-                    if ((i + 1) % itemsPerRow === 0) {
-                        x = marginLeft;
-                        y += itemHeight;
-                        doc.setDrawColor(200);
-                        doc.line(marginLeft, y - lineSpacing, pageWidth - marginLeft, y - lineSpacing);
-                        y += lineSpacing;
-                    } else {
-                        x += itemWidth;
-                    }
+                // Draw footer
+                function drawFooter() {
+                    doc.setFontSize(10);
+                    doc.text("SAFIN AHMED TECH.", marginLeft, pageHeight - footerHeight + 10);
+                    doc.text(new Date().toISOString().split('T')[0], pageWidth - marginLeft - 30, pageHeight - footerHeight + 10);
+                }
 
-                    // Update progress bar
+                // Process all images first
+                const processedProducts = [];
+                for (const product of products) {
+                    console.log('Processing image for product:', product.sku);
+                    const imageData = await downloadAndProcessImage(product.image);
+                    processedProducts.push({
+                        ...product,
+                        imageData: imageData
+                    });
                     processedItems++;
-                    const percentComplete = Math.round((processedItems / totalItems) * 100);
-                    updateProgressBar(percentComplete);
-
+                    updateProgress(processedItems, totalItems);
                     await new Promise(resolve => setTimeout(resolve, 50));
                 }
 
-                drawFooter();
-            }
+                let currentIndex = 0;
+                while (currentIndex < processedProducts.length) {
+                    const marginTop = currentIndex === 0 ? 45 : 20;
 
-            // Handle pages
-            let currentIndex = 0;
+                    if (currentIndex === 0) {
+                        drawHeader();
+                    } else {
+                        doc.addPage();
+                    }
 
-            while (currentIndex < products.length) {
-                let marginTop = (currentIndex === 0) ? 45 : 20;
+                    let x = marginLeft;
+                    let y = marginTop;
 
-                if (currentIndex === 0) {
-                    drawHeader();
-                } else {
-                    doc.addPage();
+                    const pageProducts = processedProducts.slice(currentIndex, currentIndex + itemsPerPage);
+
+                    for (let i = 0; i < pageProducts.length; i++) {
+                        const product = pageProducts[i];
+                        console.log('Adding image to PDF for product:', product.sku);
+
+                        try {
+                            // Add image with error handling
+                            doc.addImage(
+                                product.imageData,
+                                'JPEG',
+                                x,
+                                y,
+                                30,
+                                imageHeight,
+                                product.sku, // unique alias
+                                'FAST' // compression
+                            );
+                        } catch (imgError) {
+                            console.error('Error adding image to PDF:', imgError);
+                        }
+
+                        // Add text
+                        doc.setFontSize(12);
+                        doc.text(`Pattern Number: ${product.patternNumber || 'N/A'}`, x + 35, y + 5);
+                        doc.text(`Sku: ${product.sku}`, x + 35, y + 12);
+                        doc.text(`In: ${product.boxCount} - Out: ${product.pieceCount}`, x + 35, y + 19);
+                        doc.text(`Price: $${parseFloat(product.price).toFixed(2)}`, x + 35, y + 26);
+
+                        if ((i + 1) % itemsPerRow === 0) {
+                            x = marginLeft;
+                            y += itemHeight;
+                            doc.setDrawColor(200);
+                            doc.line(marginLeft, y - lineSpacing, pageWidth - marginLeft, y - lineSpacing);
+                            y += lineSpacing;
+                        } else {
+                            x += itemWidth;
+                        }
+                    }
+
                     drawFooter();
+                    currentIndex += itemsPerPage;
                 }
 
-                const productsToRender = products.slice(currentIndex, currentIndex + itemsPerPage);
-                await renderPageItems(productsToRender, marginTop);
+                // Update to 100% when complete
+                updateProgress(totalItems, totalItems);
+                await new Promise(resolve => setTimeout(resolve, 500));
 
-                currentIndex += itemsPerPage;
-            }
-
-            // Final update to 100% when the process is done
-            updateProgressBar(100);
-
-            // Save the PDF and hide the progress bar
-            setTimeout(function () {
+                // Save the PDF
                 doc.save("products.pdf");
-                progressModal.hide();
-            }, 500);
+
+            } catch (error) {
+                console.error('Error generating PDF:', error);
+                const statusText = modalEl.querySelector('.progress-status');
+                if (statusText) {
+                    statusText.textContent = 'Error generating PDF';
+                    statusText.classList.add('text-danger');
+                }
+            } finally {
+                setTimeout(() => {
+                    window.hidePdfModal();
+                }, 500);
+            }
+        };
+    </script>
+    <script>
+        window.hidePdfModal = function () {
+            const modalEl = document.getElementById('pdfProgressModal');
+            if (!modalEl) return;
+
+            // Reset progress elements
+            const progressSection = modalEl.querySelector('#progress-section');
+            const priceAdjustmentSection = modalEl.querySelector('#price-adjustment-section');
+            const progressBar = modalEl.querySelector('.progress-bar');
+
+            if (progressSection) progressSection.style.display = 'none';
+            if (priceAdjustmentSection) priceAdjustmentSection.style.display = 'block';
+            if (progressBar) progressBar.style.width = '0%';
+
+            // Try Bootstrap modal first
+            const bsModal = bootstrap.Modal.getInstance(modalEl);
+            if (bsModal) {
+                bsModal.hide();
+            } else {
+                // Fallback to manual hiding
+                modalEl.style.display = 'none';
+                // Remove modal backdrop if exists
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                // Remove modal-open class from body
+                document.body.classList.remove('modal-open');
+            }
         };
     </script>
     <script>
@@ -256,7 +462,7 @@
                 doc.addFileToVFS("arial.ttf", arialBase64);
                 doc.addFont("arial.ttf", "Arial", "normal");
                 doc.setFont("Arial");
-            } 
+            }
             catch (error) {
                 console.error('Error loading Arial font:', error);
                 // Continue without custom font if loading fails
@@ -487,7 +693,7 @@
                 drawFooter();
 
                 return doc.output('datauristring').split(',')[1];
-            } 
+            }
             catch (error) {
                 console.error('Error generating PDF:', error);
                 throw new Error(`Failed to generate PDF: ${error.message}`);
@@ -658,7 +864,6 @@
 
         };
 
-        // Helper function to convert ArrayBuffer to Base64 in chunks
         function arrayBufferToBase64(buffer) {
             let binary = '';
             const bytes = new Uint8Array(buffer);
@@ -670,7 +875,6 @@
 
             return btoa(binary);
         }
-
     </script>
     <script>
         window.downloadPdf = function (base64String, fileName) {
@@ -701,11 +905,67 @@
                 // Cleanup
                 document.body.removeChild(link);
                 URL.revokeObjectURL(link.href);
-            } catch (error) {
+            }
+            catch (error) {
                 console.error('Error downloading PDF:', error);
             }
         };
     </script>
+    <script>
+        function showToast(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `toast align-items-center text-white bg-${type} border-0`;
+            toast.setAttribute('role', 'alert');
+            toast.setAttribute('aria-live', 'assertive');
+            toast.setAttribute('aria-atomic', 'true');
+
+            toast.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                ${message}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>`;
+
+            const toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                const container = document.createElement('div');
+                container.id = 'toast-container';
+                container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+                document.body.appendChild(container);
+            }
+
+            document.getElementById('toast-container').appendChild(toast);
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+        }
+    </script>
+    <script>
+        function getSelectedRange() {
+            const modalEl = document.getElementById('pdfProgressModal');
+            const fromInput = modalEl.querySelector('#rangeFrom');
+            const toInput = modalEl.querySelector('#rangeTo');
+
+            let from = parseInt(fromInput.value) || 1;
+            let to = parseInt(toInput.value) || 999;
+
+            // Ensure valid range
+            from = Math.max(1, from);
+            to = Math.min(to, window.productsToExport.length);
+
+            if (from > to) {
+                from = 1;
+                to = Math.min(999, window.productsToExport.length);
+            }
+
+            // Update input values to reflect validated range
+            fromInput.value = from;
+            toInput.value = to;
+
+            return { from: from - 1, to: to }; // Convert to 0-based index
+        }
+    </script>
+  
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="jquery/jquery.min.js" crossorigin="anonymous"></script>
     <script src="jspdf/jspdf.umd.min.js"></script>

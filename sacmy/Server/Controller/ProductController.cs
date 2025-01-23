@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
+using sacmy.Shared.ViewModels.Products;
 using sacmy.Shared.ViewModels.ProductsViewModel;
 using sacmy.Shared.ViewModels.TasksViewModel;
 
@@ -19,11 +20,11 @@ namespace sacmy.Server.Controller
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetProducts([FromQuery] ProductsPaginationRequest request)
+        public async Task<IActionResult> GetProducts([FromQuery] ProductsForReportPaginationRequest request)
         {
             var query = _context.Products
                 .Where(e => e.BrandId == Guid.Parse("63459fb9-37cd-4119-ba73-8e614e5f308b"))
-                .Select(x => new GetProductsViewModel
+                .Select(x => new GetProductsForReportViewModel
                 {
                     Id = x.Id,
                     BrandName = x.Brand.NameEn,
@@ -49,7 +50,7 @@ namespace sacmy.Server.Controller
                 return Ok("There's No Items Yet!");
             }
 
-            var response = new ProductsPaginatedResponse<GetProductsViewModel>
+            var response = new ProductsPaginatedResponse<GetProductsForReportViewModel>
             {
                 Items = items,
                 TotalCount = totalCount,
@@ -61,6 +62,145 @@ namespace sacmy.Server.Controller
 
             return Ok(response);
         }
+
+        [HttpPut("UpdateProduct")]
+        public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductViewModel model)
+        {
+            if (model.ProductId == Guid.Empty)
+                return BadRequest("ProductId is required.");
+
+            // 1. Retrieve the product from the database
+            var product = await _context.Products
+                                    .Include(p => p.ProductImages)
+                                    .FirstOrDefaultAsync(p => p.Id == model.ProductId);
+
+            if (product == null)
+                return NotFound("Product not found.");
+
+            // 2. Update properties only if they are not null
+            //    For reference types (string?), null means do not update; an empty string means set to ""
+            //    For value types (double?, int?, etc.), null means do not update; a non-null value means update.
+
+            if (model.BrandId.HasValue)
+                product.BrandId = model.BrandId.Value;
+
+            if (string.IsNullOrWhiteSpace(model.CollectionId))
+                product.CollectionId = Guid.Parse(model.CollectionId);
+
+            if (string.IsNullOrWhiteSpace(model.CategoryId))
+                product.CategoryId = Guid.Parse(model.CategoryId);
+
+            if (string.IsNullOrWhiteSpace(model.MaterialId))
+                product.MaterialId = Guid.Parse(model.MaterialId);
+
+            if (model.CatalogId.HasValue)
+                product.CatalogId = model.CatalogId.Value;
+
+            if (model.Sku != null)
+                product.Sku = model.Sku;
+
+            if (model.PatternNumber != null)
+                product.PatternNumber = model.PatternNumber;
+
+            if (model.Name != null)
+                product.Name = model.Name;
+
+            if (model.Description != null)
+                product.Decription = model.Description;
+
+            if (model.Price.HasValue)
+                product.Price = double.Parse(model.Price.ToString());
+
+            if (model.Points.HasValue)
+                product.Points = model.Points.Value;
+
+            if (model.Quantity.HasValue)
+                product.Quantity = model.Quantity.Value;
+
+            if (model.InnerType != null)
+                product.InnerType = model.InnerType;
+
+            if (model.InnerTypeCount.HasValue)
+                product.InnerTypeCount = model.InnerTypeCount.Value;
+
+            if (model.OuterType != null)
+                product.OuterType = model.OuterType;
+
+            if (model.OuterTypeCount.HasValue)
+                product.OuterTypeCount = model.OuterTypeCount.Value;
+
+            if (model.Height.HasValue)
+                product.Height = model.Height.Value;
+
+            if (model.Diameter.HasValue)
+                product.Diameter = model.Diameter.Value;
+
+            if (model.Top.HasValue)
+                product.Top = model.Top.Value;
+
+            if (model.Base.HasValue)
+                product.Base = model.Base.Value;
+
+            if (model.Volume.HasValue)
+                product.Volume = double.Parse(model.Volume.ToString());
+
+            if (model.Weight.HasValue)
+                product.Weight = model.Weight.Value;
+
+            if (model.Area.HasValue)
+                product.Area = model.Area.Value;
+
+            if (model.Upc != null)
+                product.Upc = model.Upc;
+
+            if (model.Ean != null)
+                product.Ean = model.Ean;
+
+            // 3. Handle images:
+            //    If model.ImageLinks is not null, we assume the user wants
+            //    to replace the entire list of images with what is provided.
+            if (model.ImageLinks != null)
+            {
+                // Get all existing images from the product
+                var existingImages = product.ProductImages.Select(x => x.ImageLink).ToList();
+
+                // Determine which images to remove
+                var imagesToRemove = existingImages.Except(model.ImageLinks).ToList();
+                // Determine which images to add
+                var imagesToAdd = model.ImageLinks.Except(existingImages).ToList();
+
+                // Remove
+                if (imagesToRemove.Any())
+                {
+                    var removeEntities = product.ProductImages
+                        .Where(pi => imagesToRemove.Contains(pi.ImageLink))
+                        .ToList();
+                    _context.ProductImages.RemoveRange(removeEntities);
+                }
+
+                // Add
+                foreach (var newImageLink in imagesToAdd)
+                {
+                    // You can add any needed logic, e.g., generating IDs, etc.
+                    product.ProductImages.Add(new ProductImage
+                    {
+                        Id = Guid.NewGuid(),
+                        ProductId = product.Id,
+                        ImageLink = newImageLink
+                    });
+                }
+            }
+
+            // 4. Update metadata
+            product.UpdateDate = DateTime.UtcNow;
+
+            // 5. Save changes
+            await _context.SaveChangesAsync();
+
+            // 6. (Optional) Return updated product or a success message
+            return Ok(new { message = "Product updated successfully." });
+        }
+
     }
 
 }
