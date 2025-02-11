@@ -90,3 +90,41 @@ html, body {
     .main-content.shifted {
         margin-left: 280px;
     }
+
+.toast-container {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    z-index: 1050;
+}
+
+.toast {
+    opacity: 1 !important;
+    min-width: 200px;
+}
+
+    .toast.show {
+        display: block;
+        opacity: 1;
+    }
+
+.bg-success {
+    background-color: #198754 !important;
+}
+
+.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.bg-warning {
+    background-color: #ffc107 !important;
+}
+
+.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.toast-body {
+    padding: 0.75rem 1.25rem;
+}
+

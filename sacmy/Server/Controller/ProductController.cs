@@ -3,8 +3,8 @@ using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
+using sacmy.Shared.Core;
 using sacmy.Shared.ViewModels.Products;
-using sacmy.Shared.ViewModels.ProductsViewModel;
 using sacmy.Shared.ViewModels.TasksViewModel;
 
 namespace sacmy.Server.Controller
@@ -63,11 +63,16 @@ namespace sacmy.Server.Controller
             return Ok(response);
         }
 
-        [HttpPut("UpdateProduct")]
-        public async Task<IActionResult> UpdateProduct([FromBody] UpdateProductViewModel model)
+        [HttpPost("UpdateProduct")]
+        public async Task<ActionResult<ApiResponse>> UpdateProduct([FromBody] UpdateProductViewModel model)
         {
             if (model.ProductId == Guid.Empty)
-                return BadRequest("ProductId is required.");
+                return BadRequest(new ApiResponse
+                {
+                    Success = false,
+                    Message = "ProductId is required."
+                });
+
 
             // 1. Retrieve the product from the database
             var product = await _context.Products
@@ -75,7 +80,11 @@ namespace sacmy.Server.Controller
                                     .FirstOrDefaultAsync(p => p.Id == model.ProductId);
 
             if (product == null)
-                return NotFound("Product not found.");
+                return NotFound(new ApiResponse
+                {
+                    Success = false,
+                    Message = "Product not found."
+                });
 
             // 2. Update properties only if they are not null
             //    For reference types (string?), null means do not update; an empty string means set to ""
@@ -90,9 +99,6 @@ namespace sacmy.Server.Controller
             if (string.IsNullOrWhiteSpace(model.CategoryId))
                 product.CategoryId = Guid.Parse(model.CategoryId);
 
-            if (string.IsNullOrWhiteSpace(model.MaterialId))
-                product.MaterialId = Guid.Parse(model.MaterialId);
-
             if (model.CatalogId.HasValue)
                 product.CatalogId = model.CatalogId.Value;
 
@@ -104,9 +110,6 @@ namespace sacmy.Server.Controller
 
             if (model.Name != null)
                 product.Name = model.Name;
-
-            if (model.Description != null)
-                product.Decription = model.Description;
 
             if (model.Price.HasValue)
                 product.Price = double.Parse(model.Price.ToString());
@@ -150,46 +153,8 @@ namespace sacmy.Server.Controller
             if (model.Area.HasValue)
                 product.Area = model.Area.Value;
 
-            if (model.Upc != null)
-                product.Upc = model.Upc;
-
             if (model.Ean != null)
                 product.Ean = model.Ean;
-
-            // 3. Handle images:
-            //    If model.ImageLinks is not null, we assume the user wants
-            //    to replace the entire list of images with what is provided.
-            if (model.ImageLinks != null)
-            {
-                // Get all existing images from the product
-                var existingImages = product.ProductImages.Select(x => x.ImageLink).ToList();
-
-                // Determine which images to remove
-                var imagesToRemove = existingImages.Except(model.ImageLinks).ToList();
-                // Determine which images to add
-                var imagesToAdd = model.ImageLinks.Except(existingImages).ToList();
-
-                // Remove
-                if (imagesToRemove.Any())
-                {
-                    var removeEntities = product.ProductImages
-                        .Where(pi => imagesToRemove.Contains(pi.ImageLink))
-                        .ToList();
-                    _context.ProductImages.RemoveRange(removeEntities);
-                }
-
-                // Add
-                foreach (var newImageLink in imagesToAdd)
-                {
-                    // You can add any needed logic, e.g., generating IDs, etc.
-                    product.ProductImages.Add(new ProductImage
-                    {
-                        Id = Guid.NewGuid(),
-                        ProductId = product.Id,
-                        ImageLink = newImageLink
-                    });
-                }
-            }
 
             // 4. Update metadata
             product.UpdateDate = DateTime.UtcNow;
@@ -198,7 +163,12 @@ namespace sacmy.Server.Controller
             await _context.SaveChangesAsync();
 
             // 6. (Optional) Return updated product or a success message
-            return Ok(new { message = "Product updated successfully." });
+            return Ok(new ApiResponse
+            {
+                Success = true,
+                Message = "Product updated successfully.",
+                Data = product
+            });
         }
 
     }

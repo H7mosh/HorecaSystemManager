@@ -1,10 +1,12 @@
 ﻿@page "/Products"
 @using sacmy.Client.Services
+@using sacmy.Client.Shared.Toast
 @using sacmy.Shared.ViewModels.BrandViewModel
 @using sacmy.Shared.ViewModels.Products
 @inject ProductsService ProductsService
 @inject BrandService BrandService
 @inject IJSRuntime JS
+@inject ToastService ToastService
 
 
 
@@ -383,11 +385,9 @@
     }
 </style>
 
-
 <div class="container-fluid py-3">
     <div class="row">
         <!-- Brand Selection -->
-
         <div class="col-12">
             <div class="d-flex align-items-center">
                 <select class="form-select bg-white border rounded-3" style="width: 180px;" @bind="selectedBrandId" @oninput="OnBrandSelected">
@@ -410,6 +410,17 @@
                     <h5 class="text-dark mb-0 fw-semibold">IN STOCK</h5>
 
                     <div class="d-flex align-items-center gap-4">
+
+                        <!-- Stock Filter Checkbox -->
+                        <div class="form-check d-flex align-items-center">
+                            <input class="form-check-input me-2" 
+                                   type="checkbox" 
+                                   id="inStockFilter" 
+                                   @bind="showOnlyInStock" />
+                            <label class="form-check-label" for="inStockFilter">
+                                In Stock Only
+                            </label>
+                        </div>
                         <!-- Category Filter -->
                         <select class="form-select bg-white border" style="width: 180px;" @bind="SelectedCategory">
                             <option value="">All Categories</option>
@@ -446,85 +457,104 @@
                         <div class="modal" id="pdfProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content border-0 shadow">
-                                    <div class="modal-body p-4">
+                                    <div class="modal-header border-0 pb-0">
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body p-4 pt-0">
                                         <!-- Price Adjustment Modal Content -->
                                         <div id="price-adjustment-section">
                                             <div class="text-center mb-4">
-                                                <h5 class="modal-title">PDF Generation Options</h5>
-                                                <p class="text-muted mb-3">Configure range and price adjustment</p>
+                                                <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
+                                                <h5 class="modal-title mt-3">PDF Generation Options</h5>
+                                                <p class="text-muted small mb-4">Configure range and price adjustment</p>
 
                                                 <!-- Range Selection -->
                                                 <div class="mb-4">
-                                                    <h6 class="text-start mb-2">Select Range</h6>
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <h6 class="mb-0">Select Range</h6>
+                                                        <span class="text-muted small">
+                                                            Total items: <span id="totalItemsCount" class="fw-bold">0</span>
+                                                        </span>
+                                                    </div>
                                                     <p class="text-muted small mb-2 text-start">
-                                                        Total items: <span id="totalItemsCount">0</span>
-                                                        <br>
                                                         Maximum 999 items per range
                                                     </p>
                                                     <div class="row g-2">
                                                         <div class="col">
                                                             <div class="input-group">
-                                                                <span class="input-group-text">From</span>
+                                                                <span class="input-group-text bg-light">From</span>
                                                                 <input type="number"
                                                                        class="form-control"
                                                                        id="rangeFrom"
                                                                        min="1"
-                                                                       value="1"
-                                                                       required>
+                                                                       value="1">
                                                             </div>
                                                         </div>
                                                         <div class="col">
                                                             <div class="input-group">
-                                                                <span class="input-group-text">To</span>
+                                                                <span class="input-group-text bg-light">To</span>
                                                                 <input type="number"
                                                                        class="form-control"
                                                                        id="rangeTo"
                                                                        min="1"
-                                                                       value="999"
-                                                                       required>
+                                                                       value="999">
                                                             </div>
                                                         </div>
+                                                    </div>
+                                                </div>
+
+
+                                                <!-- Hide Prices Option -->
+                                                <div class="mb-4 text-start">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="hidePrices">
+                                                        <label class="form-check-label" for="hidePrices">
+                                                            Hide prices in PDF
+                                                        </label>
                                                     </div>
                                                 </div>
 
                                                 <!-- Price Adjustment -->
                                                 <div class="mb-4">
                                                     <h6 class="text-start mb-2">Price Adjustment</h6>
-                                                    <div class="input-group" style="max-width: 200px; margin: 0 auto;">
-                                                        <span class="input-group-text">$</span>
+                                                    <div class="input-group" style="max-width: 200px;">
+                                                        <span class="input-group-text bg-light">$</span>
                                                         <input type="number"
                                                                class="form-control"
                                                                id="priceIncrease"
-                                                               step="0.1"
+                                                               step="0.01"
                                                                min="0"
+                                                               value="0.00"
                                                                placeholder="0.00">
                                                     </div>
                                                 </div>
 
-                                                <button class="btn btn-primary" onclick="startPdfGeneration()">
+                                                <button class="btn btn-primary px-4" onclick="startPdfGeneration()">
                                                     Generate PDF
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <!-- Progress Section (unchanged) -->
+                                        <!-- Progress Section -->
                                         <div id="progress-section" style="display: none;">
-                                            <div class="text-center mb-4">
-                                                <i class="bi bi-file-pdf text-primary" style="font-size: 3rem;"></i>
-                                                <h5 class="modal-title mt-3 mb-1">Generating PDF</h5>
-                                                <p class="text-muted mb-0 progress-status">Processing items...</p>
-                                            </div>
+                                            <div class="text-center">
+                                                <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
+                                                <h5 class="mt-3 mb-2">Generating PDF</h5>
 
-                                            <div class="progress mb-3" style="height: 10px;">
-                                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
-                                                     role="progressbar"
-                                                     style="width: 0%">
+                                                <div class="progress my-4" style="height: 10px;">
+                                                    <div class="progress-bar bg-primary"
+                                                         role="progressbar"
+                                                         style="width: 0%"
+                                                         aria-valuenow="0"
+                                                         aria-valuemin="0"
+                                                         aria-valuemax="100">
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div class="d-flex justify-content-between text-muted small">
-                                                <span class="progress-count">0 of 0 items</span>
-                                                <span class="progress-percentage">0%</span>
+                                                <div class="d-flex justify-content-between text-muted small mb-2">
+                                                    <span class="progress-count">0 of 0 items</span>
+                                                    <span class="progress-percentage">0%</span>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -581,8 +611,8 @@
                                         </span>
                                     </td>
                                     <td class="text-end">
-                                        <div>$@product.Price.ToString("F2")</div>
-                                        <small class="text-success">@product.DinarPrice.ToString("N0") IQD</small>
+                                        <div>$@product.Price</div>
+                                        <small class="text-success">@product.DinarPrice IQD</small>
                                     </td>
                                     <td class="text-center">
                                         <span class="stock-status @(product.Quantity > 0 ? "in-stock" : "out-of-stock")">
@@ -792,8 +822,19 @@
                 </div>
             </div>
         </div>
+
+        
+
     </div>
 </div>
+
+<AdvancedEditDialog 
+    Product="selectedProduct"
+    IsVisible="showAdvancedEdit"
+    IsVisibleChanged="(value) => showAdvancedEdit = value"
+    OnSaved="HandleAdvancedEditSaved"
+    Categories="brandResponse?.Data?.Categories"
+    Collections="brandResponse?.Data?.Collections" />
 
 @code {
     private List<BrandViewModel> brands;
@@ -810,6 +851,9 @@
     private string successMessage = null;
     private string errorMessage = null;
     private IJSObjectReference _jsModule;
+    private bool showOnlyInStock = false;
+    private Product selectedProduct;
+    private bool showAdvancedEdit;
 
 
     protected override async Task OnInitializedAsync()
@@ -908,7 +952,8 @@
                 (string.IsNullOrEmpty(searchString) ||
                  p.Name.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
                  p.Sku.Contains(searchString, StringComparison.OrdinalIgnoreCase) ||
-                 p.PatternNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                 p.PatternNumber.Contains(searchString, StringComparison.OrdinalIgnoreCase)) &&
+                (!showOnlyInStock || p.Quantity > 0)
             )
             .OrderByDescending(p => p.IsNew)
             .ThenBy(p => p.Name) ?? Enumerable.Empty<Product>();
@@ -962,11 +1007,23 @@
         return (double)outOfStock / total * 100;
     }
 
+    private void ShowAdvancedEdit(Product product)
+    {
+        selectedProduct = product;
+        showAdvancedEdit = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleAdvancedEditSaved()
+    {
+        await LoadBrands();
+        await SetDefaultBrandAndLoadProducts();
+    }
+
     private async Task SaveChanges(Product product)
     {
+        if (isUpdating) return;
         isUpdating = true;
-        successMessage = null;
-        errorMessage = null;
 
         try
         {
@@ -975,39 +1032,40 @@
                 ProductId = Guid.Parse(product.Id),
                 Name = product.Name,
                 PatternNumber = product.PatternNumber,
-                Price = product.Price,
+                Price = double.Parse(product.Price.ToString()),
                 CategoryId = product.CategoryId,
                 CollectionId = product.SeriesOrCollectionId,
                 Quantity = product.Quantity,
-                OuterTypeCount = product.BoxCount,
-                InnerTypeCount = product.PieceCount,
+                OuterTypeCount = product.BoxCount??0,
+                InnerTypeCount = product.PieceCount??0,
                 Points = product.Points,
-                Volume = product.Volume
+                
+                Volume = double.Parse(product.Volume.ToString())
             };
 
             var response = await ProductsService.UpdateProductAsync(updateModel);
 
-            if (response.IsSuccessStatusCode)
+            if (response.Success)
             {
-                successMessage = "Product updated successfully!";
-                errorMessage = null;
+                ToastService.ShowToast(response.Message ?? "Changes saved successfully", "success");
+                await LoadBrands();
+                await SetDefaultBrandAndLoadProducts();
             }
             else
             {
-                errorMessage = $"Failed to update product. Status Code: {response.StatusCode}";
+                ToastService.ShowToast(response.Message ?? "Failed to save changes", "danger");
             }
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error updating product: {ex.Message}";
+            ToastService.ShowToast($"Error updating product: {ex.Message}", "danger");
         }
         finally
         {
             isUpdating = false;
+            ToggleProductExpand(product.Id);
+            StateHasChanged();
+
         }
-
-        ToggleProductExpand(product.Id);
-        StateHasChanged();
     }
-
 }

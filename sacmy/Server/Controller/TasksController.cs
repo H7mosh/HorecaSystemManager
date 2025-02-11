@@ -60,6 +60,7 @@ namespace sacmy.Server.Controller
                     CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
                     CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
                     CreatedbyImage = e.CreatedByNavigation.Image,
+                    CreatedbyFirebaseToken = e.CreatedByNavigation.FirebaseToken,
                     CreatedDate = (DateTime)e.CreatedDate,
                     DeadlineDate = e.Deadline
                 }).OrderByDescending(e => e.CreatedDate).ToListAsync();
@@ -112,6 +113,7 @@ namespace sacmy.Server.Controller
                    CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
                    CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
                    CreatedbyImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                   CreatedbyFirebaseToken = e.CreatedByNavigation.FirebaseToken,
                    CreatedDate = (DateTime)e.CreatedDate,
                    DeadlineDate = e.Deadline
                }).OrderByDescending(e => e.CreatedDate).ToListAsync();
@@ -158,6 +160,7 @@ namespace sacmy.Server.Controller
                     CreatedBy = e.CreatedBy ?? Guid.NewGuid(),
                     CreatedbyName = e.CreatedByNavigation.FirstName + " " + e.CreatedByNavigation.LastName,
                     CreatedbyImage = "https://api.safinahmedtech.com/assets/EmployeeImages/" + e.CreatedByNavigation.Image,
+                    CreatedbyFirebaseToken = e.CreatedByNavigation.FirebaseToken,
                     CreatedDate = (DateTime)e.CreatedDate,
                     DeadlineDate = e.Deadline
                 }).OrderByDescending(e => e.CreatedDate).ToListAsync();
@@ -243,7 +246,7 @@ namespace sacmy.Server.Controller
                                 EmpolyeeRole = e.CreatedByNavigation.Role.Role,
                                 CreatedDate = e.CreatedDate,
                             }).
-                            OrderByDescending(e => e.CreatedDate).
+                            OrderBy(e => e.CreatedDate).
                             ToListAsync();
 
             if (taskNotes is null)

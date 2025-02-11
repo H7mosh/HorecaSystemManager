@@ -239,9 +239,6 @@
                         <th class="fw-normal">Actions</th>
                     }
                     @if (selectedStageId == Guid.Parse("FB10171A-21CD-4D8D-8453-0AC58D31D95F")) //order out to delivery
-
-
-
                     {
                         <th class="fw-normal">Actions</th>
                     }
@@ -258,15 +255,12 @@
                             {
                                 <td class="ps-0">
                                     @if (order.Invoices?.Any() == true)
-
                                     {
-
                                         <button class="btn btn-link p-0 text-muted"
                                         @onclick="() => ToggleOrderExpansion(order.OrderId)"
                                         @onclick:stopPropagation="true">
                                             <i class="bi @(expandedOrders.Contains(order.OrderId) ? "bi-chevron-down" : "bi-chevron-right")"></i>
                                         </button>
-
                                     }
                                 </td>
                             }
@@ -274,7 +268,6 @@
                             <td @onclick="() => OpenOrderDetails(order.OrderId, order.CustomerId , order.CostumerFirebaseToken)">
                                 <span style="color: #6366f1;">#@order.OrderId</span>
                             </td>
-
                             <td class="customer-cell" @onclick="() => OpenOrderDetails(order.OrderId, order.CustomerId , order.CostumerFirebaseToken)">
                                 <div class="d-flex align-items-center gap-2">
                                     <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center"
@@ -497,10 +490,6 @@
 
     private bool showNotification = false;
 
-
-
-
-
     protected override async Task OnInitializedAsync()
     {
         stages = await OrderService.GetStagesAsync();
@@ -510,8 +499,6 @@
             await SelectStage(firstStage.OrderStageId);
         }
     }
-
-
 
     private async Task ShowNotification(string message, string type)
 
@@ -680,8 +667,6 @@
 
     }
 
-
-
     private async Task MarkAsDelivered(int orderId)
 
     {
@@ -774,8 +759,6 @@
         }
 
     }
-
-
 }
 
 

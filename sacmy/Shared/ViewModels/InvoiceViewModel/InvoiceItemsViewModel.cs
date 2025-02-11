@@ -22,7 +22,7 @@ namespace sacmy.Shared.ViewModels.InvoiceViewModel
         public double Weight { get; set; }
         public string? Batch { get; set; }
         public bool IsChecked { get; set; }
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
     }
 
 }

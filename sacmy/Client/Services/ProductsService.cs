@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using sacmy.Shared.Core;
 using sacmy.Shared.ViewModels.Products;
 using System.Net.Http.Json;
 using System.Text;
@@ -8,41 +9,80 @@ namespace sacmy.Client.Services
     public class ProductsService
     {
         private readonly HttpClient _httpClient;
+        private readonly IHttpClientFactory _httpClientFactory;
         private const string BaseUrl = "https://api.safinahmedtech.com/safenahmedapi/store";
 
-        public ProductsService(HttpClient httpClient)
+        public ProductsService(HttpClient httpClient , IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClient;
+            _httpClientFactory = httpClientFactory;
         }
 
         public async Task<BrandResponse> GetProductsByBrandAsync(string brandId)
         {
             try
             {
-                var response = await _httpClient.GetFromJsonAsync<BrandResponse>($"{BaseUrl}/getproductsbybrand?BrandId={brandId}");
-                return response;
+                // Log the full URL being called
+                var url = $"{BaseUrl}/getproductsbybrand?BrandId={brandId}";
+                Console.WriteLine($"Calling URL: {url}");
+
+                var response = await _httpClient.GetAsync(url);
+
+                // Log the response status code
+                Console.WriteLine($"Response Status: {response.StatusCode}");
+
+                // Read the raw response content
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Raw Response: {content}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"API returned {response.StatusCode}: {content}");
+                }
+
+                return JsonConvert.DeserializeObject<BrandResponse>(content);
             }
-            catch (HttpRequestException ex)
+            catch (Exception ex)
             {
-                // Log the error or handle it appropriately
-                throw new Exception($"Error fetching products: {ex.Message}", ex);
-            }
-            catch (JsonException ex)
-            {
-                // Handle JSON deserialization errors
-                throw new Exception($"Error deserializing response: {ex.Message}", ex);
+                Console.WriteLine($"Exception: {ex.Message}");
+                throw;
             }
         }
 
-        public async Task<HttpResponseMessage> UpdateProductAsync(UpdateProductViewModel model)
+        public async Task<ApiResponse> UpdateProductAsync(UpdateProductViewModel model)
         {
-            // Option A: Use Newtonsoft.Json explicitly
-            var json = JsonConvert.SerializeObject(model);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            try
+            {
+                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+                var response = await client.PostAsJsonAsync("api/Product/UpdateProduct", model);
 
-            var response = await _httpClient.PutAsync("api/Products/UpdateProduct", content);
-            return response;
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error Status: {response.StatusCode}");
+                    Console.WriteLine($"Error Content: {errorContent}");
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"API request failed with status {response.StatusCode}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Request failed: {ex.Message}"
+                };
+            }
         }
+
     }
 
 }

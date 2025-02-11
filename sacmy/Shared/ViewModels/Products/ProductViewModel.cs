@@ -56,23 +56,44 @@ namespace sacmy.Shared.ViewModels.Products
         public string Id { get; set; }
         public string BrandId { get; set; }
         public string CategoryId { get; set; }
+        public string CatalogId { get; set; }
         public string SeriesOrCollectionId { get; set; }
+        public string MaterialId { get; set; }
         public string Sku { get; set; }
         public string PatternNumber { get; set; }
         public string Name { get; set; }
-        public decimal Price { get; set; }
-        public decimal DinarPrice { get; set; }
-        public int Points { get; set; }
-        public int Quantity { get; set; }
-        public int BoxCount { get; set; }
-        public int PieceCount { get; set; }
-        public decimal Volume { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public decimal? Price { get; set; }
+        public decimal? DinarPrice { get; set; }
+        public int? Points { get; set; }              
+        public int? Quantity { get; set; }            
+        public int? BoxCount { get; set; }            
+        public int? PieceCount { get; set; }          
+        public decimal? Height { get; set; }          
+        public decimal? Diameter { get; set; }        
+        public decimal? Top { get; set; }             
+        public decimal? Base { get; set; }            
+        public decimal? Volume { get; set; }
+        public decimal? Weight { get; set; }
+        public decimal? Area { get; set; }            
+        public DateTime? CreatedDate { get; set; }    
         public bool IsNew { get; set; }
         public bool IsDiscounted { get; set; }
-        public decimal DiscountPercentage { get; set; }
+        public decimal? DiscountPercentage { get; set; } 
         public bool IsRaised { get; set; }
-        public decimal RaisedPercentage { get; set; }
+        public decimal? RaisedPercentage { get; set; }   
+        public string Image { get; set; }
+    }
+
+    public class GetProductsForReportViewModel
+    {
+        public Guid Id { get; set; }
+        public string? BrandName { get; set; }
+        public string? CollectionName { get; set; }
+        public string Sku { get; set; }
+        public string PatternNumber { get; set; }
+        public int BoxCount { get; set; }
+        public int PieceCount { get; set; }
+        public string Price { get; set; }
         public string Image { get; set; }
     }
 }

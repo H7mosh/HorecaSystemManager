@@ -30,6 +30,7 @@ namespace sacmy.Shared.ViewModels.TasksViewModel
         public Guid CreatedBy { get; set; }
         public string CreatedbyName {  get; set; }
         public string CreatedbyImage {  get; set; }
+        public string CreatedbyFirebaseToken { get; set; }
         public DateTime CreatedDate { get; set; }
         public DateTime? DeadlineDate { get; set; }
     }

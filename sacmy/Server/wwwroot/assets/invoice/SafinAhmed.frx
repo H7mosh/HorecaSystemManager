@@ -1,0 +1,92 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Report ScriptLanguage="CSharp" ReportInfo.Created="02/02/2025 21:41:53" ReportInfo.Modified="02/03/2025 01:11:21" ReportInfo.CreatorVersion="2021.3.26.0">
+  <Dictionary/>
+  <ReportPage Name="Page1" Watermark.Font="Arial, 60pt">
+    <ReportTitleBand Name="ReportTitle1" Width="718.2" Height="321.3">
+      <ShapeObject Name="Shape1" Left="18.9" Top="9.45" Width="680.4" Height="179.55" Border.Width="1.5" Fill.Color="White" Shape="RoundRectangle"/>
+      <TextObject Name="Text1" Left="491.4" Top="18.9" Width="170.1" Height="28.35" Text="شركة سفين احمد" HorzAlign="Right" Font="Arial, 20pt, style=Bold" TextFill.Color="192, 0, 0"/>
+      <TextObject Name="Text2" Left="529.2" Top="56.7" Width="103.95" Height="18.9" Fill.Color="White" Text="للتجارة العامة" HorzAlign="Right" Font="Arial, 14pt, style=Bold"/>
+      <TextObject Name="Text3" Left="434.7" Top="85.05" Width="255.15" Height="18.9" Fill.Color="White" Text="العنوان/ زاخو طريق ابراهيم الخليل - المجمع التجاري" HorzAlign="Right" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text4" Left="28.35" Top="18.9" Width="207.9" Height="28.35" Text="SAFIN AHMED" Font="Arial, 20pt, style=Bold" TextFill.Color="192, 0, 0"/>
+      <TextObject Name="Text5" Left="66.15" Top="56.7" Width="122.85" Height="18.9" Fill.Color="White" Text="COMPANY" Font="Arial, 13pt, style=Bold"/>
+      <TextObject Name="Text6" Left="47.25" Top="85.05" Width="141.75" Height="18.9" Fill.Color="White" Text="For General Trading" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text7" Left="28.35" Top="132.3" Width="245.7" Height="18.9" Fill.Color="White" Text="Website :    www.safinahmed.krd" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text8" Left="28.35" Top="160.65" Width="661.5" Height="18.9" Fill.Color="White" Text="Mobile No.:  +964 770 640 0456   +964 770 244 2602     +964 751 480 9968   +964 750 739 4409 مخزن" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text9" Left="595.35" Top="198.45" Width="94.5" Height="28.35" Fill.Color="White" Text="   ID&#13;&#10;:رقم الفاتورة" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="ID" Left="491.4" Top="207.9" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="White" Text="17,603" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="CustomerName" Left="396.9" Top="245.7" Width="189" Height="18.9" Border.Lines="All" Fill.Color="White" Text="محمد احمد شليري" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Time" Left="28.35" Top="207.9" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="White" Text="4:01 PM" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Date" Left="122.85" Top="207.9" Width="94.5" Height="18.9" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Address" Left="28.35" Top="245.7" Width="189" Height="18.9" Border.Lines="All" Fill.Color="White" Text="السليمانية" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text19" Left="595.35" Top="236.25" Width="94.5" Height="37.8" Fill.Color="White" Text="Customer&#13;&#10;  :المشتري&#13;&#10;" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text20" Left="595.35" Top="283.5" Width="94.5" Height="28.35" Fill.Color="White" Text="Note&#13;&#10;:الملاحظات" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text21" Left="226.8" Top="198.45" Width="94.5" Height="37.8" Fill.Color="White" Text=" Date&#13;&#10;:التاريخ" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text22" Left="226.8" Top="236.25" Width="94.5" Height="28.35" Fill.Color="White" Text="address&#13;&#10;:العنوان" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    </ReportTitleBand>
+    <PageHeaderBand Name="PageHeader1" Top="325.3" Width="718.2" Height="47.25">
+      <TableObject Name="Table1" Width="718.98" Height="47.25" Border.Lines="All" Border.Width="1.5" Fill.Color="LightGray">
+        <TableColumn Name="Column1" Width="100.93"/>
+        <TableColumn Name="Column2" Width="100.93"/>
+        <TableColumn Name="Column3" Width="82.03"/>
+        <TableColumn Name="Column4" Width="280.48"/>
+        <TableColumn Name="Column5" Width="82.03"/>
+        <TableColumn Name="Column6" Width="72.58"/>
+        <TableRow Name="Row1" Height="47.25">
+          <TableCell Name="Cell1" Border.Lines="All" Text="Total&#13;&#10; المبلغ&#13;&#10;" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell2" Border.Lines="All" Text=" Price&#13;&#10;سعر البيع" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell3" Border.Lines="All" Text="Sales Qty.&#13;&#10;الكمية المباعة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell4" Border.Lines="All" Text="Item Details&#13;&#10; تفاصيل المادة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell5" Border.Lines="All" Text=" SKU&#13;&#10;كود المادة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell6" Border.Lines="All" Text="Modul No&#13;&#10; كود المادة" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+        </TableRow>
+      </TableObject>
+    </PageHeaderBand>
+    <DataBand Name="DataInvoice" Top="376.55" Width="718.2" Height="28.35">
+      <TableObject Name="Table2" Width="718.98" Height="28.35" Border.Lines="All" Border.Width="1.5" Fill.Color="WhiteSmoke">
+        <TableColumn Name="Column7" Width="100.93"/>
+        <TableColumn Name="Column8" Width="100.93"/>
+        <TableColumn Name="Column9" Width="82.03"/>
+        <TableColumn Name="Column10" Width="53.68"/>
+        <TableColumn Name="Column11" Width="226.78"/>
+        <TableColumn Name="Column12" Width="82.03"/>
+        <TableColumn Name="Column13" Width="72.6"/>
+        <TableRow Name="Row2" Height="28.35">
+          <TableCell Name="Cell7" Border.Lines="All" Text="[Invoice.total]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell8" Border.Lines="All" Text="[Invoice.price]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell9" Border.Lines="All" Text="[Invoice.qty]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell10" Border.Lines="All" Text="[Invoice.qty2]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell11" Border.Lines="All" Text="[Invoice.details]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt"/>
+          <TableCell Name="Cell12" Border.Lines="All" Text="[Invoice.sku]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+          <TableCell Name="Cell13" Border.Lines="All" Text="[Invoice.no]" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+        </TableRow>
+      </TableObject>
+    </DataBand>
+    <ReportSummaryBand Name="ReportSummary1" Top="408.9" Width="718.2" Height="217.35">
+      <TextObject Name="total" Left="481.95" Top="9.45" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text24" Left="604.8" Top="9.45" Width="85.05" Height="37.8" Fill.Color="White" Text="   Total&#13;&#10;:مجموع الملبغ" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="porterCost" Left="481.95" Top="47.25" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text26" Left="604.8" Top="47.25" Width="85.05" Height="37.8" Fill.Color="White" Text="Porter cost &#13;&#13;&#10;:الحمالية" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="discount" Left="481.95" Top="85.05" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text28" Left="604.8" Top="85.05" Width="85.05" Height="37.8" Fill.Color="White" Text=" Discount&#13;&#10;:الخصم" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Cash" Left="481.95" Top="122.85" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text30" Left="604.8" Top="122.85" Width="85.05" Height="37.8" Fill.Color="White" Text="  Cash&#13;&#10;:الواصل نقدا" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="totalCube" Left="37.8" Top="18.9" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text32" Left="141.75" Top="18.9" Width="94.5" Height="37.8" Fill.Color="White" Text=" Total cubes&#13;&#13;&#10;:مجموع المكعب" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="qtyTotal" Left="37.8" Top="56.7" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="sdsdsd" Left="141.75" Top="56.7" Width="94.5" Height="37.8" Fill.Color="White" Text="   Qty Total&#13;&#10;:مجموع الكراتين" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="totalWeight" Left="37.8" Top="94.5" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="kjkljlkjl" Left="141.75" Top="94.5" Width="94.5" Height="37.8" Fill.Color="White" Text="Total weight&#13;&#10;:مجموع الوزن" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <LineObject Name="Line1" Left="9.45" Top="170.1" Width="718.2" Border.Width="2"/>
+      <TextObject Name="remainOfInvoice" Left="481.95" Top="179.55" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text38" Left="585.9" Top="179.55" Width="141.75" Height="37.8" Fill.Color="White" Text="Remain Of Invoice&#13;&#13;&#10;:المتبقي من الفاتورة" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="remainOfLast" Left="255.15" Top="179.55" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="Text40" Left="359.1" Top="179.55" Width="113.4" Height="37.8" Fill.Color="White" Text="Remain Of last&#13;&#13;&#10;:الديون القديمة" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="totalRemain" Left="18.9" Top="179.55" Width="94.5" Height="28.35" Border.Lines="All" Fill.Color="White" Text="01-02-2025" HorzAlign="Center" VertAlign="Center" Font="Arial, 10pt, style=Bold"/>
+      <TextObject Name="tetetette" Left="113.4" Top="179.55" Width="132.3" Height="37.8" Fill.Color="White" Text="Total Remain&#13;&#13;&#10;:مجموع الديون" HorzAlign="Center" Font="Arial, 10pt, style=Bold"/>
+    </ReportSummaryBand>
+    <PageFooterBand Name="PageFooter1" Top="630.25" Width="718.2" Height="66.15">
+      <LineObject Name="Line2" Left="85.05" Top="9.45" Width="576.45" Border.Width="2"/>
+      <TextObject Name="Text43" Left="189" Top="18.9" Width="406.35" Height="18.9" Fill.Color="White" Text="Programmer : Shivan Mizury www.Mizury-SoŌware.com" Font="Arial, 10pt, style=Bold"/>
+    </PageFooterBand>
+  </ReportPage>
+</Report>

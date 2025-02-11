@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Service;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,10 +21,13 @@ builder.Services.AddDbContext<SafeenCompanyDbContext>(
 
 // Add Hangfire
 builder.Services.AddHangfire(x => x.UseSqlServerStorage(builder.Configuration.GetConnectionString("onlineConnectionString")));
+
 builder.Services.AddHangfireServer();
 
 // Add custom services
 builder.Services.AddScoped<FileService>();
+
+builder.Services.AddScoped<ReportService>();
 
 
 // Add CORS
@@ -57,6 +61,12 @@ builder.Services.AddScoped(serviceProvider =>
     var logger = serviceProvider.GetRequiredService<ILogger<NotificationService>>();
     return new NotificationService(configuration, "SafinAhmedNotificationKeys", logger);
 });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 
 var app = builder.Build();
 
