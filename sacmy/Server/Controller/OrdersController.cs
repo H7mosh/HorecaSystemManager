@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
+using sacmy.Shared;
 using sacmy.Shared.ViewModels.InvoiceViewModel;
 using sacmy.Shared.ViewModels.OrdersViewModel;
 
@@ -21,11 +22,13 @@ namespace sacmy.Server.Controller
         EventCostumer eventCostumer = new EventCostumer();
         UnavilableOrderedItem unavilableOrderedItem = new UnavilableOrderedItem();
         CustomerBillPoint customerBill = new CustomerBillPoint();
+        private readonly ReportService _reportService;
 
-        public OrdersController(SafeenCompanyDbContext context, ILogger<OrdersController> logger)
+        public OrdersController(SafeenCompanyDbContext context, ILogger<OrdersController> logger , ReportService reportService)
         {
             _context = context;
             _logger = logger;
+            _reportService = reportService;
         }
 
         [HttpGet("stages")]
@@ -198,7 +201,7 @@ namespace sacmy.Server.Controller
 
             // Store the original order of branches
             var branchOrder = orderToFilter.storageOrderList
-                .Select(s => s.Name.ToLower())
+                .Select(s => s.Name)
                 .ToList();
 
             foreach (var item in orderToFilter.onlineOrderItemsToFilter)
@@ -209,7 +212,7 @@ namespace sacmy.Server.Controller
                 foreach (var storageOrder in orderToFilter.storageOrderList.OrderBy(s => s.order))
                 {
                     var matchingItems = await _context.MmMaxzanFullItemProcWithWajbas
-                        .Where(w => w.Cod == item.Sku && w.Subb.ToLower() == storageOrder.Name.ToLower() && w.Remain > 0)
+                        .Where(w => w.Cod == item.Sku && w.Subb == storageOrder.Name && w.Remain > 0)
                         .OrderBy(w => w.Date)
                         .ToListAsync();
 
@@ -218,9 +221,9 @@ namespace sacmy.Server.Controller
                         foreach (var matchingItem in matchingItems)
                         {
                             double quantityToUse = Math.Min(remainingQuantity, matchingItem.Remain.GetValueOrDefault());
-                            if (!resultsByBranch.ContainsKey(matchingItem.Subb.ToLower()))
+                            if (!resultsByBranch.ContainsKey(matchingItem.Subb))
                             {
-                                resultsByBranch[matchingItem.Subb.ToLower()] = new List<OrderViewerViewModel>();
+                                resultsByBranch[matchingItem.Subb] = new List<OrderViewerViewModel>();
                             }
 
                             var newItem = new OrderViewerViewModel
@@ -239,7 +242,7 @@ namespace sacmy.Server.Controller
                                 IsAvailable = true
                             };
 
-                            resultsByBranch[matchingItem.Subb.ToLower()].Add(newItem);
+                            resultsByBranch[matchingItem.Subb].Add(newItem);
                             remainingQuantity -= quantityToUse;
 
                             if (remainingQuantity <= 0)
@@ -316,7 +319,6 @@ namespace sacmy.Server.Controller
                 EventCostumer eventCostumer = new EventCostumer(); 
                 CustomerBillPoint customerBill = new CustomerBillPoint(); 
                 OnlineOrder online_order = await _context.OnlineOrders.FindAsync(fatoraViewModel.OrderId);
-
                 
                 foreach (var fatoraItem in fatoraViewModel.invoiceFromOrderItemsViewModel)
                 {
@@ -327,8 +329,8 @@ namespace sacmy.Server.Controller
                     }
                 }
 
-                
                 Customer customer = await _context.Customers.FindAsync(fatoraViewModel.CustomerId);
+
                 if (customer == null)
                 {
                     return NotFound($"Customer with ID {fatoraViewModel.CustomerId} not found.");
@@ -382,9 +384,6 @@ namespace sacmy.Server.Controller
 
                     _context.BuyFatoras.Add(buyFatora);
                 }
-
-                
-
 
                 foreach (var fatoraItem in fatoraViewModel.invoiceFromOrderItemsViewModel)
                 {
@@ -534,18 +533,21 @@ namespace sacmy.Server.Controller
             try
             {
                 var orderTracking = await _context.OrderTrackings
-                    .Include(e => e.OrderTrackingInvoices)
-                    .FirstOrDefaultAsync(ot => ot.OrderId == orderId);
+                                    .Include(e => e.OrderTrackingInvoices)
+                                    .FirstOrDefaultAsync(ot => ot.OrderId == orderId);
                 if (orderTracking == null)
                 {
                     return NotFound($"Order tracking record not found for OrderId: {orderId}");
                 }
+
                 if (isItTheMainInvoice)
                 {
                     // Update the StageId
                     orderTracking.StageId = stageId;
                 }
+                
                 var OrderTrackingInvoices = orderTracking.OrderTrackingInvoices.FirstOrDefault(e => e.BuyFatoraId == invoiceId);
+                
                 OrderTrackingInvoices.IsPdfGenerated = true;
 
                 // Save changes to the database
@@ -634,5 +636,29 @@ namespace sacmy.Server.Controller
             }
         }
 
+        [HttpPost("generate-invoice-pdf")]
+        public IActionResult GenerateInvoicePdf([FromBody] InvoicePdfRequest request)
+        {
+            _logger.LogInformation("GenerateInvoicePdf endpoint hit");
+
+            try
+            {
+                _logger.LogInformation("Request received: {@Request}", request);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.LogWarning("Model state is invalid: {@ModelState}", ModelState);
+                    return BadRequest(ModelState);
+                }
+
+                var pdfBytes = _reportService.GenerateInvoiceReport(request.Invoice, request.InvoiceItems);
+                return File(pdfBytes, "application/pdf", $"Invoice_{request.Invoice.Id}.pdf");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating invoice PDF");
+                return StatusCode(500, "Error generating invoice PDF");
+            }
+        }
     }
 }

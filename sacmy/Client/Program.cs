@@ -11,6 +11,7 @@ using sacmy.Shared.Core;
 using Blazored.LocalStorage;
 using Microsoft.Extensions.Localization;
 using System.Globalization;
+using sacmy.Client.Shared.Toast;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -43,6 +44,7 @@ builder.Services.AddSingleton<UserGlobalClass>();
 builder.Services.AddSingleton<AuthService>();
 builder.Services.AddScoped<ProductsService>();
 builder.Services.AddScoped<BrandService>();
+builder.Services.AddScoped<ToastService>();
 
 // Configure MudBlazor
 builder.Services.AddMudServices(config =>

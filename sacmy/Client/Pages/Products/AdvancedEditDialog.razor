@@ -1,0 +1,300 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.Products
+@inject ProductsService ProductsService
+@inject ToastService ToastService
+
+<div class="modal @(IsVisible ? "show d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Advanced Edit - @Product?.Name</h5>
+                <button type="button" class="btn-close" @onclick="OnClose"></button>
+            </div>
+            <div class="modal-body">
+                @if (Product != null)
+                {
+                    @* <div class="container-fluid">
+                        <div class="row">
+                            <!-- Left Column - Product Details -->
+                            <div class="col-md-8">
+                                <div class="quick-edit-form">
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Display Name</label>
+                                            <input type="text" class="form-control" @bind="Product.Name" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Pattern Number</label>
+                                            <input type="text" class="form-control" @bind="Product.PatternNumber" />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>SKU</label>
+                                            <input type="text" class="form-control" @bind="Product.Sku" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>UPC</label>
+                                            <input type="text" class="form-control" @bind="Product.Upc" />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Category</label>
+                                            <select class="form-control" @bind="Product.CategoryId">
+                                                @foreach (var category in Categories)
+                                                {
+                                                    <option value="@category.Id">@category.NameEn</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Series/Collection</label>
+                                            <select class="form-control" @bind="Product.SeriesOrCollectionId">
+                                                @foreach (var collection in Collections)
+                                                {
+                                                    <option value="@collection.Id">@collection.NameEn</option>
+                                                }
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group">
+                                            <label>Price ($)</label>
+                                            <input type="number" step="0.01" class="form-control" @bind="Product.Price" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Points</label>
+                                            <input type="number" class="form-control" @bind="Product.Points" />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row three-columns">
+                                        <div class="form-group">
+                                            <label>Quantity</label>
+                                            <input type="number" class="form-control" @bind="Product.Quantity" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Box Count</label>
+                                            <input type="number" class="form-control" @bind="Product.BoxCount" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Piece Count</label>
+                                            <input type="number" class="form-control" @bind="Product.PieceCount" />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row three-columns">
+                                        <div class="form-group">
+                                            <label>Height (cm)</label>
+                                            <input type="number" step="0.1" class="form-control" @bind="Product.Height" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Diameter (cm)</label>
+                                            <input type="number" step="0.1" class="form-control" @bind="Product.Diameter" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Volume (ml)</label>
+                                            <input type="number" step="0.1" class="form-control" @bind="Product.Volume" />
+                                        </div>
+                                    </div>
+
+                                    <div class="form-row">
+                                        <div class="form-group col-12">
+                                            <label>Description</label>
+                                            <textarea class="form-control" rows="3" @bind="Product.Description"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right Column - Images -->
+                            <div class="col-md-4">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">Product Images</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <InputFile OnChange="HandleFileSelected" 
+                                                     class="form-control" 
+                                                     accept=".jpg,.jpeg,.png" 
+                                                     multiple />
+                                        </div>
+
+                                        @if (isLoading)
+                                        {
+                                            <div class="text-center py-3">
+                                                <div class="spinner-border text-primary"></div>
+                                                <div class="mt-2">Uploading...</div>
+                                            </div>
+                                        }
+
+                                        <div class="image-grid">
+                                            @foreach (var image in Product.ProductImages)
+                                            {
+                                                <div class="image-item position-relative">
+                                                    <img src="@image.ImageLink" 
+                                                         class="img-thumbnail" 
+                                                         alt="Product image" />
+                                                    <button class="btn btn-danger btn-sm position-absolute top-0 end-0"
+                                                            @onclick="() => DeleteImage(image)">
+                                                        <i class="bi bi-x"></i>
+                                                    </button>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div> *@
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+                <button type="button" class="btn btn-primary" @onclick="SaveChanges" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                    }
+                    Save Changes
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .image-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .image-item {
+        aspect-ratio: 1;
+        overflow: hidden;
+    }
+
+    .image-item img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .modal-xl {
+        max-width: 1200px;
+    }
+</style>
+
+@code {
+    [Parameter] public Product Product { get; set; }
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback<bool> IsVisibleChanged { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+    [Parameter] public List<Category> Categories { get; set; } = new();
+    [Parameter] public List<Collection> Collections { get; set; } = new();
+
+    private bool isLoading;
+
+    private async Task OnClose()
+    {
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            isLoading = true;
+            // foreach (var file in e.GetMultipleFiles())
+            // {
+            //     if (file.Size > 5 * 1024 * 1024) // 5MB limit
+            //     {
+            //         ToastService.ShowToast($"File {file.Name} is too large. Maximum size is 5MB.", "warning");
+            //         continue;
+            //     }
+
+            //     var imageUrl = await ProductsService.UploadProductImageAsync(file, Product.BrandId);
+            //     Product.ProductImages.Add(new ProductImage 
+            //     { 
+            //         Id = Guid.NewGuid(),
+            //         ProductId = Product.Id,
+            //         ImageLink = imageUrl 
+            //     });
+            // }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error uploading images: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteImage(ProductImage image)
+    {
+        // try
+        // {
+        //     isLoading = true;
+        //     await ProductsService.DeleteProductImageAsync(image.ImageLink);
+        //     //Product.ProductImages.Remove(image);
+        // }
+        // catch (Exception ex)
+        // {
+        //     ToastService.ShowToast($"Error deleting image: {ex.Message}", "error");
+        // }
+        // finally
+        // {
+        //     isLoading = false;
+        //     StateHasChanged();
+        // }
+    }
+
+    private async Task SaveChanges()
+    {
+        try
+        {
+            isLoading = true;
+            // var updateModel = new UpdateProductViewModel
+            // {
+            //     ProductId = Guid.Parse(Product.Id),
+            //     Name = Product.Name,
+            //     PatternNumber = Product.PatternNumber,
+            //     Sku = Product.Sku,
+            //     Price = double.Parse(Product.Price.ToString()),
+            //     CategoryId = Product.CategoryId,
+            //     CollectionId = Product.SeriesOrCollectionId,
+            //     Quantity = Product.Quantity,
+            //     OuterTypeCount = Product.BoxCount,
+            //     InnerTypeCount = Product.PieceCount,
+            //     Points = Product.Points,
+            //     Volume = double.Parse(Product.Volume.ToString()),
+            //     ImageLinks = Product.Image.ToList()
+            // };
+
+           // await ProductsService.UpdateProductAsync(updateModel);
+            await OnSaved.InvokeAsync();
+            await OnClose();
+            ToastService.ShowToast("Product updated successfully!", "success");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error saving changes: {ex.Message}", "error");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+}

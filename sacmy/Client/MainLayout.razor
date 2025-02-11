@@ -12,6 +12,7 @@
 @using System.Globalization
 @using Blazored.LocalStorage;
 @inject ILocalStorageService LocalStorage
+@using sacmy.Client.Shared.Toast
 
 @inherits LayoutComponentBase
 
@@ -19,7 +20,9 @@
 @* <Appbar /> *@
 
 <MudThemeProvider />
+
 <MudDialogProvider />
+
 <MudSnackbarProvider />
 
 <div class="d-flex flex-column h-100">
@@ -97,12 +100,6 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/ProductsForReport")" href="/ProductsForReport" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-list-task me-2"></i>
-                            Products For Report
-                        </a>
-                    </li>
-                    <li class="nav-item">
                         <a class="nav-link @GetNavLinkClass("/Products")" href="/Products" @onclick="() => ToggleDrawer()">
                             <i class="bi bi-list-task me-2"></i>
                             Products
@@ -124,6 +121,8 @@
         </div>
     </div>
 </div>
+
+<ToastContainer />
 
 @code {
     private UserViewModel CurrentUser => UserGlobal.User;
@@ -150,7 +149,6 @@
             "Invoice" => "Invoice",
             "CustomerInvoiceTrack" => "Customer Invoice Track",
             "Products" => "Products",
-            "ProductsForReport" => "Products For Report",
             "Tasks" => "Tasks",
             "Orders" => "Orders",
             _ => "Dashboard",

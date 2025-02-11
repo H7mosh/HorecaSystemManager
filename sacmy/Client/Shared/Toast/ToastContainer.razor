@@ -1,0 +1,30 @@
+﻿@implements IDisposable
+
+@if (ToastService.Toasts.Any())
+{
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1050;">
+        @foreach (var toast in ToastService.Toasts)
+        {
+            <Toast Type="@toast.Type" 
+                   Message="@toast.Message" 
+                   OnCloseCallback="@(() => ToastService.RemoveToast(toast))" />
+        }
+    </div>
+}
+
+@code {
+    [Inject] private ToastService ToastService { get; set; }
+    
+    protected override void OnInitialized()
+    {
+        ToastService.OnToastsUpdated += StateHasChanged;
+    }
+    
+    public void Dispose()
+    {
+        if (ToastService != null)
+        {
+            ToastService.OnToastsUpdated -= StateHasChanged;
+        }
+    }
+}

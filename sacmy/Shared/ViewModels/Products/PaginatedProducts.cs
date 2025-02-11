@@ -4,9 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace sacmy.Shared.ViewModels.ProductsViewModel
+namespace sacmy.Shared.ViewModels.Products
 {
-
     public class ProductsForReportPaginationRequest
     {
         public int PageNumber { get; set; } = 1;
