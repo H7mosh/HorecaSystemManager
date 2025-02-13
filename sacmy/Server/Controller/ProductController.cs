@@ -330,10 +330,9 @@ namespace sacmy.Server.Controller
                     });
                 }
 
-                // Validate product exists
+                // Validate product exists and get SKU
                 var product = await _context.Products
                     .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
-
                 if (product == null)
                 {
                     return NotFound(new ApiResponse
@@ -343,9 +342,27 @@ namespace sacmy.Server.Controller
                     });
                 }
 
+                // Get file extension
+                string extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+
+                // Get existing images count for this product
+                int existingImagesCount = await _context.ProductImages
+                    .CountAsync(pi => pi.ProductId == productId && !pi.IsDeleted);
+
+                // Generate filename based on SKU and existing images count
+                string fileName;
+                if (existingImagesCount == 0)
+                {
+                    fileName = $"{product.Sku}{extension}";
+                }
+                else
+                {
+                    fileName = $"{product.Sku}-{existingImagesCount + 1}{extension}";
+                }
+
                 // Save image using ImageService
                 var imageService = new ImageService();
-                var fileName = await imageService.SaveImageAsync(image, "C:/assets/AppImage");
+                await imageService.SaveImageAsync(image, "C:/assets/AppImage", fileName); // Pass the fileName to SaveImageAsync
 
                 // Create image URL
                 var imageUrl = $"https://api.safinahmedtech.com/assets/AppImage/{fileName}";
