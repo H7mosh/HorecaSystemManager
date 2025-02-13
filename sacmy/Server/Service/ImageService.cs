@@ -5,9 +5,10 @@
 
         private readonly string _imageDirectory = "C:/assets/AppImage";
 
-        public async Task<string> SaveImageAsync(IFormFile imageFile, string path)
+        public async Task<string> SaveImageAsync(IFormFile imageFile, string path, string customFileName = null)
         {
             string _imageDirectory = path;
+
             if (imageFile == null || imageFile.Length == 0)
             {
                 throw new ArgumentException("Invalid image file");
@@ -18,9 +19,26 @@
                 Directory.CreateDirectory(_imageDirectory);
             }
 
-            var extension = Path.GetExtension(imageFile.FileName);
-            var fileName = $"{DateTime.Now:yyyy_MM_dd_HHmmssfff}{extension}";
+            // Use the custom filename if provided, otherwise use the timestamp format
+            var extension = Path.GetExtension(imageFile.FileName).ToLowerInvariant();
+            var fileName = customFileName ?? $"{DateTime.Now:yyyy_MM_dd_HHmmssfff}{extension}";
+
             var filePath = Path.Combine(_imageDirectory, fileName);
+
+            // If file exists, ensure we don't overwrite it
+            if (File.Exists(filePath))
+            {
+                var fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+                var counter = 1;
+
+                // Keep trying until we find an available filename
+                while (File.Exists(filePath))
+                {
+                    fileName = $"{fileNameWithoutExt}-{counter}{extension}";
+                    filePath = Path.Combine(_imageDirectory, fileName);
+                    counter++;
+                }
+            }
 
             using (var fileStream = new FileStream(filePath, FileMode.Create))
             {

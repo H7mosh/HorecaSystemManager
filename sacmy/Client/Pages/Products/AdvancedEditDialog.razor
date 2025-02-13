@@ -4,80 +4,83 @@
 @using sacmy.Shared.ViewModels.Products
 @inject ProductsService ProductsService
 @inject ToastService ToastService
+@inject IJSRuntime JS
 
 
 @if (IsVisible)
 {
-    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.6);">
         <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg">
-                <div class="modal-header bg-light">
-                    <h5 class="modal-title d-flex align-items-center gap-2">
-                        <i class="bi bi-pencil-square text-primary"></i>
-                        Advanced Edit - @(Product?.Name ?? "Loading...")
+            <div class="modal-content border-0 rounded-lg shadow-2xl">
+                <!-- Header section -->
+                <div class="modal-header border-0 bg-gradient-to-r from-blue-50 to-white p-4">
+                    <h5 class="modal-title d-flex align-items-center gap-2 text-primary">
+                        <i class="bi bi-pencil-square"></i>
+                        <span class="fw-semibold">Edit Product Details - @(Product?.Name ?? "Loading...")</span>
                     </h5>
-                    <button type="button" class="btn-close" @onclick="HandleClose"></button>
+                    <button type="button" class="btn-close shadow-none" @onclick="HandleClose"></button>
                 </div>
 
                 @if (isLoading)
                 {
-                    <div class="modal-body d-flex align-items-center justify-content-center" style="min-height: 400px;">
+                    <div class="modal-body d-flex align-items-center justify-content-center min-h-96">
                         <div class="text-center">
-                            <div class="spinner-border text-primary mb-3" role="status"></div>
-                            <p class="text-muted mb-0">Loading product details...</p>
+                            <div class="spinner-grow text-primary mb-3" role="status"></div>
+                            <p class="text-muted mb-0 fw-medium">Loading product information...</p>
                         </div>
                     </div>
                 }
                 else if (productDetail == null)
                 {
-                    <div class="modal-body d-flex align-items-center justify-content-center" style="min-height: 400px;">
-                        <div class="text-center">
-                            <div class="alert alert-danger d-inline-flex align-items-center gap-2 mb-0">
-                                <i class="bi bi-exclamation-triangle"></i>
-                                Failed to load product details
-                            </div>
+                    <div class="modal-body d-flex align-items-center justify-content-center min-h-96">
+                        <div class="alert alert-danger d-inline-flex align-items-center gap-2 shadow-sm">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            <span>Failed to load product details</span>
                         </div>
                     </div>
                 }
                 else
                 {
                     <div class="modal-body p-4">
-                        <div class="row g-4">
-                            <!-- Images Gallery -->
-                            <div class="col-12">
+                        <!-- Tab Navigation -->
+                        <nav class="nav nav-tabs nav-fill mb-4">
+                            <button class="nav-link @(activeTab == "images" ? "active" : "")" @onclick='() => activeTab = "images"'>
+                                <i class="bi bi-images me-2"></i>Images
+                            </button>
+                            <button class="nav-link @(activeTab == "details" ? "active" : "")" @onclick='() => activeTab = "details"'>
+                                <i class="bi bi-info-circle me-2"></i>Details
+                            </button>
+                            <button class="nav-link @(activeTab == "specs" ? "active" : "")" @onclick='() => activeTab = "specs"'>
+                                <i class="bi bi-tools me-2"></i>Specifications
+                            </button>
+                        </nav>
+
+                        <div class="tab-content">
+                            <!-- Images Tab Content -->
+                            <div class="@(activeTab == "images" ? "d-block" : "d-none")">
                                 <div class="card border-0 shadow-sm">
                                     <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <h6 class="card-title text-primary mb-0">
-                                                <i class="bi bi-images me-2"></i>Product Images
-                                            </h6>
-                                        </div>
-                                        <div class="product-images">
+                                        <div class="product-images mb-4">
                                             @if (productDetail.Images?.Any() == true)
                                             {
-                                                <div class="row g-3">
+                                                <div class="row g-4">
                                                     @foreach (var image in productDetail.Images)
                                                     {
                                                         <div class="col-auto">
-                                                            <div class="position-relative">
-                                                                <img src="@image.ImageLink"
-                                                                     alt="Product Image"
-                                                                     class="rounded shadow-sm"
-                                                                     style="width: 120px; height: 120px; object-fit: contain;" />
-                                                                <button class="btn btn-danger btn-sm position-absolute top-0 end-0 m-1 p-1"
-                                                                        @onclick="() => HandleImageDelete(image.Id)"
-                                                                        disabled="@(isDeletingImage == image.Id)">
-                                                                    @if (isDeletingImage == image.Id)
-                                                                    {
-                                                                        <div class="spinner-border spinner-border-sm" role="status">
-                                                                            <span class="visually-hidden">Loading...</span>
-                                                                        </div>
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        <i class="bi bi-trash"></i>
-                                                                    }
-                                                                </button>
+                                                            <div class="position-relative image-container">
+                                                                <img src="@image.ImageLink" alt="Product Image" class="rounded-lg shadow-sm product-image" style="width: 150px; height: 150px; object-fit: cover;" />
+                                                                <div class="image-overlay">
+                                                                    <button class="btn btn-danger btn-sm rounded-circle p-2" @onclick="() => HandleImageDelete(image.Id)" disabled="@(isDeletingImage == image.Id)">
+                                                                        @if (isDeletingImage == image.Id)
+                                                                        {
+                                                                            <div class="spinner-border spinner-border-sm"></div>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <i class="bi bi-trash"></i>
+                                                                        }
+                                                                    </button>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     }
@@ -85,252 +88,63 @@
                                             }
                                             else
                                             {
-                                                <div class="text-muted text-center py-4">
-                                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
-                                                    <p class="mb-0 mt-2">No images available</p>
+                                                <div class="text-center py-5 bg-light rounded-lg">
+                                                    <i class="bi bi-images text-muted" style="font-size: 3rem;"></i>
+                                                    <p class="text-muted mt-3 mb-0">No product images available</p>
                                                 </div>
                                             }
                                         </div>
 
-                                        <!-- Image Upload Section -->
-                                        <div class="mt-4">
-                                            <InputFile OnChange="@HandleFileSelected"
-                                                       multiple
-                                                       accept="image/*"
-                                                       class="d-none"
-                                                       @ref="fileInput" />
-
-                                            <div class="upload-zone @(isDragging ? "dragging" : "")"
-                                                 @ondragenter="@(() => isDragging = true)"
-                                                 @ondragleave="@(() => isDragging = false)"
-                                                 @ondragend="@(() => isDragging = false)"
-                                                 @ondrop="HandleDrop"
-                                                 @onclick="ClickFileInput">
-                                                <div class="text-center p-4">
-                                                    @if (isUploading)
-                                                    {
-                                                        <div class="spinner-border text-primary mb-2" role="status">
-                                                            <span class="visually-hidden">Loading...</span>
-                                                        </div>
-                                                        <p class="mb-0">Uploading images...</p>
-                                                    }
-                                                    else
-                                                    {
-                                                        <i class="bi bi-cloud-upload text-primary" style="font-size: 2rem;"></i>
-                                                        <p class="mt-2 mb-1">Drag and drop images here</p>
-                                                        <p class="text-muted small mb-2">or</p>
-                                                        <button type="button" class="btn btn-outline-primary">
-                                                            Browse Files
-                                                        </button>
-                                                    }
-                                                </div>
-                                            
+                                        <InputFile OnChange="@HandleFileSelected" multiple accept="image/*" class="d-none" id="@fileInputId" />
+                                        <div class="upload-zone @(isDragging ? "dragging" : "") @(isUploading ? "uploading" : "")" @ondragenter:preventDefault @ondragenter="HandleDragEnter" @ondragleave:preventDefault @ondragleave="HandleDragLeave" @ondragover:preventDefault @ondrop:preventDefault @ondrop="HandleDrop" @onclick="ClickFileInput">
+                                            <div class="text-center p-5">
+                                                @if (isUploading)
+                                                {
+                                                    <div class="spinner-border text-primary mb-3"></div>
+                                                    <p class="mb-0 fw-medium">Uploading your images...</p>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-cloud-arrow-up text-primary" style="font-size: 2.5rem;"></i>
+                                                    <p class="fw-medium mt-3 mb-2">Drag and drop your images here</p>
+                                                    <p class="text-muted small mb-3">or</p>
+                                                    <button type="button" class="btn btn-outline-primary px-4">Select Files</button>
+                                                    <p class="text-muted small mt-3 mb-0">Supported formats: PNG, JPG, JPEG (Max: 10MB)</p>
+                                                }
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Basic Information -->
-                            <div class="col-12">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-info-circle me-2"></i>Basic Information
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-3">
-                                                <label class="form-label text-muted small">SKU</label>
-                                                <input type="text" class="form-control bg-light" value="@productDetail.Sku" readonly />
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label class="form-label text-muted small">Pattern Number</label>
-                                                <input type="text" class="form-control bg-light" value="@productDetail.PatternNumber" readonly />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label text-muted small">Name</label>
-                                                <input type="text" class="form-control" @bind="productDetail.Name" />
-                                            </div>
-                                            <div class="col-12">
-                                                <label class="form-label text-muted small">Description</label>
-                                                <textarea class="form-control" rows="3" @bind="productDetail.Description"></textarea>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Price</label>
-                                                <div class="input-group">
-                                                    <span class="input-group-text">$</span>
-                                                    <input type="number" step="0.01" class="form-control" @bind="productDetail.Price" />
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Points</label>
-                                                <input type="number" class="form-control" @bind="productDetail.Points" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Quantity</label>
-                                                <input type="number" class="form-control" @bind="productDetail.Quantity" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <!-- Other Tabs -->
+                            <div class="@(activeTab == "details" ? "d-block" : "d-none")">
+                                <!-- Details Tab Content -->
+                                <!-- Add content here -->
                             </div>
-
-                            <!-- Categories & Relations -->
-                            <div class="col-12">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-diagram-3 me-2"></i>Categories & Relations
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Brand</label>
-                                                <select class="form-select" @bind="productDetail.BrandId">
-                                                    @foreach (var brand in Brands ?? new List<BrandViewModel>())
-                                                    {
-                                                        <option value="@brand.Id">@brand.NameEn</option>
-                                                    }
-                                                </select>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Category</label>
-                                                <select class="form-select" @bind="productDetail.CategoryId">
-                                                    @foreach (var category in Categories ?? new List<Category>())
-                                                    {
-                                                        <option value="@category.Id">@category.NameEn</option>
-                                                    }
-                                                </select>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Collection</label>
-                                                <select class="form-select" @bind="productDetail.CollectionId">
-                                                    @foreach (var collection in Collections ?? new List<Collection>())
-                                                    {
-                                                        <option value="@collection.Id">@collection.NameEn</option>
-                                                    }
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="@(activeTab == "specs" ? "d-block" : "d-none")">
+                                <!-- Specifications Tab Content -->
+                                <!-- Add content here -->
                             </div>
-
-                            <div class="col-md-6">
-                                <!-- Measurements -->
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-rulers me-2"></i>Measurements
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-6">
-                                                <label class="form-label text-muted small">Height</label>
-                                                <input type="number" step="0.01" class="form-control" @bind="productDetail.Height" />
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label text-muted small">Diameter</label>
-                                                <input type="number" step="0.01" class="form-control" @bind="productDetail.Diameter" />
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label text-muted small">Top</label>
-                                                <input type="number" step="0.01" class="form-control" @bind="productDetail.Top" />
-                                            </div>
-                                            <div class="col-6">
-                                                <label class="form-label text-muted small">Base</label>
-                                                <input type="number" step="0.01" class="form-control" @bind="productDetail.Base" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Volume</label>
-                                                <input type="number" step="0.01" class="form-control" @bind="productDetail.Volume" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Weight</label>
-                                                <input type="number" step="0.01" class="form-control" @bind="productDetail.Weight" />
-                                            </div>
-                                            <div class="col-md-4">
-                                                <label class="form-label text-muted small">Area</label>
-                                                <input type="number" step="0.01" class="form-control" @bind="productDetail.Area" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <!-- Packaging Information -->
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-box-seam me-2"></i>Packaging Information
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label text-muted small">Inner Type</label>
-                                                <input type="text" class="form-control" @bind="productDetail.InnerType" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label text-muted small">Inner Type Count</label>
-                                                <input type="number" class="form-control" @bind="productDetail.InnerTypeCount" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label text-muted small">Outer Type</label>
-                                                <input type="text" class="form-control" @bind="productDetail.OuterType" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label text-muted small">Outer Type Count</label>
-                                                <input type="number" class="form-control" @bind="productDetail.OuterTypeCount" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Product Identifiers -->
-                            <div class="col-12">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title text-primary mb-3">
-                                            <i class="bi bi-upc-scan me-2"></i>Product Identifiers
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <label class="form-label text-muted small">EAN</label>
-                                                <input type="text" class="form-control" @bind="productDetail.Ean" />
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label class="form-label text-muted small">UPC</label>
-                                                <input type="text" class="form-control" @bind="productDetail.Upc" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
                         </div>
                     </div>
 
-                    <div class="modal-footer bg-light">
-                        <button type="button"
-                                class="btn btn-link text-decoration-none"
-                                @onclick="HandleClose"
-                                disabled="@isSaving">
-                            Cancel
-                        </button>
-                        <button type="button"
-                                class="btn btn-primary px-4 d-flex align-items-center gap-2"
-                                @onclick="HandleSave"
-                                disabled="@isSaving">
-                            @if (isSaving)
-                            {
-                                <span class="spinner-border spinner-border-sm"></span>
-                                <span>Saving Changes...</span>
-                            }
-                            else
-                            {
-                                <i class="bi bi-check2"></i>
-                                <span>Save Changes</span>
-                            }
-                        </button>
+                    <div class="modal-footer border-0 bg-light p-4">
+                        <div class="d-flex gap-3">
+                            <button type="button" class="btn btn-light px-4" @onclick="HandleClose" disabled="@isSaving">Cancel</button>
+                            <button type="button" class="btn btn-primary px-4 d-inline-flex align-items-center gap-2" @onclick="SaveBasicInformation" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <div class="spinner-border spinner-border-sm"></div>
+                                    <span>Saving Changes...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-check2-circle"></i>
+                                    <span>Save Changes</span>
+                                }
+                            </button>
+                        </div>
                     </div>
                 }
             </div>
@@ -338,26 +152,6 @@
     </div>
 }
 
-
-<style>
-    .upload-zone {
-        border: 2px dashed #dee2e6;
-        border-radius: 0.5rem;
-        background: #f8f9fa;
-        transition: all 0.2s ease;
-        cursor: pointer;
-    }
-
-        .upload-zone:hover {
-            border-color: #6c757d;
-            background: #f1f3f5;
-        }
-
-        .upload-zone.dragging {
-            border-color: #0d6efd;
-            background: #e9ecef;
-        }
-</style>
 
 @code {
     [Parameter] public Product Product { get; set; }
@@ -374,11 +168,8 @@
     private bool isDragging;
     private bool isUploading;
     private ProductDetailViewModel productDetail;
-
-    private InputFile fileInput;
-
-    [Inject]
-    private IJSRuntime JS { get; set; }
+    private string fileInputId = "fileInput_" + Guid.NewGuid().ToString("N");
+    private string activeTab = "images";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -390,9 +181,19 @@
 
     private async Task ClickFileInput()
     {
-        // Get the element reference from the InputFile component
-        var element = await JS.InvokeAsync<ElementReference>("getElement", fileInput);
-        await JS.InvokeVoidAsync("clickElement", element);
+        await JS.InvokeVoidAsync("imageUploadHelpers.clickInput", fileInputId);
+    }
+
+    private void HandleDragEnter()
+    {
+        isDragging = true;
+        StateHasChanged();
+    }
+
+    private void HandleDragLeave()
+    {
+        isDragging = false;
+        StateHasChanged();
     }
 
     private async Task HandleDrop(DragEventArgs e)
@@ -405,30 +206,36 @@
 
             if (productDetail == null) return;
 
-            if (e.DataTransfer.Files != null)
-            {
-                // Convert FileList to List<IBrowserFile>
-                var files = await JS.InvokeAsync<List<FileInfo>>("getDroppedFiles");
+            var files = await JS.InvokeAsync<string[]>("imageUploadHelpers.handleDrop", e);
 
-                foreach (var fileInfo in files)
+            if (files == null || files.Length == 0) return;
+
+            foreach (var fileData in files)
+            {
+                try
                 {
-                    using var stream = new MemoryStream(Convert.FromBase64String(fileInfo.Data));
+                    byte[] fileBytes = Convert.FromBase64String(fileData);
+                    using var memoryStream = new MemoryStream(fileBytes);
 
                     var result = await ProductsService.AddProductImageAsync(
                         productDetail.Id,
-                        stream,
-                        fileInfo.Name
+                        memoryStream,
+                        "dropped_image.jpg"
                     );
 
                     if (result.Success)
                     {
-                        ToastService.ShowToast($"Image {fileInfo.Name} uploaded successfully", "success");
+                        ToastService.ShowToast("Image uploaded successfully", "success");
                         await LoadProductDetails();
                     }
                     else
                     {
-                        ToastService.ShowToast($"Failed to upload {fileInfo.Name}: {result.Message}", "error");
+                        ToastService.ShowToast(result.Message ?? "Failed to upload image", "error");
                     }
+                }
+                catch (Exception ex)
+                {
+                    ToastService.ShowToast($"Error processing file: {ex.Message}", "error");
                 }
             }
         }
@@ -443,14 +250,6 @@
         }
     }
 
-    public class FileInfo
-    {
-        public string Name { get; set; }
-        public string Data { get; set; }
-    }
-
-    
-
     private async Task HandleFileSelected(InputFileChangeEventArgs e)
     {
         try
@@ -462,39 +261,7 @@
 
             foreach (var file in e.GetMultipleFiles(10))
             {
-                try
-                {
-                    if (file.Size > 10485760) // 10MB limit
-                    {
-                        ToastService.ShowToast($"File {file.Name} is too large. Maximum size is 10MB.", "error");
-                        continue;
-                    }
-
-                    using var stream = file.OpenReadStream(maxAllowedSize: 10485760);
-                    using var memoryStream = new MemoryStream();
-                    await stream.CopyToAsync(memoryStream);
-                    memoryStream.Position = 0;
-
-                    var result = await ProductsService.AddProductImageAsync(
-                        productDetail.Id,
-                        memoryStream,
-                        file.Name
-                    );
-
-                    if (result.Success)
-                    {
-                        ToastService.ShowToast($"Image {file.Name} uploaded successfully", "success");
-                        await LoadProductDetails();
-                    }
-                    else
-                    {
-                        ToastService.ShowToast($"Failed to upload {file.Name}: {result.Message}", "error");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ToastService.ShowToast($"Error processing file {file.Name}: {ex.Message}", "error");
-                }
+                await ProcessFile(file);
             }
         }
         finally
@@ -508,7 +275,7 @@
     {
         try
         {
-            if (file.Size > 10485760) // 10MB limit
+            if (file.Size > 10485760)
             {
                 ToastService.ShowToast($"File {file.Name} is too large. Maximum size is 10MB.", "error");
                 return;
@@ -528,7 +295,7 @@
             if (result.Success)
             {
                 ToastService.ShowToast($"Image {file.Name} uploaded successfully", "success");
-                await LoadProductDetails(); // Refresh the images
+                await LoadProductDetails();
             }
             else
             {
@@ -568,71 +335,6 @@
         }
     }
 
-    private async Task HandleClose()
-    {
-        if (isSaving) return;
-        await IsVisibleChanged.InvokeAsync(false);
-    }
-
-    private async Task HandleSave()
-    {
-        if (isSaving) return;
-
-        try
-        {
-            isSaving = true;
-            StateHasChanged();
-
-            var updateModel = new UpdateProductViewModel
-                {
-                    ProductId = Guid.Parse(productDetail.Id),
-                    Name = productDetail.Name,
-                    Description = productDetail.Description,
-                    Price = productDetail.Price,
-                    Points = productDetail.Points,
-                    Quantity = productDetail.Quantity,
-                    BrandId = Guid.Parse(productDetail.BrandId),
-                    CategoryId = productDetail.CategoryId,
-                    CollectionId = productDetail.CollectionId,
-                    InnerType = productDetail.InnerType,
-                    InnerTypeCount = productDetail.InnerTypeCount,
-                    OuterType = productDetail.OuterType,
-                    OuterTypeCount = productDetail.OuterTypeCount,
-                    Height = productDetail.Height,
-                    Diameter = productDetail.Diameter,
-                    Top = productDetail.Top,
-                    Base = productDetail.Base,
-                    Volume = productDetail.Volume,
-                    Weight = productDetail.Weight,
-                    Area = productDetail.Area,
-                    Ean = productDetail.Ean,
-                    Upc = productDetail.Upc
-                };
-
-            var response = await ProductsService.UpdateProductAsync(updateModel);
-
-            if (response.Success)
-            {
-                ToastService.ShowToast("Product updated successfully", "success");
-                await OnSaved.InvokeAsync();
-                await HandleClose();
-            }
-            else
-            {
-                ToastService.ShowToast(response.Message ?? "Failed to update product", "error");
-            }
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowToast($"Error: {ex.Message}", "error");
-        }
-        finally
-        {
-            isSaving = false;
-            StateHasChanged();
-        }
-    }
-
     private async Task HandleImageDelete(string imageId)
     {
         try
@@ -662,28 +364,107 @@
             StateHasChanged();
         }
     }
-}
 
+    private async Task HandleClose()
+    {
+        if (isSaving) return;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
 
-<script>
-    window.imageUploadHelpers = {
-        clickInput: function (inputId) {
-            const element = document.getElementById(inputId);
-            if (element) {
-                element.click();
+    private async Task SaveBasicInformation()
+    {
+        if (isSaving) return;
+
+        try
+        {
+            isSaving = true;
+            StateHasChanged();
+
+            var updateModel = new UpdateProductViewModel
+                {
+                    ProductId = Guid.Parse(productDetail.Id),
+                    Sku = productDetail.Sku,
+                    PatternNumber = productDetail.PatternNumber,
+                    Name = productDetail.Name,
+                    Description = productDetail.Description,
+                    Price = productDetail.Price,
+                    Points = productDetail.Points,
+                    Quantity = productDetail.Quantity,
+                    BrandId = Guid.Parse(productDetail.BrandId),
+                    CategoryId = productDetail.CategoryId,
+                    CollectionId = productDetail.CollectionId,
+                    Height = productDetail.Height,
+                    Diameter = productDetail.Diameter,
+                    Top = productDetail.Top,
+                    Base = productDetail.Base,
+                    Volume = productDetail.Volume,
+                    Weight = productDetail.Weight,
+                    Area = productDetail.Area,
+                    InnerType = productDetail.InnerType,
+                    InnerTypeCount = productDetail.InnerTypeCount,
+                    OuterType = productDetail.OuterType,
+                    OuterTypeCount = productDetail.OuterTypeCount,
+                    Ean = productDetail.Ean,
+                    Upc = productDetail.Upc
+                };
+
+            var response = await ProductsService.UpdateProductAsync(updateModel);
+
+            if (response.Success)
+            {
+                ToastService.ShowToast("Product updated successfully", "success");
+                await OnSaved.InvokeAsync();
+                await HandleClose();
             }
-        },
-
-        handleDrop: function (event) {
-            const dt = event.dataTransfer;
-            if (dt.files.length) {
-                return Array.from(dt.files).map(file => ({
-                    name: file.name,
-                    size: file.size,
-                    type: file.type
-                }));
+            else
+            {
+                ToastService.ShowToast(response.Message ?? "Failed to update product", "error");
             }
-            return [];
         }
-    };
-</script>
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error: {ex.Message}", "error");
+        }
+        finally
+        {
+            isSaving = false;
+            StateHasChanged();
+        }
+    }
+
+    // Helper method to show confirmation dialog
+    private async Task<bool> ShowConfirmDialog(string title, string message)
+    {
+        return await JS.InvokeAsync<bool>("confirm", $"{title}\n\n{message}");
+    }
+
+    // Helper method to format currency
+    private string FormatCurrency(decimal value)
+    {
+        return value.ToString("C2");
+    }
+
+    // Helper method to validate required fields
+    private bool ValidateRequiredFields()
+    {
+        if (string.IsNullOrWhiteSpace(productDetail.Name))
+        {
+            ToastService.ShowToast("Product name is required", "error");
+            return false;
+        }
+
+        if (productDetail.Price <= 0)
+        {
+            ToastService.ShowToast("Price must be greater than zero", "error");
+            return false;
+        }
+
+        if (productDetail.Quantity < 0)
+        {
+            ToastService.ShowToast("Quantity cannot be negative", "error");
+            return false;
+        }
+
+        return true;
+    }
+}
