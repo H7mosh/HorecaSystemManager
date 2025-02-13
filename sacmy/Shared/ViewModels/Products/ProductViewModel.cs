@@ -61,6 +61,8 @@ namespace sacmy.Shared.ViewModels.Products
         public string MaterialId { get; set; }
         public string Sku { get; set; }
         public string PatternNumber { get; set; }
+        public string? Ean { get; set; }
+        public string? Upc { get; set; }
         public string Name { get; set; }
         public decimal? Price { get; set; }
         public decimal? DinarPrice { get; set; }

@@ -171,6 +171,150 @@ namespace sacmy.Server.Controller
             });
         }
 
+        [HttpGet("GetProductById/{productId}")]
+        public async Task<ActionResult<ApiResponse>> GetProductById(Guid productId)
+        {
+            try
+            {
+                // 1. Query the product with all necessary includes
+                var product = await _context.Products
+                    .Include(p => p.ProductImages)
+                    .Include(p => p.Brand)
+                    .Include(p => p.Category)
+                    .Include(p => p.Collection)
+                    .Include(p => p.Material)
+                    .Include(p => p.Catalog)
+                    .Where(p => p.Id == productId && !p.IsDeleted)
+                    .Select(p => new
+                    {
+                        p.Id,
+                        p.BrandId,
+                        Brand = p.Brand.NameEn,
+                        p.CollectionId,
+                        Collection = p.Collection.NameEn,
+                        p.CategoryId,
+                        Category = p.Category.NameEn,
+                        p.MaterialId,
+                        Material = p.Material.NameEn,
+                        p.CatalogId,
+                        Catalog = p.Catalog.NameEn,
+                        p.Sku,
+                        p.PatternNumber,
+                        p.Name,
+                        p.Decription,
+                        p.Price,
+                        p.Points,
+                        p.Quantity,
+                        p.InnerType,
+                        p.InnerTypeCount,
+                        p.InnerTypeImage,
+                        p.OuterType,
+                        p.OuterTypeCount,
+                        p.OuterTypeImages,
+                        p.Height,
+                        p.Diameter,
+                        p.Top,
+                        p.Base,
+                        p.Volume,
+                        p.Weight,
+                        p.Area,
+                        p.Upc,
+                        p.Ean,
+                        p.CreatedDate,
+                        p.UpdateDate,
+                        Images = p.ProductImages
+                            .Where(pi => !pi.IsDeleted)
+                            .Select(pi => new
+                            {
+                                pi.Id,
+                                ImageLink = pi.ImageLink.Replace("https://api.safinahmedtech.com", "http://46.165.247.249"),
+                                pi.CreatedDate
+                            })
+                            .OrderBy(pi => pi.CreatedDate)
+                            .ToList()
+                    })
+                    .FirstOrDefaultAsync();
+
+                if (product == null)
+                {
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Product not found."
+                    });
+                }
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Product retrieved successfully.",
+                    Data = product
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = "An error occurred while retrieving the product.",
+                    Data = ex.Message
+                });
+            }
+        }
+
+        [HttpDelete("DeleteProductImage/{imageId}")]
+        public async Task<ActionResult<ApiResponse>> DeleteProductImage(Guid imageId)
+        {
+            try
+            {
+                // Find the product image
+                var productImage = await _context.ProductImages
+                    .FirstOrDefaultAsync(pi => pi.Id == imageId);
+
+                if (productImage == null)
+                {
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Product image not found."
+                    });
+                }
+
+                // Get the file name from the image link
+                var fileName = Path.GetFileName(productImage.ImageLink);
+
+                // Delete the image from the server
+                var imageService = new ImageService();
+                var isDeleted = await imageService.RemoveImageAsync(fileName, "C:/assets/AppImage");
+
+                if (!isDeleted)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Failed to delete image file from server."
+                    });
+                }
+
+                // Delete the record from database
+                _context.ProductImages.Remove(productImage);
+                await _context.SaveChangesAsync();
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Product image deleted successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred while deleting the product image: {ex.Message}"
+                });
+            }
+        }
     }
 
 }

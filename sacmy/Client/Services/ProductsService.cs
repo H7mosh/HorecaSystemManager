@@ -83,6 +83,74 @@ namespace sacmy.Client.Services
             }
         }
 
+        public async Task<ApiResponse<ProductDetailViewModel>> GetProductByIdAsync(string productId)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+                var response = await client.GetAsync($"api/Product/GetProductById/{productId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ApiResponse<ProductDetailViewModel>>(responseContent);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error Status: {response.StatusCode}");
+                    Console.WriteLine($"Error Content: {errorContent}");
+                    return new ApiResponse<ProductDetailViewModel>
+                    {
+                        Success = false,
+                        Message = $"API request failed with status {response.StatusCode}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<ProductDetailViewModel>
+                {
+                    Success = false,
+                    Message = $"Request failed: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> DeleteProductImageAsync(string imageId)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+                var response = await client.DeleteAsync($"api/Product/DeleteProductImage/{imageId}");
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error Status: {response.StatusCode}");
+                    Console.WriteLine($"Error Content: {errorContent}");
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"API request failed with status {response.StatusCode}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Request failed: {ex.Message}"
+                };
+            }
+        }
+
     }
 
 }
