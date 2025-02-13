@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using sacmy.Shared.Core;
 using sacmy.Shared.ViewModels.Products;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 
@@ -110,6 +111,53 @@ namespace sacmy.Client.Services
             catch (Exception ex)
             {
                 return new ApiResponse<ProductDetailViewModel>
+                {
+                    Success = false,
+                    Message = $"Request failed: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> AddProductImageAsync(string productId, Stream imageStream, string fileName)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+
+                // Create multipart form content
+                using var content = new MultipartFormDataContent();
+
+                // Add the image file
+                var imageContent = new StreamContent(imageStream);
+                imageContent.Headers.ContentType = new MediaTypeHeaderValue("image/jpeg"); // Adjust based on file type
+                content.Add(imageContent, "image", fileName);
+
+                // Add the product ID
+                content.Add(new StringContent(productId), "productId");
+
+                // Send the request
+                var response = await client.PostAsync("api/Product/AddProductImage", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return JsonConvert.DeserializeObject<ApiResponse>(responseContent);
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error Status: {response.StatusCode}");
+                    Console.WriteLine($"Error Content: {errorContent}");
+                    return new ApiResponse
+                    {
+                        Success = false,
+                        Message = $"API request failed with status {response.StatusCode}"
+                    };
+                }
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse
                 {
                     Success = false,
                     Message = $"Request failed: {ex.Message}"

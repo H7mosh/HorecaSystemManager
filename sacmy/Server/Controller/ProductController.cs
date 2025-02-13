@@ -315,6 +315,76 @@ namespace sacmy.Server.Controller
                 });
             }
         }
+
+        [HttpPost("AddProductImage")]
+        public async Task<ActionResult<ApiResponse>> AddProductImage([FromForm] IFormFile image, [FromForm] Guid productId)
+        {
+            try
+            {
+                if (image == null || image.Length == 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "No image file provided."
+                    });
+                }
+
+                // Validate product exists
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
+
+                if (product == null)
+                {
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Product not found."
+                    });
+                }
+
+                // Save image using ImageService
+                var imageService = new ImageService();
+                var fileName = await imageService.SaveImageAsync(image, "C:/assets/AppImage");
+
+                // Create image URL
+                var imageUrl = $"https://api.safinahmedtech.com/assets/AppImage/{fileName}";
+
+                // Create new product image record
+                var productImage = new sacmy.Server.Models.ProductImage
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = productId,
+                    ImageLink = imageUrl,
+                    CreatedDate = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
+                // Add to database
+                _context.ProductImages.Add(productImage);
+                await _context.SaveChangesAsync();
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Image uploaded successfully.",
+                    Data = new
+                    {
+                        Id = productImage.Id,
+                        ImageLink = productImage.ImageLink,
+                        CreatedDate = productImage.CreatedDate
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred while uploading the image: {ex.Message}"
+                });
+            }
+        }
     }
 
 }

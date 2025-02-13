@@ -5,6 +5,7 @@
 @inject ProductsService ProductsService
 @inject ToastService ToastService
 
+
 @if (IsVisible)
 {
     <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
@@ -89,6 +90,42 @@
                                                     <p class="mb-0 mt-2">No images available</p>
                                                 </div>
                                             }
+                                        </div>
+
+                                        <!-- Image Upload Section -->
+                                        <div class="mt-4">
+                                            <InputFile OnChange="@HandleFileSelected"
+                                                       multiple
+                                                       accept="image/*"
+                                                       class="d-none"
+                                                       @ref="fileInput" />
+
+                                            <div class="upload-zone @(isDragging ? "dragging" : "")"
+                                                 @ondragenter="@(() => isDragging = true)"
+                                                 @ondragleave="@(() => isDragging = false)"
+                                                 @ondragend="@(() => isDragging = false)"
+                                                 @ondrop="HandleDrop"
+                                                 @onclick="ClickFileInput">
+                                                <div class="text-center p-4">
+                                                    @if (isUploading)
+                                                    {
+                                                        <div class="spinner-border text-primary mb-2" role="status">
+                                                            <span class="visually-hidden">Loading...</span>
+                                                        </div>
+                                                        <p class="mb-0">Uploading images...</p>
+                                                    }
+                                                    else
+                                                    {
+                                                        <i class="bi bi-cloud-upload text-primary" style="font-size: 2rem;"></i>
+                                                        <p class="mt-2 mb-1">Drag and drop images here</p>
+                                                        <p class="text-muted small mb-2">or</p>
+                                                        <button type="button" class="btn btn-outline-primary">
+                                                            Browse Files
+                                                        </button>
+                                                    }
+                                                </div>
+                                            
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -268,6 +305,7 @@
                                     </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
@@ -300,6 +338,27 @@
     </div>
 }
 
+
+<style>
+    .upload-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+        .upload-zone:hover {
+            border-color: #6c757d;
+            background: #f1f3f5;
+        }
+
+        .upload-zone.dragging {
+            border-color: #0d6efd;
+            background: #e9ecef;
+        }
+</style>
+
 @code {
     [Parameter] public Product Product { get; set; }
     [Parameter] public bool IsVisible { get; set; }
@@ -312,13 +371,173 @@
     private string isDeletingImage;
     private bool isLoading = true;
     private bool isSaving = false;
+    private bool isDragging;
+    private bool isUploading;
     private ProductDetailViewModel productDetail;
+
+    private InputFile fileInput;
+
+    [Inject]
+    private IJSRuntime JS { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
         if (IsVisible && Product != null)
         {
             await LoadProductDetails();
+        }
+    }
+
+    private async Task ClickFileInput()
+    {
+        // Get the element reference from the InputFile component
+        var element = await JS.InvokeAsync<ElementReference>("getElement", fileInput);
+        await JS.InvokeVoidAsync("clickElement", element);
+    }
+
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        try
+        {
+            isDragging = false;
+            isUploading = true;
+            StateHasChanged();
+
+            if (productDetail == null) return;
+
+            if (e.DataTransfer.Files != null)
+            {
+                // Convert FileList to List<IBrowserFile>
+                var files = await JS.InvokeAsync<List<FileInfo>>("getDroppedFiles");
+
+                foreach (var fileInfo in files)
+                {
+                    using var stream = new MemoryStream(Convert.FromBase64String(fileInfo.Data));
+
+                    var result = await ProductsService.AddProductImageAsync(
+                        productDetail.Id,
+                        stream,
+                        fileInfo.Name
+                    );
+
+                    if (result.Success)
+                    {
+                        ToastService.ShowToast($"Image {fileInfo.Name} uploaded successfully", "success");
+                        await LoadProductDetails();
+                    }
+                    else
+                    {
+                        ToastService.ShowToast($"Failed to upload {fileInfo.Name}: {result.Message}", "error");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error uploading files: {ex.Message}", "error");
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    public class FileInfo
+    {
+        public string Name { get; set; }
+        public string Data { get; set; }
+    }
+
+    
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            isUploading = true;
+            StateHasChanged();
+
+            if (productDetail == null) return;
+
+            foreach (var file in e.GetMultipleFiles(10))
+            {
+                try
+                {
+                    if (file.Size > 10485760) // 10MB limit
+                    {
+                        ToastService.ShowToast($"File {file.Name} is too large. Maximum size is 10MB.", "error");
+                        continue;
+                    }
+
+                    using var stream = file.OpenReadStream(maxAllowedSize: 10485760);
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    memoryStream.Position = 0;
+
+                    var result = await ProductsService.AddProductImageAsync(
+                        productDetail.Id,
+                        memoryStream,
+                        file.Name
+                    );
+
+                    if (result.Success)
+                    {
+                        ToastService.ShowToast($"Image {file.Name} uploaded successfully", "success");
+                        await LoadProductDetails();
+                    }
+                    else
+                    {
+                        ToastService.ShowToast($"Failed to upload {file.Name}: {result.Message}", "error");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ToastService.ShowToast($"Error processing file {file.Name}: {ex.Message}", "error");
+                }
+            }
+        }
+        finally
+        {
+            isUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ProcessFile(IBrowserFile file)
+    {
+        try
+        {
+            if (file.Size > 10485760) // 10MB limit
+            {
+                ToastService.ShowToast($"File {file.Name} is too large. Maximum size is 10MB.", "error");
+                return;
+            }
+
+            using var stream = file.OpenReadStream(maxAllowedSize: 10485760);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            var result = await ProductsService.AddProductImageAsync(
+                productDetail.Id,
+                memoryStream,
+                file.Name
+            );
+
+            if (result.Success)
+            {
+                ToastService.ShowToast($"Image {file.Name} uploaded successfully", "success");
+                await LoadProductDetails(); // Refresh the images
+            }
+            else
+            {
+                ToastService.ShowToast($"Failed to upload {file.Name}: {result.Message}", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error processing file {file.Name}: {ex.Message}", "error");
         }
     }
 
@@ -365,30 +584,30 @@
             StateHasChanged();
 
             var updateModel = new UpdateProductViewModel
-            {
-                ProductId = Guid.Parse(productDetail.Id),
-                Name = productDetail.Name,
-                Description = productDetail.Description,
-                Price = productDetail.Price,
-                Points = productDetail.Points,
-                Quantity = productDetail.Quantity,
-                BrandId = Guid.Parse(productDetail.BrandId),
-                CategoryId = productDetail.CategoryId,
-                CollectionId = productDetail.CollectionId,
-                InnerType = productDetail.InnerType,
-                InnerTypeCount = productDetail.InnerTypeCount,
-                OuterType = productDetail.OuterType,
-                OuterTypeCount = productDetail.OuterTypeCount,
-                Height = productDetail.Height,
-                Diameter = productDetail.Diameter,
-                Top = productDetail.Top,
-                Base = productDetail.Base,
-                Volume = productDetail.Volume,
-                Weight = productDetail.Weight,
-                Area = productDetail.Area,
-                Ean = productDetail.Ean,
-                Upc = productDetail.Upc
-            };
+                {
+                    ProductId = Guid.Parse(productDetail.Id),
+                    Name = productDetail.Name,
+                    Description = productDetail.Description,
+                    Price = productDetail.Price,
+                    Points = productDetail.Points,
+                    Quantity = productDetail.Quantity,
+                    BrandId = Guid.Parse(productDetail.BrandId),
+                    CategoryId = productDetail.CategoryId,
+                    CollectionId = productDetail.CollectionId,
+                    InnerType = productDetail.InnerType,
+                    InnerTypeCount = productDetail.InnerTypeCount,
+                    OuterType = productDetail.OuterType,
+                    OuterTypeCount = productDetail.OuterTypeCount,
+                    Height = productDetail.Height,
+                    Diameter = productDetail.Diameter,
+                    Top = productDetail.Top,
+                    Base = productDetail.Base,
+                    Volume = productDetail.Volume,
+                    Weight = productDetail.Weight,
+                    Area = productDetail.Area,
+                    Ean = productDetail.Ean,
+                    Upc = productDetail.Upc
+                };
 
             var response = await ProductsService.UpdateProductAsync(updateModel);
 
@@ -426,7 +645,6 @@
             if (result.Success)
             {
                 ToastService.ShowToast("Image deleted successfully", "success");
-                // Refresh product details to update the image list
                 await LoadProductDetails();
             }
             else
@@ -445,3 +663,27 @@
         }
     }
 }
+
+
+<script>
+    window.imageUploadHelpers = {
+        clickInput: function (inputId) {
+            const element = document.getElementById(inputId);
+            if (element) {
+                element.click();
+            }
+        },
+
+        handleDrop: function (event) {
+            const dt = event.dataTransfer;
+            if (dt.files.length) {
+                return Array.from(dt.files).map(file => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                }));
+            }
+            return [];
+        }
+    };
+</script>
