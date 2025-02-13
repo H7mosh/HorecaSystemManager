@@ -23,6 +23,7 @@ namespace sacmy.Shared.ViewModels.Products
         public string? Sku { get; set; }
         public string? PatternNumber { get; set; }
         public string? Name { get; set; }
+        public string? Description { get; set; }
         public double? Price { get; set; }
         public int? Points { get; set; }          
         public int? Quantity { get; set; }        
@@ -38,5 +39,6 @@ namespace sacmy.Shared.ViewModels.Products
         public double? Weight { get; set; }
         public double? Area { get; set; }
         public string? Ean { get; set; }
+        public string? Upc { get; set; }
     }
 }
