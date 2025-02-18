@@ -4,7 +4,9 @@ using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
 using sacmy.Shared.Core;
+using sacmy.Shared.ViewModels.EmployeeViewModel;
 using sacmy.Shared.ViewModels.Products;
+using sacmy.Shared.ViewModels.StickNoteViewModel;
 using sacmy.Shared.ViewModels.TasksViewModel;
 
 namespace sacmy.Server.Controller
@@ -14,53 +16,143 @@ namespace sacmy.Server.Controller
     public class ProductController : ControllerBase
     {
         private readonly SafeenCompanyDbContext _context;
-        public ProductController(SafeenCompanyDbContext context)
+        private readonly StoreService _storeService;
+        private readonly ILogger<OrdersController> _logger;
+
+        public ProductController(SafeenCompanyDbContext context, StoreService storeService, ILogger<OrdersController> logger)
         {
             _context = context;
+            _storeService = storeService;
+            _logger = logger;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetProducts([FromQuery] ProductsForReportPaginationRequest request)
+        [HttpGet("{brandId}")]
+        public async Task<IActionResult> GetProductsByBrandId(string brandId)
         {
-            var query = _context.Products
-                .Where(e => e.BrandId == Guid.Parse("63459fb9-37cd-4119-ba73-8e614e5f308b"))
-                .Select(x => new GetProductsForReportViewModel
+            try
+            {
+                _logger.LogInformation($"Received request for brandId: {brandId}");
+
+                // Validate brandId
+                if (string.IsNullOrEmpty(brandId))
                 {
-                    Id = x.Id,
-                    BrandName = x.Brand.NameEn,
-                    CollectionName = x.Collection.NameEn,
-                    Sku = x.Sku,
-                    PatternNumber = x.PatternNumber,
-                    BoxCount = x.OuterTypeCount,
-                    PieceCount = x.InnerTypeCount,
-                    Price = x.Price.ToString(),
-                    Image = x.ProductImages.FirstOrDefault().ImageLink.Replace("https://api.safinahmedtech.com", "http://46.165.247.249"),
-                });
+                    return BadRequest("BrandId is required.");
+                }
 
-            var totalCount = await query.CountAsync();
-            var totalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize);
+                // Fetch the brand data (cached or otherwise)
+                var brandResponse = await _storeService.GetCachedBrandData(brandId);
 
-            var items = await query
-                .Skip((request.PageNumber - 1) * request.PageSize)
-                .Take(request.PageSize)
-                .ToListAsync();
+                if (brandResponse == null
+                    || brandResponse.Data == null
+                    || brandResponse.Data.Products == null
+                    || !brandResponse.Data.Products.Any())
+                {
+                    // Return an empty BrandResponse if no products are found
+                    return Ok(new BrandResponse
+                    {
+                        Id = brandId,
+                        Data = new BrandData
+                        {
+                            Products = new List<sacmy.Shared.ViewModels.Products.Product>(),
+                            Categories = new List<sacmy.Shared.ViewModels.Products.Category>(),
+                            Collections = new List<sacmy.Shared.ViewModels.Products.Collection>(),
+                            Advertises = new List<sacmy.Shared.ViewModels.Products.Advertise>()
+                        }
+                    });
+                }
 
-            if (items is null || !items.Any())
-            {
-                return Ok("There's No Items Yet!");
+                // -----------------------------------------------------------------------------------
+                // 1) Get all products (already done in brandResponse)
+                var allProducts = brandResponse.Data.Products;
+
+                // 2) Extract Product IDs
+                var productGuids = allProducts
+                        .Select(p => Guid.Parse(p.Id)) 
+                        .ToList();
+
+                _logger.LogInformation($"Product GUIDs: {string.Join(", ", productGuids.Take(5))}");
+
+
+                // 3) Fetch StickyNotes for these Product IDs
+                var productNotes = await _context.StickyNotes
+                    .Include(sn => sn.Employee)
+                    .Where(sn => sn.TableName == "Products")
+                    .ToListAsync();
+
+                // Then filter in memory
+                var stickyNotes = productNotes
+                    .Where(sn => productGuids.Contains(sn.RecordId))
+                    .ToList();
+
+                // 4) Group the sticky notes by RecordId
+                var stickyNotesGrouped = stickyNotes
+                    .GroupBy(sn => sn.RecordId)
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                // 5) Map sticky notes onto each product
+                foreach (var product in allProducts)
+                {
+                    if (stickyNotesGrouped.TryGetValue(Guid.Parse(product.Id), out var notesForThisProduct))
+                    {
+                        // Convert each StickyNote to your GetStickyNoteViewModel
+                        product.StickyNotes = notesForThisProduct.Select(sn => new GetStickyNoteViewModel
+                        {
+                            Id = sn.Id,
+                            TableName = sn.TableName,
+                            RecordId = sn.RecordId,
+                            EmployeeId = sn.EmployeeId,
+                            Note = sn.Note,
+                            CreatedDate = sn.CreatedDate,
+
+                            Employee = new GetEmployeeViewModel
+                            {
+                                Id = sn.Employee.Id,
+                                FirstName = sn.Employee.FirstName,
+                                LastName = sn.Employee.LastName,
+                                PhoneNumber = sn.Employee.PhoneNumber,
+                                JobTitle = sn.Employee.JobTitle,
+                                Branch = sn.Employee.Branch,
+                                Brand = sn.Employee.Brand,
+                                Image = sn.Employee.Image,
+                                FirebaseToken = sn.Employee.FirebaseToken,
+                                CreatedDate = sn.Employee.CreatedDate
+                            }
+                        }).ToList();
+                    }
+                    else
+                    {
+                        // No sticky notes for this product
+                        product.StickyNotes = new List<GetStickyNoteViewModel>();
+                    }
+                }
+                // -----------------------------------------------------------------------------------
+
+                // Return the full response with products now containing sticky notes
+                var fullBrandResponse = new BrandResponse
+                {
+                    Id = brandResponse.Id,
+                    BrandEn = brandResponse.BrandEn,
+                    BrandAr = brandResponse.BrandAr,
+                    BrandTr = brandResponse.BrandTr,
+                    BrandKr = brandResponse.BrandKr,
+                    Image = brandResponse.Image,
+                    Data = new BrandData
+                    {
+                        Advertises = brandResponse.Data.Advertises,
+                        Categories = brandResponse.Data.Categories,
+                        Collections = brandResponse.Data.Collections,
+                        Products = allProducts  // Now each product has StickyNotes
+                    }
+                };
+
+                return Ok(fullBrandResponse);
             }
-
-            var response = new ProductsPaginatedResponse<GetProductsForReportViewModel>
+            catch (Exception ex)
             {
-                Items = items,
-                TotalCount = totalCount,
-                TotalPages = totalPages,
-                CurrentPage = request.PageNumber,
-                HasNext = request.PageNumber < totalPages,
-                HasPrevious = request.PageNumber > 1
-            };
-
-            return Ok(response);
+                _logger.LogError($"Error in {nameof(GetProductsByBrandId)}: {ex.Message}");
+                _logger.LogError($"Stack trace: {ex.StackTrace}");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
 
         [HttpPost("UpdateProduct")]
@@ -267,7 +359,7 @@ namespace sacmy.Server.Controller
         {
             try
             {
-                // Find the product image
+                // 1. Find the product image
                 var productImage = await _context.ProductImages
                     .FirstOrDefaultAsync(pi => pi.Id == imageId);
 
@@ -280,14 +372,14 @@ namespace sacmy.Server.Controller
                     });
                 }
 
-                // Get the file name from the image link
+                // 2. Get the file name from the image link
                 var fileName = Path.GetFileName(productImage.ImageLink);
 
-                // Delete the image from the server
+                // 3. Delete the image from the server
                 var imageService = new ImageService();
-                var isDeleted = await imageService.RemoveImageAsync(fileName, "C:/assets/AppImage");
+                var isDeletedFromServer = await imageService.RemoveImageAsync(fileName, "C:/assets/AppImage");
 
-                if (!isDeleted)
+                if (!isDeletedFromServer)
                 {
                     return BadRequest(new ApiResponse
                     {
@@ -296,14 +388,20 @@ namespace sacmy.Server.Controller
                     });
                 }
 
-                // Delete the record from database
-                _context.ProductImages.Remove(productImage);
+                // 4. Soft delete (instead of removing it from the DB)
+                productImage.IsDeleted = true;
+
+                // 5. Mark the entity as modified and save changes
+                // (If you're using EF Core tracking, setting the property is enough to track the change.
+                //  But if needed, you can explicitly call Update. Either approach will work.)
+                _context.ProductImages.Update(productImage);
                 await _context.SaveChangesAsync();
 
+                // 6. Return success response
                 return Ok(new ApiResponse
                 {
                     Success = true,
-                    Message = "Product image deleted successfully."
+                    Message = "Product image deleted (soft delete) successfully."
                 });
             }
             catch (Exception ex)

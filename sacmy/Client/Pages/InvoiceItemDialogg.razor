@@ -1,5 +1,6 @@
 ﻿@page "/invoice-items-dialog"
 @inject IJSRuntime JSRuntime
+@using MudBlazor
 @using sacmy.Client.Services
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.InvoiceViewModel
@@ -86,13 +87,14 @@
     </DialogContent>
 
     <DialogActions>
-        <button class="btn btn-primary" @onclick="Close">Close</button>
+        @* <button class="btn btn-primary" @onclick="Close">Close</button> *@
     </DialogActions>
 </MudDialog>
 
 @code {
-    [CascadingParameter]
-    MudDialogInstance MudDialog { get; set; }
+    // TODO : Replace This With Boostrap modal
+    // [CascadingParameter]
+    // MudDialogInstance MudDialog { get; set; }
 
     [Parameter]
     public BuyFatoraViewModel Invoice { get; set; }
@@ -181,7 +183,7 @@
                 CloseOnEscapeKey = true,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true,
-                DisableBackdropClick = true
+                //DisableBackdropClick = true
             };
 
         var dialog = DialogService.Show<UserPasswordAndCarNumberDialog>("Required Information", dialogParameters, options);
@@ -252,7 +254,7 @@
                 await OnSuccessfulPdfGeneration.InvokeAsync();
 
                 // Step 4: Close the Dialog
-                MudDialog.Close();
+                // MudDialog.Close();
 
                 
             }
@@ -264,7 +266,7 @@
         }
     }
 
-    private void Close() => MudDialog.Close();
+    //private void Close() => MudDialog.Close();
 }
 
 

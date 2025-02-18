@@ -1,17 +1,16 @@
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.JSInterop;
-using MudBlazor;
-using MudBlazor.Services;
 using sacmy.Client;
 using sacmy.Client.Configuraion;
 using sacmy.Client.Services;
 using sacmy.Services;
 using sacmy.Shared.Core;
 using Blazored.LocalStorage;
-using Microsoft.Extensions.Localization;
 using System.Globalization;
 using sacmy.Client.Shared.Toast;
+using MudBlazor.Services;
+using MudBlazor;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
@@ -23,6 +22,7 @@ builder.Services.AddHttpClient("sacmy.ServerAPI", client =>
     client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
 });
+
 
 // Configure API URL
 var baseApiUrl = builder.Configuration["BaseApiUrl"] ?? builder.HostEnvironment.BaseAddress;
@@ -45,6 +45,8 @@ builder.Services.AddSingleton<AuthService>();
 builder.Services.AddScoped<ProductsService>();
 builder.Services.AddScoped<BrandService>();
 builder.Services.AddScoped<ToastService>();
+builder.Services.AddScoped<StickyNoteService>();
+
 
 // Configure MudBlazor
 builder.Services.AddMudServices(config =>

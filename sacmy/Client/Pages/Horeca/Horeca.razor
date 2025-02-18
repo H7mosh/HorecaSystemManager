@@ -113,20 +113,20 @@ else{
 </MudCard>
 
 
-<MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
+@* <MudMessageBox @ref="mbox" Title="Warning" CancelText="Cancel">
     <MessageContent>
         Deleting can <b>not</b> be undone!
     </MessageContent>
     <YesButton>
             <MudButton Variant="Variant.Filled" Color="MudBlazor.Color.Error" StartIcon="@Icons.Material.Filled.DeleteForever" @onclick="()=>RemoveHoreca()">Delete!</MudButton>
     </YesButton>
-</MudMessageBox>
+</MudMessageBox> *@
 
     @code {
     private Guid selectedItemsId;
     private List<GetHorecaInformationsViewModel> HorecaInformations = new List<GetHorecaInformationsViewModel>();
     private string _searchString;
-    MudMessageBox mbox { get; set; }
+    //MudMessageBox mbox { get; set; }
     string state = "Message box hasn't been opened yet";
     bool isLoading = false;
 
@@ -169,7 +169,7 @@ else{
     private async void OnShowButtonClicked(GetHorecaInformationsViewModel row)
     {
         selectedItemsId = row.Id;
-        bool? result = await mbox.Show();
+       // bool? result = await mbox.Show();
     }
 
     private byte[]? ProductsToBytes()

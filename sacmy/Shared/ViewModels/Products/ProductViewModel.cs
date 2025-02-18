@@ -1,4 +1,5 @@
-﻿using System;
+﻿using sacmy.Shared.ViewModels.StickNoteViewModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,16 @@ using System.Threading.Tasks;
 
 namespace sacmy.Shared.ViewModels.Products
 {
+
+    public class AdvertiseViewModel
+    {
+        public Guid Id { get; set; }
+
+        public Guid ProductId { get; set; }
+
+        public string Image { get; set; } = null!;
+    }
+   
     public class BrandResponse
     {
         public string Id { get; set; }
@@ -15,6 +26,8 @@ namespace sacmy.Shared.ViewModels.Products
         public string BrandKr { get; set; }
         public string Image { get; set; }
         public BrandData Data { get; set; }
+
+
     }
 
     public class BrandData
@@ -23,6 +36,10 @@ namespace sacmy.Shared.ViewModels.Products
         public List<Category> Categories { get; set; }
         public List<Collection> Collections { get; set; }
         public List<Product> Products { get; set; }
+
+        public int TotalCount { get; set; }
+        public int TotalPages { get; set; }
+        public int CurrentPage { get; set; }
     }
 
     public class Advertise
@@ -64,12 +81,15 @@ namespace sacmy.Shared.ViewModels.Products
         public string? Ean { get; set; }
         public string? Upc { get; set; }
         public string Name { get; set; }
+        public string Description { get; set; }
         public decimal? Price { get; set; }
         public decimal? DinarPrice { get; set; }
         public int? Points { get; set; }              
         public int? Quantity { get; set; }            
-        public int? BoxCount { get; set; }            
-        public int? PieceCount { get; set; }          
+        public int? BoxCount { get; set; }
+        public string? BoxCountType { get; set; }
+        public int? PieceCount { get; set; }
+        public string? PieceCountType { get; set; }
         public decimal? Height { get; set; }          
         public decimal? Diameter { get; set; }        
         public decimal? Top { get; set; }             
@@ -84,6 +104,8 @@ namespace sacmy.Shared.ViewModels.Products
         public bool IsRaised { get; set; }
         public decimal? RaisedPercentage { get; set; }   
         public string Image { get; set; }
+        public List<GetStickyNoteViewModel> StickyNotes { get; set; } = new();
+
     }
 
     public class GetProductsForReportViewModel
