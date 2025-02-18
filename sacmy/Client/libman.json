@@ -2105,10 +2105,7 @@
     },
     {
       "library": "bootstrap@5.3.3",
-      "destination": "wwwroot/bootstrap/js/bootstrap/",
-      "files": [
-        "js/bootstrap.bundle.min.js"
-      ]
+      "destination": "wwwroot/bootstrap/js/"
     }
   ]
 }

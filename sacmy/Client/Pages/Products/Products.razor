@@ -1,109 +1,234 @@
 ﻿@page "/Products"
 @using sacmy.Client.Services
 @using sacmy.Client.Shared.Toast
+@using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.BrandViewModel
 @using sacmy.Shared.ViewModels.Products
+@using sacmy.Client.Pages.Components
+@using sacmy.Shared.ViewModels.StickNoteViewModel
 @inject ProductsService ProductsService
 @inject BrandService BrandService
+@inject StickyNoteService stickyNoteService
 @inject IJSRuntime JS
 @inject ToastService ToastService
-
+@inject UserGlobalClass UserGlobal
 
 
 <style>
-    /* Original styles */
+    /* Updated & Combined Styles */
+
+    /* New/Updated styles from second snippet (overrides or replaces old ones where conflicts occur) */
+    .container-fluid {
+        padding: 1rem;
+    }
+
+    .actions-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .brand-select {
+        width: 180px;
+    }
+
+    .header-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+
+    .controls-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .stock-filter {
+        display: flex;
+        align-items: center;
+    }
+
+    .search-box {
+        position: relative;
+        width: 280px;
+    }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
     .product-table {
         width: 100%;
-        border-collapse: collapse;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .table-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
+        background: #f9fafb;
     }
 
         .table-header th {
-            padding: 0.75rem;
-            font-weight: 500;
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
             text-align: left;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
 
     .product-row {
-        border-bottom: 1px solid #eee;
+        transition: background-color 0.15s;
     }
 
+        .product-row:hover {
+            background-color: #f9fafb;
+        }
+
         .product-row td {
-            padding: 0.75rem;
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
             vertical-align: middle;
         }
 
     .product-image {
-        width: 40px;
-        height: 40px;
-        object-fit: contain;
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 0.375rem;
+        background: #f9fafb;
+        padding: 0.25rem;
     }
 
-    .pagination {
+    .product-info {
         display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 1rem 0;
+        flex-direction: column;
     }
 
-    .page-number {
-        min-width: 32px;
-        height: 32px;
-        padding: 0;
-        border: 1px solid #dee2e6;
-        background: white;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #666;
+    .sku-main {
+        font-weight: 500;
+        color: #111827;
     }
 
-        .page-number.active {
-            background: #0d6efd;
-            color: white;
-            border-color: #0d6efd;
-        }
-
-        .page-number:hover:not(.active) {
-            background: #f8f9fa;
-        }
+    .sku-sub {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
 
     .category-badge {
-        font-size: 0.75rem;
+        display: inline-block;
         padding: 0.25rem 0.75rem;
-        border-radius: 999px;
-        background: #f8f9fa;
-        color: #666;
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 9999px;
+        font-size: 0.75rem;
     }
 
-    .stock-status {
+    .price-info {
+        text-align: right;
+    }
+
+    .price-main {
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .price-dinar {
         font-size: 0.875rem;
+        color: #059669;
     }
 
-        .stock-status.in-stock {
-            color: #198754;
+    .stock-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .table-footer {
+        background: white;
+        border-top: 1px solid #e5e7eb;
+        padding: 1rem;
+        margin-top: 1rem;
+        border-radius: 0 0 0.5rem 0.5rem;
+    }
+
+        .stock-badge.in-stock {
+            background: #def7ec;
+            color: #065f46;
         }
 
-        .stock-status.out-of-stock {
-            color: #dc3545;
+        .stock-badge.out-of-stock {
+            background: #fee2e2;
+            color: #991b1b;
         }
 
-    /* New overview styles */
+    .sticky-notes {
+        display: flex;
+        margin-left: -0.5rem;
+    }
+
+    .note-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        border: 2px solid white;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .note-avatar:hover {
+            transform: scale(1.1);
+            z-index: 1;
+        }
+
+    .note-tooltip {
+        position: absolute;
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
+        padding: 1rem;
+        width: 280px;
+        z-index: 1000;
+        display: none;
+    }
+
+    .note-avatar:hover .note-tooltip {
+        display: block;
+    }
+
     .overview-card {
         background: white;
         border-radius: 0.5rem;
         padding: 1.5rem;
-        height: 100%;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
 
     .stat-header {
-        color: #6B7280;
+        color: #6b7280;
         font-size: 0.875rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -113,35 +238,17 @@
     .stat-value {
         font-size: 1.875rem;
         font-weight: 600;
+        color: #2563eb;
         line-height: 2.25rem;
         margin-top: 0.25rem;
-        color: #1a56db;
-    }
-
-    .stat-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-        color: #6B7280;
-        font-size: 0.875rem;
-    }
-
-    .stat-number {
-        font-size: 0.875rem;
-        font-weight: 500;
     }
 
     .progress-bar {
         width: 100%;
         height: 0.5rem;
-        background: #F3F4F6;
+        background: #f3f4f6;
         border-radius: 9999px;
-        margin-top: 0.5rem;
-        margin-bottom: 1rem;
+        margin: 0.5rem 0 1rem;
         overflow: hidden;
     }
 
@@ -152,13 +259,412 @@
     }
 
         .progress-fill.available {
-            background: #10B981;
+            background: #10b981;
         }
 
         .progress-fill.out-of-stock {
-            background: #EF4444;
+            background: #ef4444;
         }
 
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .stat-number {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .page-info {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .page-number {
+        min-width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #e5e7eb;
+        background: white;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #374151;
+        cursor: pointer;
+        margin: 0 2px;
+    }
+
+        .page-number:hover {
+            background: #f3f4f6;
+        }
+
+        .page-number.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+    .pagination-info {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .page-button {
+        min-width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #e5e7eb;
+        background: white;
+        border-radius: 0.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #374151;
+        cursor: pointer;
+    }
+
+        .page-button:hover {
+            background: #f9fafb;
+        }
+
+        .page-button.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+    /* ----------------------------------------------------- */
+    /* Additional/Retained styles from original snippet that aren't overridden in the new code */
+
+    /* Expanded row highlight */
+    .expanded-row {
+        background-color: #EFF6FF; /* Light blue background */
+    }
+
+    /* Quick Edit Form */
+    .quick-edit-form {
+        padding: 1.5rem;
+        background: #F8FAFC; /* Slightly different background than the row */
+        border-radius: 0.5rem;
+        margin: 0.5rem 1rem;
+        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
+        border: 1px solid #E0E7FF; /* Light blue border */
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+        .form-row.three-columns {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1E40AF; /* Darker blue for labels */
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            height: 2.5rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #BFDBFE; /* Light blue border */
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: #1E293B;
+            background-color: white;
+            transition: all 0.15s ease-in-out;
+        }
+
+            .form-group input:focus,
+            .form-group select:focus {
+                outline: none;
+                border-color: #60A5FA; /* Medium blue */
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            .form-group input:hover,
+            .form-group select:hover {
+                border-color: #93C5FD; /* Light blue hover */
+            }
+
+            .form-group input[type="number"] {
+                -moz-appearance: textfield;
+            }
+
+                .form-group input[type="number"]::-webkit-outer-spin-button,
+                .form-group input[type="number"]::-webkit-inner-spin-button {
+                    -webkit-appearance: none;
+                    margin: 0;
+                }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #E0E7FF;
+        margin-top: 1rem;
+    }
+
+        .form-actions .btn-secondary {
+            background-color: #F3F4F6;
+            color: #374151;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid #D1D5DB;
+            transition: all 0.15s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .form-actions .btn-secondary:hover {
+                background-color: #E5E7EB;
+                border-color: #9CA3AF;
+            }
+
+            .form-actions .btn-secondary i {
+                font-size: 0.875rem;
+            }
+
+        /* Push Save/Cancel buttons to the right */
+        .form-actions .btn-primary,
+        .form-actions .btn-link {
+            margin-left: auto;
+        }
+
+            /* Remove margin from Cancel button when next to Save */
+            .form-actions .btn-primary + .btn-link {
+                margin-left: 0;
+            }
+
+        .form-actions .btn-primary {
+            background-color: #2563EB; /* Slightly darker blue */
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+            .form-actions .btn-primary:hover {
+                background-color: #1D4ED8; /* Even darker blue on hover */
+            }
+
+        .form-actions .btn-link {
+            color: #6B7280;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.15s ease-in-out;
+        }
+
+            .form-actions .btn-link:hover {
+                color: #1E40AF; /* Dark blue on hover */
+            }
+
+    /* Modal & progress bar */
+    #progressModal .modal-content {
+        border-radius: 1rem;
+    }
+
+    #progressModal .progress {
+        border-radius: 0.5rem;
+        background-color: #e9ecef;
+        overflow: hidden;
+    }
+
+    #progressModal .progress-bar {
+        border-radius: 0.5rem;
+        transition: width 0.3s ease;
+        min-width: 0%;
+    }
+
+    #progressModal .bi-file-pdf {
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0%
+
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+    }
+
+    /* Sticky Notes (additional ones not overridden by the second snippet) */
+    .sticky-notes-container {
+        display: flex;
+        margin-left: -8px;
+    }
+
+    .sticky-note-wrapper {
+        position: relative;
+        margin-left: -8px;
+    }
+
+        .sticky-note-wrapper:first-child {
+            margin-left: 0;
+        }
+
+    .employee-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        border: 2px solid white;
+    }
+
+        .employee-avatar.add-note {
+            background-color: #3B82F6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .employee-avatar:first-child {
+            background-color: #FEE2E2; /* Light red background for first avatar */
+        }
+
+        .employee-avatar:last-child {
+            background-color: #0D6EFD; /* Light green background for second avatar */
+        }
+
+        .employee-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .employee-avatar:hover {
+            transform: scale(1.1);
+            z-index: 2;
+        }
+
+    .sticky-note-tooltip {
+        position: absolute;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        padding: 12px;
+        width: 280px;
+        z-index: 1000;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 8px;
+        display: none;
+    }
+
+    .employee-avatar:hover .sticky-note-tooltip {
+        display: block;
+    }
+
+    .note-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .note-author-image {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+    }
+
+    .note-author-info {
+        flex: 1;
+    }
+
+    .note-author-name {
+        font-weight: 600;
+        color: #111827;
+        font-size: 14px;
+        line-height: 1.25;
+    }
+
+    .note-author-title {
+        color: #6B7280;
+        font-size: 12px;
+    }
+
+    .note-content {
+        color: #374151;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .note-employee-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .note-employee-name {
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .note-employee-title {
+        font-size: 12px;
+        color: #6B7280;
+    }
+
+    .note-date {
+        font-size: 12px;
+        color: #6B7280;
+    }
+
+    /* "Hot products" / Extra sections not in updated snippet */
     .hot-products {
         margin-top: 2rem;
         padding-top: 1.5rem;
@@ -182,6 +688,49 @@
         padding: 1rem;
     }
 
+    .note-detail-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .note-detail-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+    }
+
+    .note-detail-info {
+        flex: 1;
+    }
+
+    .note-detail-name {
+        font-weight: 600;
+        font-size: 16px;
+        color: #111827;
+    }
+
+    .note-detail-title {
+        font-size: 14px;
+        color: #6B7280;
+    }
+
+    .note-detail-content {
+        font-size: 16px;
+        line-height: 1.5;
+        color: #374151;
+        margin-bottom: 16px;
+    }
+
+    .note-detail-date {
+        font-size: 14px;
+        color: #6B7280;
+    }
+
+
     .views-row {
         display: flex;
         justify-content: space-between;
@@ -204,184 +753,20 @@
         text-align: right;
     }
 
-.expanded-row {
-        background-color: #EFF6FF;  /* Light blue background */
+    /* Responsive adjustments for the quick-edit-form and form-row */
+    @@media (max-width: 768px) {
+        .form-row, .form-row.three-columns
+
+    {
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
     .quick-edit-form {
-        padding: 1.5rem;
-        background: #F8FAFC;  /* Slightly different background than the row */
-        border-radius: 0.5rem;
-        margin: 0.5rem 1rem;
-        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
-        border: 1px solid #E0E7FF;  /* Light blue border */
+        padding: 1rem;
+        margin: 0.5rem;
     }
 
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .form-row.three-columns {
-        grid-template-columns: 1fr 1fr 1fr;
-    }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .form-group label {
-        font-size: 0.875rem;
-        font-weight: 500;
-        color: #1E40AF;  /* Darker blue for labels */
-        margin-bottom: 0.5rem;
-    }
-
-    .form-group input,
-    .form-group select {
-        height: 2.5rem;
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #BFDBFE;  /* Light blue border */
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        color: #1E293B;
-        background-color: white;
-        transition: all 0.15s ease-in-out;
-    }
-
-    .form-group input:focus,
-    .form-group select:focus {
-        outline: none;
-        border-color: #60A5FA;  /* Medium blue */
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-    }
-
-    .form-group input:hover,
-    .form-group select:hover {
-        border-color: #93C5FD;  /* Light blue hover */
-    }
-
-    .form-group input[type="number"] {
-        -moz-appearance: textfield;
-    }
-
-    .form-group input[type="number"]::-webkit-outer-spin-button,
-    .form-group input[type="number"]::-webkit-inner-spin-button {
-        -webkit-appearance: none;
-        margin: 0;
-    }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-start;
-        gap: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #E0E7FF;
-        margin-top: 1rem;
-    }
-
-    .form-actions .btn-secondary {
-        background-color: #F3F4F6;
-        color: #374151;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        border: 1px solid #D1D5DB;
-        transition: all 0.15s ease-in-out;
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .form-actions .btn-secondary:hover {
-        background-color: #E5E7EB;
-        border-color: #9CA3AF;
-    }
-
-    .form-actions .btn-secondary i {
-        font-size: 0.875rem;
-    }
-
-    /* Push Save/Cancel buttons to the right */
-    .form-actions .btn-primary,
-    .form-actions .btn-link {
-        margin-left: auto;
-    }
-    
-    /* Remove margin from Cancel button when next to Save */
-    .form-actions .btn-primary + .btn-link {
-        margin-left: 0;
-    }
-
-    .form-actions .btn-primary {
-        background-color: #2563EB;  /* Slightly darker blue */
-        color: white;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        border: none;
-        transition: background-color 0.15s ease-in-out;
-    }
-
-    .form-actions .btn-primary:hover {
-        background-color: #1D4ED8;  /* Even darker blue on hover */
-    }
-
-    .form-actions .btn-link {
-        color: #6B7280;
-        text-decoration: none;
-        padding: 0.5rem 1rem;
-        font-size: 0.875rem;
-        font-weight: 500;
-        transition: color 0.15s ease-in-out;
-    }
-
-    .form-actions .btn-link:hover {
-        color: #1E40AF;  /* Dark blue on hover */
-    }
-
-    @@media (max-width: 768px) {
-        .form-row,
-        .form-row.three-columns {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-
-        .quick-edit-form {
-            padding: 1rem;
-            margin: 0.5rem;
-        }
-    }
-
-    #progressModal .modal-content {
-        border-radius: 1rem;
-    }
-
-    #progressModal .progress {
-        border-radius: 0.5rem;
-        background-color: #e9ecef;
-        overflow: hidden;
-    }
-
-    #progressModal .progress-bar {
-        border-radius: 0.5rem;
-        transition: width 0.3s ease;
-        min-width: 0%;
-    }
-
-    #progressModal .bi-file-pdf {
-        animation: pulse 2s infinite;
-    }
-
-    @@keyframes pulse {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.05); }
-        100% { transform: scale(1); }
     }
 </style>
 
@@ -410,12 +795,11 @@
                     <h5 class="text-dark mb-0 fw-semibold">IN STOCK</h5>
 
                     <div class="d-flex align-items-center gap-4">
-
                         <!-- Stock Filter Checkbox -->
                         <div class="form-check d-flex align-items-center">
-                            <input class="form-check-input me-2" 
-                                   type="checkbox" 
-                                   id="inStockFilter" 
+                            <input class="form-check-input me-2"
+                                   type="checkbox"
+                                   id="inStockFilter"
                                    @bind="showOnlyInStock" />
                             <label class="form-check-label" for="inStockFilter">
                                 In Stock Only
@@ -452,116 +836,6 @@
                                 <span>Generate PDF</span>
                             </button>
                         </div>
-
-                        <!-- Progress Modal -->
-                        <div class="modal" id="pdfProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content border-0 shadow">
-                                    <div class="modal-header border-0 pb-0">
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <div class="modal-body p-4 pt-0">
-                                        <!-- Price Adjustment Modal Content -->
-                                        <div id="price-adjustment-section">
-                                            <div class="text-center mb-4">
-                                                <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
-                                                <h5 class="modal-title mt-3">PDF Generation Options</h5>
-                                                <p class="text-muted small mb-4">Configure range and price adjustment</p>
-
-                                                <!-- Range Selection -->
-                                                <div class="mb-4">
-                                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                                        <h6 class="mb-0">Select Range</h6>
-                                                        <span class="text-muted small">
-                                                            Total items: <span id="totalItemsCount" class="fw-bold">0</span>
-                                                        </span>
-                                                    </div>
-                                                    <p class="text-muted small mb-2 text-start">
-                                                        Maximum 999 items per range
-                                                    </p>
-                                                    <div class="row g-2">
-                                                        <div class="col">
-                                                            <div class="input-group">
-                                                                <span class="input-group-text bg-light">From</span>
-                                                                <input type="number"
-                                                                       class="form-control"
-                                                                       id="rangeFrom"
-                                                                       min="1"
-                                                                       value="1">
-                                                            </div>
-                                                        </div>
-                                                        <div class="col">
-                                                            <div class="input-group">
-                                                                <span class="input-group-text bg-light">To</span>
-                                                                <input type="number"
-                                                                       class="form-control"
-                                                                       id="rangeTo"
-                                                                       min="1"
-                                                                       value="999">
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-
-
-                                                <!-- Hide Prices Option -->
-                                                <div class="mb-4 text-start">
-                                                    <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" id="hidePrices">
-                                                        <label class="form-check-label" for="hidePrices">
-                                                            Hide prices in PDF
-                                                        </label>
-                                                    </div>
-                                                </div>
-
-                                                <!-- Price Adjustment -->
-                                                <div class="mb-4">
-                                                    <h6 class="text-start mb-2">Price Adjustment</h6>
-                                                    <div class="input-group" style="max-width: 200px;">
-                                                        <span class="input-group-text bg-light">$</span>
-                                                        <input type="number"
-                                                               class="form-control"
-                                                               id="priceIncrease"
-                                                               step="0.01"
-                                                               min="0"
-                                                               value="0.00"
-                                                               placeholder="0.00">
-                                                    </div>
-                                                </div>
-
-                                                <button class="btn btn-primary px-4" onclick="startPdfGeneration()">
-                                                    Generate PDF
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        <!-- Progress Section -->
-                                        <div id="progress-section" style="display: none;">
-                                            <div class="text-center">
-                                                <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
-                                                <h5 class="mt-3 mb-2">Generating PDF</h5>
-
-                                                <div class="progress my-4" style="height: 10px;">
-                                                    <div class="progress-bar bg-primary"
-                                                         role="progressbar"
-                                                         style="width: 0%"
-                                                         aria-valuenow="0"
-                                                         aria-valuemin="0"
-                                                         aria-valuemax="100">
-                                                    </div>
-                                                </div>
-
-                                                <div class="d-flex justify-content-between text-muted small mb-2">
-                                                    <span class="progress-count">0 of 0 items</span>
-                                                    <span class="progress-percentage">0%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
                     </div>
                 </div>
             </div>
@@ -578,16 +852,14 @@
                     <table class="product-table">
                         <thead class="table-header">
                             <tr>
-                                <th style="width: 40px;">
-                                    <input type="checkbox" class="form-check-input" />
-                                </th>
-                                <th style="width: 60px;"></th>
-                                <th style="width: 150px;">SKU</th>
+                                <th style="width: 80px;">Image</th>
+                                <th style="width: 150px;">Sku</th>
                                 <th style="width: 200px;">Name</th>
                                 <th style="width: 150px;">Category</th>
-                                <th style="width: 120px;" class="text-end">Price</th>
-                                <th style="width: 120px;" class="text-center">Stock</th>
-                                <th style="width: 40px;"></th>
+                                <th style="width: 150px;">Price</th>
+                                <th style="width: 120px;">Stock</th>        <!-- Stock column -->
+                                <th style="width: 100px;">Stick Notes</th>  <!-- Stick Notes column -->
+                                <th style="width: 80px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -595,118 +867,163 @@
                             {
                                 <tr class="product-row">
                                     <td>
-                                        <input type="checkbox" class="form-check-input" />
-                                    </td>
-                                    <td>
                                         <img src="@product.Image" class="product-image" alt="@product.Name" />
                                     </td>
                                     <td>
-                                        <div>@product.Sku</div>
-                                        <small class="text-muted">@product.PatternNumber</small>
+                                        <div class="fw-medium text-dark">@product.Sku</div>
+                                        <div class="text-muted small">@product.PatternNumber</div>
                                     </td>
                                     <td>@product.Name</td>
                                     <td>
-                                        <span class="category-badge">
-                                            @GetCategoryName(product.CategoryId)
-                                        </span>
+                                        <span class="category-badge">@GetCategoryName(product.CategoryId)</span>
                                     </td>
                                     <td class="text-end">
-                                        <div>$@product.Price</div>
-                                        <small class="text-success">@product.DinarPrice IQD</small>
+                                        <div class="fw-semibold text-dark">$@product.Price</div>
+                                        <div class="text-success small">@product.DinarPrice IQD</div>
                                     </td>
-                                    <td class="text-center">
-                                        <span class="stock-status @(product.Quantity > 0 ? "in-stock" : "out-of-stock")">
+                                    <td>
+                                        <!-- Stock data goes here -->
+                                        <span class="stock-badge @(product.Quantity > 0 ? "in-stock" : "out-of-stock")">
+                                            @if (product.Quantity > 0)
+                                            {
+                                                <i class="bi bi-check-circle-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-x-circle-fill"></i>
+                                            }
                                             @product.Quantity in stock
                                         </span>
                                     </td>
                                     <td>
-                                        <button class="btn btn-sm p-0" @onclick="() => ToggleProductExpand(product.Id)">
+                                        @if (product.StickyNotes?.Any() == true)
+                                        {
+                                            <div class="sticky-notes-container">
+                                                @foreach (var note in product.StickyNotes)
+                                                {
+                                                    <div class="sticky-note-wrapper">
+                                                        <div class="employee-avatar" style="background-color: @(note == product.StickyNotes.First() ? "#FEE2E2" : "#D1FAE5")">
+                                                            <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")"
+                                                                 @onclick="() => ShowNoteDetails(note)" />
+
+                                                            <div class="sticky-note-tooltip">
+                                                                <div class="note-header">
+                                                                    <img class="note-author-image"
+                                                                         src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                                         alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
+                                                                    <div class="note-author-info">
+                                                                        <div class="note-author-name">@(note.Employee?.FirstName) @(note.Employee?.LastName)</div>
+                                                                        <div class="note-author-title">@(note.Employee?.JobTitle ?? "Employee")</div>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="note-content">@note.Note</div>
+                                                                <div class="note-date">@note.CreatedDate.ToString("MMM dd, yyyy")</div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                }
+                                                <div class="employee-avatar add-note" @onclick="() => ShowAddNoteDialog(product.Id)">
+                                                    <i class="bi bi-plus-lg"></i>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="employee-avatar add-note" @onclick="() => ShowAddNoteDialog(product.Id)">
+                                                <i class="bi bi-plus-lg"></i>
+                                            </div>
+                                        }
+                                    
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-link p-0" @onclick="() => ToggleProductExpand(product.Id)">
                                             <i class="bi @(IsProductExpanded(product.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
                                         </button>
                                     </td>
                                 </tr>
                                 @if (IsProductExpanded(product.Id))
                                 {
-                                    <tr class="expanded-row">
-                                        <td colspan="8">
-                                            <div class="quick-edit-form">
-                                                <div class="form-row">
-                                                    <div class="form-group">
-                                                        <label>Height</label>
-                                                        <input type="number" step="0.01" @bind="@product.Height" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Diameter</label>
-                                                        <input type="number" step="0.01" @bind="@product.Diameter" />
-                                                    </div>
-                                                </div>
+                                                <tr class="expanded-row">
+                                                    <td colspan="8">
+                                                        <div class="quick-edit-form">
+                                                            <div class="form-row">
+                                                                <div class="form-group">
+                                                                    <label>Height</label>
+                                                                    <input type="number" step="0.01" @bind="@product.Height" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label>Diameter</label>
+                                                                    <input type="number" step="0.01" @bind="@product.Diameter" />
+                                                                </div>
+                                                            </div>
 
-                                                <div class="form-row">
-                                                    <div class="form-group">
-                                                        <label>Top</label>
-                                                        <input type="number" step="0.01" @bind="@product.Top" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Base</label>
-                                                        <input type="number" step="0.01" @bind="@product.Base" />
-                                                    </div>
-                                                </div>
+                                                            <div class="form-row">
+                                                                <div class="form-group">
+                                                                    <label>Top</label>
+                                                                    <input type="number" step="0.01" @bind="@product.Top" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label>Base</label>
+                                                                    <input type="number" step="0.01" @bind="@product.Base" />
+                                                                </div>
+                                                            </div>
 
-                                                <div class="form-row three-columns">
-                                                    <div class="form-group">
-                                                        <label>Volume</label>
-                                                        <input type="number" step="0.01" @bind="@product.Volume" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Weight</label>
-                                                        <input type="number" step="0.01" @bind="@product.Weight" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Area</label>
-                                                        <input type="number" step="0.01" @bind="@product.Area" />
-                                                    </div>
-                                                </div>
+                                                            <div class="form-row three-columns">
+                                                                <div class="form-group">
+                                                                    <label>Volume</label>
+                                                                    <input type="number" step="0.01" @bind="@product.Volume" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label>Weight</label>
+                                                                    <input type="number" step="0.01" @bind="@product.Weight" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label>Area</label>
+                                                                    <input type="number" step="0.01" @bind="@product.Area" />
+                                                                </div>
+                                                            </div>
 
-                                                <div class="form-row">
-                                                    <div class="form-group">
-                                                        <label>EAN</label>
-                                                        <input type="text" @bind="@product.Ean" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>UPC</label>
-                                                        <input type="text" @bind="@product.Upc" />
-                                                    </div>
-                                                </div>
+                                                            <div class="form-row">
+                                                                <div class="form-group">
+                                                                    <label>EAN</label>
+                                                                    <input type="text" @bind="@product.Ean" />
+                                                                </div>
+                                                                <div class="form-group">
+                                                                    <label>UPC</label>
+                                                                    <input type="text" @bind="@product.Upc" />
+                                                                </div>
+                                                            </div>
 
-                                                <div class="form-actions">
-                                                    <button class="btn btn-secondary" @onclick="() => ShowAdvancedEdit(product)">
-                                                        <i class="bi bi-sliders"></i> Advanced Edit
-                                                    </button>
-                                                    <button class="btn btn-primary position-relative"
-                                                            @onclick="() => SaveChanges(product)"
-                                                            disabled="@isUpdating">
+                                                            <div class="form-actions">
+                                                                <button class="btn btn-secondary" @onclick="() => ShowAdvancedEdit(product)">
+                                                                    <i class="bi bi-sliders"></i> Advanced Edit
+                                                                </button>
+                                                                <button class="btn btn-primary position-relative"
+                                                                        @onclick="() => SaveChanges(product)"
+                                                                        disabled="@isUpdating">
                                                         @if (isUpdating)
                                                         {
-                                                            <span class="spinner-border spinner-border-sm me-2"
-                                                                  role="status"
-                                                                  aria-hidden="true">
-                                                            </span>
-                                                            <span>Saving...</span>
+                                                                            <span class="spinner-border spinner-border-sm me-2"
+                                                                                  role="status"
+                                                                                  aria-hidden="true">
+                                                                            </span>
+                                                                            <span>Saving...</span>
                                                         }
                                                         else
                                                         {
-                                                            <span>Save Changes</span>
+                                                                            <span>Save Changes</span>
                                                         }
-                                                    </button>
-                                                    <button class="btn btn-link"
-                                                            @onclick="() => ToggleProductExpand(product.Id)"
-                                                            disabled="@isUpdating">
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
+                                                                </button>
+                                                                <button class="btn btn-link"
+                                                                        @onclick="() => ToggleProductExpand(product.Id)"
+                                                                        disabled="@isUpdating">
+                                                                    Cancel
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
                                 }
                             }
                         </tbody>
@@ -756,6 +1073,7 @@
                     No products found matching your criteria.
                 </div>
             }
+
 
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
@@ -820,10 +1138,188 @@
                 </div>
             </div>
         </div>
-
-        
-
     </div>
+
+    <!-- Progress Modal -->
+    <div class="modal" id="pdfProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4 pt-0">
+                    <!-- Price Adjustment Modal Content -->
+                    <div id="price-adjustment-section">
+                        <div class="text-center mb-4">
+                            <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
+                            <h5 class="modal-title mt-3">PDF Generation Options</h5>
+                            <p class="text-muted small mb-4">Configure range and price adjustment</p>
+
+                            <!-- Range Selection -->
+                            <div class="mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0">Select Range</h6>
+                                    <span class="text-muted small">
+                                        Total items: <span id="totalItemsCount" class="fw-bold">0</span>
+                                    </span>
+                                </div>
+                                <p class="text-muted small mb-2 text-start">
+                                    Maximum 999 items per range
+                                </p>
+                                <div class="row g-2">
+                                    <div class="col">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">From</span>
+                                            <input type="number"
+                                                   class="form-control"
+                                                   id="rangeFrom"
+                                                   min="1"
+                                                   value="1">
+                                        </div>
+                                    </div>
+                                    <div class="col">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light">To</span>
+                                            <input type="number"
+                                                   class="form-control"
+                                                   id="rangeTo"
+                                                   min="1"
+                                                   value="999">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hide Prices Option -->
+                            <div class="mb-4 text-start">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="hidePrices">
+                                    <label class="form-check-label" for="hidePrices">
+                                        Hide prices in PDF
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Price Adjustment -->
+                            <div class="mb-4">
+                                <h6 class="text-start mb-2">Price Adjustment</h6>
+                                <div class="input-group" style="max-width: 200px;">
+                                    <span class="input-group-text bg-light">$</span>
+                                    <input type="number"
+                                           class="form-control"
+                                           id="priceIncrease"
+                                           step="0.01"
+                                           min="0"
+                                           value="0.00"
+                                           placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary px-4" onclick="startPdfGeneration()">
+                                Generate PDF
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress Section -->
+                    <div id="progress-section" style="display: none;">
+                        <div class="text-center">
+                            <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
+                            <h5 class="mt-3 mb-2">Generating PDF</h5>
+
+                            <div class="progress my-4" style="height: 10px;">
+                                <div class="progress-bar bg-primary"
+                                     role="progressbar"
+                                     style="width: 0%"
+                                     aria-valuenow="0"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between text-muted small mb-2">
+                                <span class="progress-count">0 of 0 items</span>
+                                <span class="progress-percentage">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (showNoteDialog)
+    {
+        <div class="modal fade show" style="display: block;" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Sticky Note Details</h5>
+                        <button type="button" class="btn-close" @onclick="CloseNoteDialog"></button>
+                    </div>
+                    <div class="modal-body">
+                        @if (selectedNote != null)
+                        {
+                            <div class="note-detail-header">
+                                <img class="note-detail-avatar"
+                                     src="@(selectedNote.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                     alt="Employee" />
+                                <div class="note-detail-info">
+                                    <div class="note-detail-name">
+                                        @(selectedNote.Employee?.FirstName) @(selectedNote.Employee?.LastName)
+                                    </div>
+                                    <div class="note-detail-title">
+                                        @(selectedNote.Employee?.JobTitle ?? "Employee")
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="note-detail-content">
+                                @selectedNote.Note
+                            </div>
+                            <div class="note-detail-date">
+                                Created on @selectedNote.CreatedDate.ToString("MMMM dd, yyyy")
+                            </div>
+                        }
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseNoteDialog">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+
+
+    @if (showAddDialog)
+    {
+        <div class="modal fade show" style="display: block;" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add Sticky Note</h5>
+                        <button type="button" class="btn-close" @onclick="CloseAddDialog"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="noteText" class="form-label">Note</label>
+                            <textarea id="noteText"
+                                      class="form-control"
+                                      rows="3"
+                                      @bind="newNoteText"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseAddDialog">Cancel</button>
+                        <button type="button" class="btn btn-primary" @onclick="AddNote">Add Note</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-backdrop fade show"></div>
+    }
+
+
 </div>
 
 <AdvancedEditDialog Product="selectedProduct"
@@ -852,7 +1348,72 @@
     private bool showOnlyInStock = false;
     private Product selectedProduct;
     private bool showAdvancedEdit;
+    private GetStickyNoteViewModel selectedNote;  // Changed from StickNote to GetStickyNoteViewModel
+    private bool showNoteDialog = false;
+    private bool showAddDialog = false;
+    private string newNoteText = "";
+    private string selectedProductId;
 
+    private void ShowNoteDetails(GetStickyNoteViewModel note)  // Changed parameter type
+    {
+        selectedNote = note;
+        showNoteDialog = true;
+    }
+
+    private void CloseNoteDialog()
+    {
+        showNoteDialog = false;
+        selectedNote = null;
+    }
+
+    private void ShowAddNoteDialog(string productId)
+    {
+        selectedProductId = productId;
+        showAddDialog = true;
+    }
+
+    private void CloseAddDialog()
+    {
+        showAddDialog = false;
+        newNoteText = "";
+        selectedProductId = null;
+    }
+
+    private async Task AddNote()
+    {
+        if (string.IsNullOrWhiteSpace(newNoteText) || string.IsNullOrEmpty(selectedProductId))
+            return;
+
+        try
+        {
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = "Products",
+                    RecordId = Guid.Parse(selectedProductId),
+                    Note = newNoteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await stickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                ToastService.ShowToast("Note added successfully", "success");
+                await LoadBrands();
+                CloseAddDialog();
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message ?? "Failed to add note", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error adding note: {ex.Message}", "error");
+        }
+    }
+
+   
 
     protected override async Task OnInitializedAsync()
     {
@@ -1034,20 +1595,20 @@
         try
         {
             var updateModel = new UpdateProductViewModel
-            {
-                ProductId = Guid.Parse(product.Id),
-                Name = product.Name,
-                PatternNumber = product.PatternNumber,
-                Price = double.Parse(product.Price.ToString()),
-                CategoryId = product.CategoryId,
-                CollectionId = product.SeriesOrCollectionId,
-                Quantity = product.Quantity,
-                OuterTypeCount = product.BoxCount??0,
-                InnerTypeCount = product.PieceCount??0,
-                Points = product.Points,
-                
-                Volume = double.Parse(product.Volume.ToString())
-            };
+                {
+                    ProductId = Guid.Parse(product.Id),
+                    Name = product.Name,
+                    PatternNumber = product.PatternNumber,
+                    Price = double.Parse(product.Price.ToString()),
+                    CategoryId = product.CategoryId,
+                    CollectionId = product.SeriesOrCollectionId,
+                    Quantity = product.Quantity,
+                    OuterTypeCount = product.BoxCount ?? 0,
+                    InnerTypeCount = product.PieceCount ?? 0,
+                    Points = product.Points,
+
+                    Volume = double.Parse(product.Volume.ToString())
+                };
 
             var response = await ProductsService.UpdateProductAsync(updateModel);
 
@@ -1075,3 +1636,4 @@
         }
     }
 }
+

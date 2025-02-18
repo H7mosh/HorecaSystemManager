@@ -1,5 +1,7 @@
-﻿using Newtonsoft.Json;
+﻿using Microsoft.AspNetCore.WebUtilities;
+using Newtonsoft.Json;
 using sacmy.Shared.Core;
+using sacmy.Shared.ViewModels.BrandViewModel;
 using sacmy.Shared.ViewModels.Products;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -11,6 +13,7 @@ namespace sacmy.Client.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IHttpClientFactory _httpClientFactory;
+
         private const string BaseUrl = "https://api.safinahmedtech.com/safenahmedapi/store";
 
         public ProductsService(HttpClient httpClient , IHttpClientFactory httpClientFactory)
@@ -23,29 +26,53 @@ namespace sacmy.Client.Services
         {
             try
             {
-                // Log the full URL being called
-                var url = $"{BaseUrl}/getproductsbybrand?BrandId={brandId}";
-                Console.WriteLine($"Calling URL: {url}");
+                // Construct the endpoint with only brandId
+                var url = $"api/Product/{brandId}";
 
-                var response = await _httpClient.GetAsync(url);
+                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
 
-                // Log the response status code
+                // Log the full request details
+                Console.WriteLine($"Base Address: {client.BaseAddress}");
+                Console.WriteLine($"Relative URL: {url}");
+                Console.WriteLine($"Full URL: {new Uri(client.BaseAddress, url)}");
+
+                // Make the request
+                var response = await client.GetAsync(url);
+                var responseContent = await response.Content.ReadAsStringAsync();
+
+                // Log the raw response
                 Console.WriteLine($"Response Status: {response.StatusCode}");
+                Console.WriteLine($"Raw Response Content: {responseContent}");
 
-                // Read the raw response content
-                var content = await response.Content.ReadAsStringAsync();
-                Console.WriteLine($"Raw Response: {content}");
-
-                if (!response.IsSuccessStatusCode)
+                if (response.IsSuccessStatusCode)
                 {
-                    throw new HttpRequestException($"API returned {response.StatusCode}: {content}");
+                    // If successful, deserialize the JSON into BrandResponse
+                    var content = await response.Content.ReadFromJsonAsync<BrandResponse>();
+                    return content;
                 }
+                else
+                {
+                    // Log any error text
+                    Console.WriteLine($"Error Response: {responseContent}");
 
-                return JsonConvert.DeserializeObject<BrandResponse>(content);
+                    // Return an "empty" BrandResponse to avoid null exceptions in the UI
+                    return new BrandResponse
+                    {
+                        Data = new BrandData
+                        {
+                            Products = new List<Product>(),
+                            Categories = new List<Category>(),
+                            Collections = new List<Collection>(),
+                            Advertises = new List<Advertise>()
+                        }
+                    };
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception: {ex.Message}");
+                Console.WriteLine($"Exception type: {ex.GetType().Name}");
+                Console.WriteLine($"Exception message: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 throw;
             }
         }
@@ -196,6 +223,36 @@ namespace sacmy.Client.Services
                     Success = false,
                     Message = $"Request failed: {ex.Message}"
                 };
+            }
+        }
+
+        public async Task<string> ResetCacheAsync()
+        {
+            try
+            {
+                // Construct the URL using the base URL constant
+                var url = $"{BaseUrl}/resetcache";
+                Console.WriteLine($"Calling URL: {url}");
+
+                // Send POST request without body
+                var response = await _httpClient.PostAsync(url, null);
+
+                // Read the response content
+                var content = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response Status: {response.StatusCode}");
+                Console.WriteLine($"Raw Response: {content}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new HttpRequestException($"API returned {response.StatusCode}: {content}");
+                }
+
+                return content; // This should contain "Cache reset and refreshed successfully."
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                throw;
             }
         }
 

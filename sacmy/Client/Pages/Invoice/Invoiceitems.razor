@@ -131,7 +131,7 @@
                                             <th class="px-4 py-3 text-secondary fw-semibold small border-0">
                                                 Batch
                                             </th>
-                                            
+
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -165,7 +165,7 @@
                                                 <td class="px-4 py-3 font-monospace small text-secondary">
                                                     @item.Batch
                                                 </td>
-                                                
+
                                             </tr>
                                         }
                                     </tbody>
@@ -195,6 +195,7 @@
 
     <div class="modal-backdrop fade show"></div>
 }
+
 
 <style>
     .table > :not(caption) > * > * {
@@ -302,7 +303,7 @@
                 CloseOnEscapeKey = true,
                 MaxWidth = MaxWidth.Small,
                 FullWidth = true,
-                DisableBackdropClick = true
+                //DisableBackdropClick = true
             };
 
         var dialog = await DialogService.ShowAsync<UserPasswordAndCarNumberDialog>("Required Information", dialogParameters, options);

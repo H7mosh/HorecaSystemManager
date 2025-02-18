@@ -1,7 +1,8 @@
-using Hangfire;
+﻿using Hangfire;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using sacmy.Client.Services;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Service;
 using System.Text.Json.Serialization;
@@ -21,13 +22,26 @@ builder.Services.AddDbContext<SafeenCompanyDbContext>(
 
 // Add Hangfire
 builder.Services.AddHangfire(x => x.UseSqlServerStorage(builder.Configuration.GetConnectionString("onlineConnectionString")));
-
 builder.Services.AddHangfireServer();
 
 // Add custom services
 builder.Services.AddScoped<FileService>();
-
 builder.Services.AddScoped<ReportService>();
+builder.Services.AddScoped<StoreService>();
+builder.Services.AddScoped<RedisCacheService>();
+
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "46.165.247.249:6379";
+    options.InstanceName = "RedisCacheInstance";
+});
+
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = "46.165.247.249:6379";
+    options.InstanceName = "RedisCacheInstance";
+});
 
 
 // Add CORS
@@ -41,19 +55,26 @@ builder.Services.AddCors(options =>
     });
 });
 
-
+// Logging
 builder.Services.AddLogging(loggingBuilder =>
 {
     loggingBuilder.AddConsole();
     loggingBuilder.AddDebug();
 });
 
+// Notification Services
 builder.Services.AddScoped(serviceProvider =>
 {
     var configuration = serviceProvider.GetRequiredService<IConfiguration>();
     var logger = serviceProvider.GetRequiredService<ILogger<NotificationService>>();
-    return new NotificationService(configuration, "SafinAhmedManagerNotificationKeys" ,logger);
+    return new NotificationService(configuration, "SafinAhmedManagerNotificationKeys", logger);
 });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+    });
 
 builder.Services.AddScoped(serviceProvider =>
 {
@@ -62,8 +83,8 @@ builder.Services.AddScoped(serviceProvider =>
     return new NotificationService(configuration, "SafinAhmedNotificationKeys", logger);
 });
 
-builder.Services.AddControllers()
-    .AddJsonOptions(options =>
+
+builder.Services.AddControllers().AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
     });
@@ -73,22 +94,20 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.UseWebAssemblyDebugging();
+     app.UseWebAssemblyDebugging(); 
 }
+
 else
 {
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
+
 app.UseHttpsRedirection();
 app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseRouting();
-app.UseCors();
-
-// Configure Hangfire dashboard
-app.UseHangfireDashboard();
 
 app.MapRazorPages();
 app.MapControllers();

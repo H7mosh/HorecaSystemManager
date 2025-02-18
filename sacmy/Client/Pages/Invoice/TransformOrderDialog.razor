@@ -7,14 +7,14 @@
 
 <MudDialog>
     <DialogContent>
-        
-      <MudSelect T="string" Label="Address" @bind-value ="SelectedBranch" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="MudBlazor.Margin.Dense">
+
+        <MudSelect T="string" Label="Address" @bind-value="SelectedBranch" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="MudBlazor.Margin.Dense">
             <MudSelectItem Value="@("Erbil")" />
             <MudSelectItem Value="@("zakho")" />
             <MudSelectItem Value="@("Baghdad")" />
         </MudSelect>
 
-      <MudSelect T="string" Label="مصدر الشراء" @bind-value="Company" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="MudBlazor.Margin.Dense">
+        <MudSelect T="string" Label="مصدر الشراء" @bind-value="Company" AnchorOrigin="Origin.BottomCenter" Variant="Variant.Outlined" Margin="MudBlazor.Margin.Dense">
             <MudSelectItem Value="@("pasabhace zaxo")" />
             <MudSelectItem Value="@("pasabhace Erbil")" />
             <MudSelectItem Value="@("pasabhace Baghdad")" />
@@ -44,36 +44,36 @@
     [Parameter]
     public int Id { get; set; }
     private string SelectedBranch { get; set; }
-    private string Company{ get; set; }
+    private string Company { get; set; }
     public string CarNo { get; set; }
     bool isLoading = false;
 
-    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter] IMudDialogInstance MudDialog { get; set; }
 
     async Task Submit()
     {
         isLoading = true;
         // Capture input values
         var transferInvoiceViewModel = new TransferInvoiceViewModel
-        {
-            SaleBillId = Id,
-            Branch = SelectedBranch,
-            Company = Company,
-            CarNo = CarNo
-        };
+            {
+                SaleBillId = Id,
+                Branch = SelectedBranch,
+                Company = Company,
+                CarNo = CarNo
+            };
 
         var json = JsonConvert.SerializeObject(transferInvoiceViewModel);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         // Send POST request
         HttpClient httpClient = new HttpClient();
-        var response = await httpClient.PostAsync($"{appConfig.BaseApiUrl}/api/Invoice/TransferInvoice", content );
+        var response = await httpClient.PostAsync($"{appConfig.BaseApiUrl}/api/Invoice/TransferInvoice", content);
 
         // Check response status
         if (response.IsSuccessStatusCode)
         {
             MudDialog.Close(DialogResult.Ok(true));
-            SnackbarService.Add("Invoice Transferred Successfully", Severity.Success);   
+            SnackbarService.Add("Invoice Transferred Successfully", Severity.Success);
         }
         else
         {

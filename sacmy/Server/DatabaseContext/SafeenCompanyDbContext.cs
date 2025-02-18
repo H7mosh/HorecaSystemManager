@@ -439,6 +439,8 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<SystemSetting> SystemSettings { get; set; }
 
+    public virtual DbSet<StickyNote> StickyNotes { get; set; }
+
     public virtual DbSet<sacmy.Server.Models.Task> Tasks { get; set; }
 
     public virtual DbSet<TaskNote> TaskNotes { get; set; }
@@ -7371,6 +7373,10 @@ public partial class SafeenCompanyDbContext : DbContext
                 .HasMaxLength(50)
                 .HasColumnName("WEB");
         });
+
+        modelBuilder.Entity<StickyNote>()
+                .Property(s => s.Id)
+                .HasDefaultValueSql("NEWID()");
 
         modelBuilder.Entity<sacmy.Server.Models.Task>(entity =>
         {
