@@ -1,5 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
 @using sacmy.Client.Services
+@using sacmy.Client.Shared.Components.DialogHeader
 @using sacmy.Shared.ViewModels.BrandViewModel
 @using sacmy.Shared.ViewModels.Products
 @inject ProductsService ProductsService
@@ -9,24 +10,18 @@
 
 @if (IsVisible)
 {
-    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" id="header">
         <div class="modal-dialog modal-xl modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <!-- Improved header with better spacing and icon alignment -->
-                <div class="modal-header py-2 px-3 border-bottom d-flex justify-content-between align-items-center">
-                    <div>
-                        <i class="bi bi-pencil-square me-2"></i>
-                        <span>Advanced Edit</span>
-                    </div>
-
-                    <button type="button"
-                            class="border-0 bg-transparent p-0"
-                            style="font-size: 16px; cursor: pointer;"
-                            @onclick="HandleClose"
-                            aria-label="Close">
-                        X
-                    </button>
-                </div>
+                <DialogHeader 
+                    Title="Advanced Edit"
+                    Icon="bi bi-pencil-square"
+                    BackgroundColor="#007bff"
+                    TitleColor="#ffffff"
+                    IconColor="#0d6efd"
+                    ShowCloseButton="true"
+                    OnClose="HandleClose" />
 
                 @if (isLoading)
                 {
@@ -537,6 +532,14 @@
     .btn-primary:not(:disabled):active {
         transform: translateY(1px);
     }
+
+    #header .modal-content {
+        padding: 0 !important;
+    }
+
+    #header .modal-header {
+        padding: 0.75rem 1rem;
+    }
 </style>
 
 @code {
@@ -608,7 +611,8 @@
                     var result = await ProductsService.AddProductImageAsync(
                         productDetail.Id,
                         memoryStream,
-                        "dropped_image.jpg" // You might want to get the actual filename from JS
+                        "dropped_image.jpg",
+                        productDetail.BrandId == "C268AA86-EC5D-4648-85DE-4B8FC83EFF0D" ?"bonna":"pasabahce"
                     );
 
                     if (result.Success)
@@ -677,7 +681,8 @@
             var result = await ProductsService.AddProductImageAsync(
                 productDetail.Id,
                 memoryStream,
-                file.Name
+                file.Name,
+                productDetail.BrandId == "C268AA86-EC5D-4648-85DE-4B8FC83EFF0D"?"bonna":"pasabahce"
             );
 
             if (result.Success)
@@ -830,13 +835,10 @@
             var updateModel = new UpdateProductViewModel
                 {
                     ProductId = Guid.Parse(productDetail.Id),
-                // Preserve sensitive fields
                     Sku = productDetail.Sku,
                     PatternNumber = productDetail.PatternNumber,
                     Price = productDetail.Price,
                     Quantity = productDetail.Quantity,
-
-                // Fields that can be updated
                     Name = productDetail.Name,
                     Description = productDetail.Description,
                     BrandId = Guid.Parse(productDetail.BrandId),
@@ -863,8 +865,8 @@
             if (response.Success)
             {
                 ToastService.ShowToast("Product updated successfully", "success");
-                await OnSaved.InvokeAsync();
-                await HandleClose();
+                await IsVisibleChanged.InvokeAsync(false);
+                await OnSaved.InvokeAsync(); // This will just close the dialog
             }
             else
             {

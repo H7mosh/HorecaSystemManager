@@ -3,9 +3,11 @@
 @using Blazored.LocalStorage
 @using Microsoft.Extensions.Localization
 @using System.Globalization
+@using sacmy.Services
 @inherits LayoutComponentBase
 @inject ILocalStorageService LocalStorage
 @inject IStringLocalizer<SharedResource> Localizer
+@inject AuthService _authService
 
 
 <CascadingAuthenticationState>
@@ -34,6 +36,14 @@
     {
         var language = await LocalStorage.GetItemAsync<string>("language") ?? "en";
         UpdateDirection(language);
+        
+        // Check if user is already authenticated
+        var isAuthenticated = await _authService.IsUserAuthenticatedAsync();
+        if (isAuthenticated)
+        {
+            // Redirect to home screen if already authenticated
+            Navigation.NavigateTo("/HomeScreen");
+        }
     }
 
     private void UpdateDirection(string language)

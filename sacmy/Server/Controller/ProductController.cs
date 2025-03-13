@@ -46,20 +46,20 @@ namespace sacmy.Server.Controller
                     || brandResponse.Data == null
                     || brandResponse.Data.Products == null
                     || !brandResponse.Data.Products.Any())
-                {
-                    // Return an empty BrandResponse if no products are found
-                    return Ok(new BrandResponse
                     {
-                        Id = brandId,
-                        Data = new BrandData
+                        // Return an empty BrandResponse if no products are found
+                        return Ok(new BrandResponse
                         {
-                            Products = new List<sacmy.Shared.ViewModels.Products.Product>(),
-                            Categories = new List<sacmy.Shared.ViewModels.Products.Category>(),
-                            Collections = new List<sacmy.Shared.ViewModels.Products.Collection>(),
-                            Advertises = new List<sacmy.Shared.ViewModels.Products.Advertise>()
-                        }
-                    });
-                }
+                            Id = brandId,
+                            Data = new BrandData
+                            {
+                                Products = new List<sacmy.Shared.ViewModels.Products.Product>(),
+                                Categories = new List<sacmy.Shared.ViewModels.Products.Category>(),
+                                Collections = new List<sacmy.Shared.ViewModels.Products.Collection>(),
+                                Advertises = new List<sacmy.Shared.ViewModels.Products.Advertise>()
+                            }
+                        });
+                    }
 
                 // -----------------------------------------------------------------------------------
                 // 1) Get all products (already done in brandResponse)
@@ -67,7 +67,7 @@ namespace sacmy.Server.Controller
 
                 // 2) Extract Product IDs
                 var productGuids = allProducts
-                        .Select(p => Guid.Parse(p.Id)) 
+                        .Select(p => p.Id) 
                         .ToList();
 
                 _logger.LogInformation($"Product GUIDs: {string.Join(", ", productGuids.Take(5))}");
@@ -92,7 +92,7 @@ namespace sacmy.Server.Controller
                 // 5) Map sticky notes onto each product
                 foreach (var product in allProducts)
                 {
-                    if (stickyNotesGrouped.TryGetValue(Guid.Parse(product.Id), out var notesForThisProduct))
+                    if (stickyNotesGrouped.TryGetValue(product.Id , out var notesForThisProduct))
                     {
                         // Convert each StickyNote to your GetStickyNoteViewModel
                         product.StickyNotes = notesForThisProduct.Select(sn => new GetStickyNoteViewModel
@@ -414,6 +414,66 @@ namespace sacmy.Server.Controller
             }
         }
 
+        [HttpDelete("DeleteBonnaImage/{imageId}")]
+        public async Task<ActionResult<ApiResponse>> DeleteBonnaImage(Guid imageId)
+        {
+            try
+            {
+                // 1. Find the product image
+                var productImage = await _context.ProductImages
+                    .FirstOrDefaultAsync(pi => pi.Id == imageId);
+
+                if (productImage == null)
+                {
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Product image not found."
+                    });
+                }
+
+                // 2. Get the file name from the image link
+                var fileName = Path.GetFileName(productImage.ImageLink);
+
+                // 3. Delete the image from the server
+                var imageService = new ImageService();
+                var isDeletedFromServer = await imageService.RemoveImageAsync(fileName, "C:/assets/BonnaImages");
+
+                if (!isDeletedFromServer)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Failed to delete image file from server."
+                    });
+                }
+
+                // 4. Soft delete (instead of removing it from the DB)
+                productImage.IsDeleted = true;
+
+                // 5. Mark the entity as modified and save changes
+                // (If you're using EF Core tracking, setting the property is enough to track the change.
+                //  But if needed, you can explicitly call Update. Either approach will work.)
+                _context.ProductImages.Update(productImage);
+                await _context.SaveChangesAsync();
+
+                // 6. Return success response
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Product image deleted (soft delete) successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred while deleting the product image: {ex.Message}"
+                });
+            }
+        }
+
         [HttpPost("AddProductImage")]
         public async Task<ActionResult<ApiResponse>> AddProductImage([FromForm] IFormFile image, [FromForm] Guid productId)
         {
@@ -464,6 +524,93 @@ namespace sacmy.Server.Controller
 
                 // Create image URL
                 var imageUrl = $"https://api.safinahmedtech.com/assets/AppImage/{fileName}";
+
+                // Create new product image record
+                var productImage = new sacmy.Server.Models.ProductImage
+                {
+                    Id = Guid.NewGuid(),
+                    ProductId = productId,
+                    ImageLink = imageUrl,
+                    CreatedDate = DateTime.UtcNow,
+                    IsDeleted = false
+                };
+
+                // Add to database
+                _context.ProductImages.Add(productImage);
+                await _context.SaveChangesAsync();
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = "Image uploaded successfully.",
+                    Data = new
+                    {
+                        Id = productImage.Id,
+                        ImageLink = productImage.ImageLink,
+                        CreatedDate = productImage.CreatedDate
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred while uploading the image: {ex.Message}"
+                });
+            }
+        }
+
+        [HttpPost("AddBonnaImage")]
+        public async Task<ActionResult<ApiResponse>> AddBonnaImage([FromForm] IFormFile image, [FromForm] Guid productId)
+        {
+            try
+            {
+                if (image == null || image.Length == 0)
+                {
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "No image file provided."
+                    });
+                }
+
+                // Validate product exists and get SKU
+                var product = await _context.Products
+                    .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
+                if (product == null)
+                {
+                    return NotFound(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "Product not found."
+                    });
+                }
+
+                // Get file extension
+                string extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+
+                // Get existing images count for this product
+                int existingImagesCount = await _context.ProductImages
+                    .CountAsync(pi => pi.ProductId == productId && !pi.IsDeleted);
+
+                // Generate filename based on SKU and existing images count
+                string fileName;
+                if (existingImagesCount == 0)
+                {
+                    fileName = $"{product.Sku}{extension}";
+                }
+                else
+                {
+                    fileName = $"{product.Sku}-{existingImagesCount + 1}{extension}";
+                }
+
+                // Save image using ImageService
+                var imageService = new ImageService();
+                await imageService.SaveImageAsync(image, "C:/assets/BonnaImages", fileName); // Pass the fileName to SaveImageAsync
+
+                // Create image URL
+                var imageUrl = $"https://api.safinahmedtech.com/assets/BonnaImages/{fileName}";
 
                 // Create new product image record
                 var productImage = new sacmy.Server.Models.ProductImage

@@ -1,0 +1,435 @@
+﻿@using sacmy.Client.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.CustomerViewModel
+@inject CustomerService customerService
+@inject ToastService toastService
+
+
+<div class="modal @(IsVisible ? "show d-block" : "d-none")" tabindex="-1" role="dialog" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Customize Price for Selected Products</h5>
+                <button type="button" class="btn-close" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i> @successMessage
+                            <button type="button" class="btn-close" @onclick="@(() => successMessage = string.Empty)" aria-label="Close"></button>
+                        </div>
+                }
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Selected Products: <strong>@SelectedCount</strong></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Price Modification Options with Checkboxes that are mutually exclusive -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Discount Option:</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="discountCheckbox"
+                                           checked="@IsDiscounted"
+                                           @onchange="@(e => ToggleDiscount((bool)e.Value))" />
+                                    <label class="form-check-label" for="discountCheckbox">
+                                        Apply Discount
+                                    </label>
+                                </div>
+                                <div class="input-group @(IsDiscounted ? "" : "opacity-50")">
+                                    <input type="number"
+                                           class="form-control"
+                                           step="0.01"
+                                           @bind="DiscountPercentage"
+                                           disabled="@(!IsDiscounted)" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Price Increase Option:</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="increaseCheckbox"
+                                           checked="@IsRaised"
+                                           @onchange="@(e => TogglePriceIncrease((bool)e.Value))" />
+                                    <label class="form-check-label" for="increaseCheckbox">
+                                        Apply Increase
+                                    </label>
+                                </div>
+                                <div class="input-group @(IsRaised ? "" : "opacity-50")">
+                                    <input type="number"
+                                           class="form-control"
+                                           step="0.01"
+                                           @bind="RaisePercentage"
+                                           disabled="@(!IsRaised)" />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col">
+                        <h6>Select Customer</h6>
+                        <div class="input-group mb-3">
+                            <input type="text"
+                                   class="form-control"
+                                   placeholder="Search customers..."
+                                   @bind="searchQuery"
+                                   @bind:event="oninput"
+                                   @onkeyup="OnSearchInput" />
+                            <button class="btn btn-outline-secondary" type="button" @onclick="SearchCustomers">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                @if (isLoading)
+                {
+                        <div class="d-flex justify-content-center my-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                }
+                else if (customers?.Count > 0)
+                {
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;"></th>
+                                        <th>Customer Name</th>
+                                        <th>Phone Number</th>
+                                        <th>Branch</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                @foreach (var customer in customers)
+                                {
+                                            <tr class="@(selectedCustomerId == customer.Id ? "table-primary" : "")" @onclick="() => SelectCustomer(customer.Id)">
+                                                <td class="text-center">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="radio" name="customerRadio" checked="@(selectedCustomerId == customer.Id)" @onclick="() => SelectCustomer(customer.Id)" />
+                                                    </div>
+                                                </td>
+                                                <td>@customer.Name</td>
+                                                <td>@customer.PhoneNumber</td>
+                                                <td>@customer.Branch</td>
+                                            </tr>
+                                }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <span class="text-muted">
+                                    Showing @(((currentPage - 1) * pageSize) + 1) to @Math.Min(currentPage * pageSize, totalCustomers) of @totalCustomers customers
+                                </span>
+                            </div>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary me-2" @onclick="PreviousPage" disabled="@(currentPage <= 1)">
+                                    <i class="bi bi-chevron-left"></i> Previous
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary" @onclick="NextPage" disabled="@(currentPage * pageSize >= totalCustomers)">
+                                    Next <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                }
+                else if (!string.IsNullOrEmpty(errorMessage))
+                {
+                        <div class="alert alert-danger">
+                        @errorMessage
+                        </div>
+                }
+                else
+                {
+                        <div class="alert alert-info">
+                            No customers found.
+                        </div>
+                }
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" @onclick="ApplyCustomPricing" disabled="@(selectedCustomerId == 0 || isSubmitting)">
+                    @if (isSubmitting)
+                    {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Applying...</span>
+                    }
+                    else
+                    {
+                            <span>Apply Custom Pricing</span>
+                    }
+                </button>
+                <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public int SelectedCount { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback<CustomPriceViewModel> OnApplyCustomPrice { get; set; }
+
+    [Parameter]
+    public List<string> SelectedProductIds { get; set; } = new List<string>();
+
+    [Inject]
+    private CustomerService CustomerService { get; set; }
+
+    [Inject]
+    private HttpClient HttpClient { get; set; }
+
+    private List<CustomerViewModel> customers = new List<CustomerViewModel>();
+
+    private bool isLoading = false;
+    private bool isSubmitting = false;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private int selectedCustomerId = 0;
+    private decimal PriceAdjustment = 0;
+    private string searchQuery = string.Empty;
+
+    // Changed from dropdown to checkbox options
+    private bool IsDiscounted = false;
+    private decimal DiscountPercentage = 0;
+    private bool IsRaised = false;
+    private decimal RaisePercentage = 0;
+
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalCustomers = 0;
+
+    // Debounce timer for search
+    private Timer _debounceTimer;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (IsVisible && customers.Count == 0)
+        {
+            await LoadCustomers();
+        }
+    }
+
+    public void Dispose()
+    {
+        _debounceTimer?.Dispose();
+    }
+
+    private async Task LoadCustomers()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+
+            ApiResponse<List<CustomerViewModel>> response;
+
+            if (string.IsNullOrWhiteSpace(searchQuery))
+            {
+                response = await CustomerService.GetCustomersAsync(currentPage, pageSize);
+            }
+            else
+            {
+                response = await CustomerService.SearchCustomersAsync(searchQuery, currentPage, pageSize);
+            }
+
+            if (response.Success)
+            {
+                customers = response.Data;
+                totalCustomers = response.TotalCount ?? response.Data.Count;
+            }
+            else
+            {
+                errorMessage = response.Message ?? "Failed to load customers.";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void OnSearchInput(KeyboardEventArgs e)
+    {
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                currentPage = 1; // Reset to first page when searching
+                await LoadCustomers();
+                StateHasChanged();
+            });
+        }, null, 300, Timeout.Infinite); // 300ms debounce
+    }
+
+    // Toggle methods to ensure only one option can be enabled at a time
+    private void ToggleDiscount(bool value)
+    {
+        if (value)
+        {
+            IsDiscounted = true;
+            IsRaised = false; // Disable the other option
+        }
+        else
+        {
+            IsDiscounted = false;
+        }
+        StateHasChanged();
+    }
+
+    private void TogglePriceIncrease(bool value)
+    {
+        if (value)
+        {
+            IsRaised = true;
+            IsDiscounted = false; // Disable the other option
+        }
+        else
+        {
+            IsRaised = false;
+        }
+        StateHasChanged();
+    }
+
+    private void SelectCustomer(int customerId)
+    {
+        selectedCustomerId = customerId;
+    }
+
+    private async Task PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            await LoadCustomers();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        currentPage++;
+        await LoadCustomers();
+    }
+
+    private async Task SearchCustomers()
+    {
+        currentPage = 1;
+        await LoadCustomers();
+    }
+
+    private async Task ApplyCustomPricing()
+    {
+        if (selectedCustomerId == 0 || SelectedProductIds.Count == 0)
+        {
+            toastService.ShowToast("Please select a customer and at least one product", "warning");
+            return;
+        }
+
+        try
+        {
+            isSubmitting = true;
+            // Clear any previous messages
+            successMessage = string.Empty;
+            errorMessage = string.Empty;
+
+            var selectedCustomer = customers.FirstOrDefault(c => c.Id == selectedCustomerId);
+            if (selectedCustomer != null)
+            {
+                // Create the custom price model for the parent component
+                var customPriceModel = new CustomPriceViewModel
+                {
+                    CustomerId = selectedCustomerId,
+                    CustomerName = selectedCustomer.Name,
+                    PriceAdjustment = PriceAdjustment,
+                    IsDiscounted = IsDiscounted,
+                    DiscountPercentage = DiscountPercentage,
+                    IsRaised = IsRaised,
+                    RaisePercentage = RaisePercentage
+                };
+
+                // Create bulk relationships for the API
+                var relationships = SelectedProductIds.Select(productId => new CustomerProductRelationViewModel
+                {
+                    Id = Guid.NewGuid(),
+                    CustomerId = selectedCustomerId,
+                    ProductId = Guid.Parse(productId),
+                    IsDiscounted = IsDiscounted,
+                    DiscountPercentage = DiscountPercentage,
+                    IsRaised = IsRaised,
+                    RaisePercentage = RaisePercentage
+                }).ToList();
+
+                // Send the bulk relationships to the API using CustomerService
+                var response = await CustomerService.BulkAddCustomerProductRelationsAsync(relationships);
+
+                if (response.Success)
+                {
+                    // Set success message to display in the UI
+                    successMessage = $"Successfully applied custom pricing for {relationships.Count} products!";
+
+                    // Also show toast if toast service is available
+                    toastService?.ShowToast($"Successfully applied custom pricing for {relationships.Count} products", "success");
+
+                    // Notify the parent component
+                    await OnApplyCustomPrice.InvokeAsync(customPriceModel);
+
+                    // Reset form fields after successful submission
+                    // Keep the customer selection for convenience
+                    if (IsDiscounted)
+                    {
+                        DiscountPercentage = 0;
+                    }
+                    else if (IsRaised)
+                    {
+                        RaisePercentage = 0;
+                    }
+                }
+                else
+                {
+                    errorMessage = $"Failed to apply custom pricing: {response.Message}";
+                    toastService?.ShowToast($"Failed to apply custom pricing: {response.Message}", "error");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error applying custom pricing: {ex.Message}";
+            toastService?.ShowToast($"Error applying custom pricing: {ex.Message}", "error");
+        }
+        finally
+        {
+            isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+}

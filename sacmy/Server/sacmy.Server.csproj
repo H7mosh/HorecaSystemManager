@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+	<PackageReference Include="Dapper" Version="2.1.66" />
 	<PackageReference Include="FastReport.OpenSource" Version="2025.1.0" />
 	<PackageReference Include="FastReport.OpenSource.Export.PdfSimple" Version="2025.1.0" />
 	<PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
@@ -32,6 +33,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="9.0.2" />
     <PackageReference Include="PDFsharp" Version="6.1.1" />
+    <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
 	  
   </ItemGroup>

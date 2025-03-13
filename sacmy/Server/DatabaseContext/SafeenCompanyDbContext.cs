@@ -483,6 +483,10 @@ public partial class SafeenCompanyDbContext : DbContext
 
     public virtual DbSet<ZzOrderOnlinePrint> ZzOrderOnlinePrints { get; set; }
 
+    public virtual DbSet<LowStockRecipient> LowStockRecipients { get; set; }
+    public virtual DbSet<LowStockNotification> LowStockNotifications { get; set; }
+
+    public virtual DbSet<NotificationLog> NotificationLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -7377,6 +7381,47 @@ public partial class SafeenCompanyDbContext : DbContext
         modelBuilder.Entity<StickyNote>()
                 .Property(s => s.Id)
                 .HasDefaultValueSql("NEWID()");
+
+        modelBuilder.Entity<LowStockRecipient>()
+                        .HasKey(r => r.ID);
+
+        modelBuilder.Entity<LowStockRecipient>()
+            .HasOne(r => r.Employee)
+            .WithMany()
+            .HasForeignKey(r => r.EmployeeID)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LowStockRecipient>()
+            .Ignore(r => r.Product);
+
+        modelBuilder.Entity<LowStockRecipient>()
+                        .HasIndex(r => new { r.ProductID, r.EmployeeID })
+                        .IsUnique();
+
+        // Configure LowStockNotification
+        modelBuilder.Entity<LowStockNotification>()
+            .HasKey(n => n.ID);
+
+        modelBuilder.Entity<LowStockNotification>()
+            .HasOne(n => n.Employee)
+            .WithMany()
+            .HasForeignKey(n => n.EmployeeID)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<LowStockNotification>()
+            .Ignore(n => n.Product);
+
+        modelBuilder.Entity<NotificationLog>()
+       .HasKey(n => n.ID); // ✅ Primary Key
+
+        modelBuilder.Entity<NotificationLog>()
+            .HasOne(n => n.Employee) // ✅ Keep valid relationship
+            .WithMany()
+            .HasForeignKey(n => n.EmployeeID)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<NotificationLog>()
+            .Ignore(n => n.Product); // ✅ Ignore invalid navigation
 
         modelBuilder.Entity<sacmy.Server.Models.Task>(entity =>
         {

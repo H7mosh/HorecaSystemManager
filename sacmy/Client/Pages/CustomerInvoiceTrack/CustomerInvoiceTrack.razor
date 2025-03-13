@@ -1,116 +1,30 @@
 ﻿@page "/CustomerInvoiceTrack"
+@using System.Linq.Expressions
+@using System.Net.Http
+@using System.Net.Http.Json
+@using sacmy.Client.Components.DialogHeader
+@using sacmy.Client.Components.Dialogs
 @using sacmy.Client.Pages.Components.Dialogs
 @using sacmy.Client.Pages.Invoice
 @using sacmy.Client.Pages.Tasks
 @using sacmy.Client.Services
+@using sacmy.Client.Shared.Components.CustomDataGrid
+@using sacmy.Client.Shared.Components.DialogHeader
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.CustomerTracker
-@using System.Linq.Expressions
-@using System.Net.Http
-@using System.Net.Http.Json
 @using sacmy.Shared.ViewModels.InvoiceViewModel
-@using sacmy.Client.Pages.Components.CustomDataGrid
+@using sacmy.Shared.ViewModels.StickNoteViewModel
 @using sacmy.Shared.ViewModels.TasksViewModel
 @inject HttpClient Http
 @inject TaskService taskService
 @inject UserGlobalClass UserGlobal
-<!--<h3>CustomerInvoiceTrack</h3>-->
-
-<style>
-    .custom-active-link.active {
-        background-color: transparent !important;
-        color: blue !important;
-        border-bottom: 2px solid blue !important;
-    }
-
-    .custom-inactive-link {
-        color: darkgrey;
-    }
-
-        .custom-inactive-link:hover {
-            color: blue;
-            border-bottom: 2px solid blue;
-        }
+@inject CustomerInvoiceTrackService CustomerInvoiceTrackService
+@inject IDialogService DialogService 
+@inject StickyNoteService StickyNoteService 
+@inject ToastService ToastService 
+@inject IJSRuntime JS 
 
 
-    /* Custom DataGrid Styles */
-    .custom-data-grid .mud-table-container {
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0px 2px 8px rgba(0, 0, 0, 0.1);
-        margin-bottom: 0;
-    }
-
-    .custom-data-grid table {
-        background-color: #fff;
-        width: 100%;
-    }
-
-    /* Adjust grid height to remove extra space */
-    .custom-data-grid {
-        height: auto;
-    }
-
-    .custom-data-grid tr {
-        height: 60px;
-    }
-
-    .custom-data-grid tr:hover {
-        background-color: #C9DEFE; /* Light blue background on hover */
-    }
-
-    .custom-data-grid tbody tr:nth-child(even) {
-        background-color: #F4F9FF; /* Light grey background for even rows */}
-
-        /* Header styling to match the example */
-    .custom-data-grid th {
-            background-color: #5D9EFD; /* Example header color */
-            font-weight: 600;
-            text-align: left;
-            padding: 12px;
-            border-bottom: 1px solid #64b5f6;}
-
-    .custom-data-grid td {
-        padding: 12px;
-        vertical-align: middle;
-    }
-
-    .custom-data-grid .mud-switch {
-        color: #007bff;
-    }
-
-    .search-field {
-        max-width: 250px;
-    }
-
-    .modal-custom {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-    }
-
-    .modal-lg {
-        max-width: 80%; /* Increase modal width */
-    }
-
-    .modal-dialog-centered {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: calc(100vh - 1rem); /* Vertically center the modal */
-    }
-
-    .employee-image {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        margin-right: 5px;
-        vertical-align: middle;
-    }
-
-
-</style>
 
 <div style="padding: 10px;">
     <h3 style="margin-bottom: 40px;">@Localizer["CustomerInvoiceTasks"]</h3>
@@ -136,71 +50,79 @@
 
     @if (isLoading)
     {
-        <div class="loading-overlay">
-            <div class="loading-spinner"></div>
-            <p class="loading-text">@Localizer["LoadingPleaseWait"]</p>
+        <div class="d-flex justify-content-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">@Localizer["LoadingPleaseWait"]</span>
+            </div>
+            <p class="ms-3">@Localizer["LoadingPleaseWait"]</p>
         </div>
     }
     else if (activeTab == 1 && customerData != null)
     {
-        <sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="CustomerHiddenViewModel"
-                                                                     Items="@customerData"
-                                                                     SearchString="@_searchString"
-                                                                     OnRowClick="CustomerRowClicked"
-                                                                     OnSelectedItemsChanged="SelectedItemsChanged"
-                                                                     Columns="@customerColumns"
-                                                                     ShowRowButton="false"
-                                                                     RowButtonText="View Details"
-                                                                     RowButtonTitle="Actions"
-                                                                     OnRowButtonClick="@(() => Console.Write(""))" />
+        <sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="CustomerHiddenViewModel"
+                                                               Items="@customerData"
+                                                               SearchString="@_searchString"
+                                                               OnRowClick="@CustomerRowClicked"
+                                                               OnSelectedItemsChanged="@SelectedItemsChanged"
+                                                               OnAddNote="@ShowAddNoteDialog"
+                                                               OnViewNotes="@ShowAllNotes"
+                                                               Columns="@customerColumns"
+                                                               ShowRowButton="false"
+                                                               RowButtonText="View Details"
+                                                               RowButtonTitle="Actions"
+                                                               RowButtonIcon="bi bi-eye" />
     }
     else if (activeTab == 2 && debtorData != null)
     {
-        <sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="DeptCustomerViewModel"
-                                                                     Items="@debtorData"
-                                                                     SearchString="@_searchDebtorString"
-                                                                     OnRowClick="DebtorRowClicked"
-                                                                     OnSelectedItemsChanged="SelectedDebtorItemsChanged"
-                                                                     Columns="@debtorColumns"
-                                                                     ShowRowButton="false"
-                                                                     RowButtonText="View Details"
-                                                                     RowButtonTitle="Actions"
-                                                                     OnRowButtonClick="@(() => Console.Write(""))" />
+        <sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="DeptCustomerViewModel"
+                                                               Items="@debtorData"
+                                                               SearchString="@_searchDebtorString"
+                                                               OnRowClick="@DebtorRowClicked"
+                                                               OnSelectedItemsChanged="@SelectedDebtorItemsChanged"
+                                                               OnAddNote="@ShowAddNoteDialog"
+                                                               OnViewNotes="@ShowAllNotes"
+                                                               Columns="@debtorColumns"
+                                                               ShowRowButton="false"
+                                                               RowButtonText="View Details"
+                                                               RowButtonTitle="Actions"
+                                                               RowButtonIcon="bi bi-eye" />
     }
     else if (activeTab == 3 && invoiceData != null)
     {
-        <sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
-                                                                     Items="@invoiceData"
-                                                                     SearchString="@_searchInvoiceString"
-                                                                     OnRowClick="InvoiceRowClicked"
-                                                                     OnSelectedItemsChanged="SelectedInvoiceItemsChanged"
-                                                                     Columns="@invoiceColumns"
-                                                                     ShowRowButton="false"
-                                                                     RowButtonText="View Details"
-                                                                     RowButtonIcon="@Icons.Material.Outlined.Details"
-                                                                     RowButtonTitle="Actions"
-                                                                     OnRowButtonClick="@ShowInvoiceItems" />
+        <sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
+                                                               Items="@invoiceData"
+                                                               SearchString="@_searchInvoiceString"
+                                                               OnRowClick="@InvoiceRowClicked"
+                                                               OnSelectedItemsChanged="@SelectedInvoiceItemsChanged"
+                                                               OnAddNote="@ShowAddNoteDialog"
+                                                               OnViewNotes="@ShowAllNotes"
+                                                               Columns="@invoiceColumns"
+                                                               ShowRowButton="true"
+                                                               RowButtonText="View Details"
+                                                               RowButtonIcon="bi bi-list-ul"
+                                                               RowButtonTitle="Actions"
+                                                               OnRowButtonClick="@ShowInvoiceItems" />
     }
-
     else
     {
-        <div>@Localizer["NoDataAvailable"]</div>
+        <div class="alert alert-info my-4">@Localizer["NoDataAvailable"]</div>
     }
 
-    <div class="modal @(showTaskModal ? "show d-block modal-custom" : "d-none")" tabindex="-1" role="dialog">
+    <!-- Task Modal -->
+    <div class="modal @(showTaskModal ? "show d-block" : "d-none")" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
             <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">@Localizer["TasksForCustomerOrInvoice"]</h5>
-                    <button type="button" class="close" @onclick="() => showTaskModal = false" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
+                <DialogHeader Title="@Localizer["TasksForCustomerOrInvoice"]"
+                              Icon="bi bi-list-check"
+                              OnClose="@(() => showTaskModal = false)" />
                 <div class="modal-body">
                     @if (isTaskLoading)
                     {
-                        <div class="loading-spinner">
-                            <p>@Localizer["LoadingTasksPleaseWait"]</p>
+                        <div class="d-flex justify-content-center my-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">@Localizer["LoadingTasksPleaseWait"]</span>
+                            </div>
+                            <p class="ms-3">@Localizer["LoadingTasksPleaseWait"]</p>
                         </div>
                     }
                     else if (taskData != null && taskData.Any())
@@ -237,19 +159,142 @@
                     }
                     else
                     {
-                        <p>@Localizer["NoTasksAvailable"]</p>
+                        <p class="text-center py-4">@Localizer["NoTasksAvailable"]</p>
                     }
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" @onclick="ShowAddTaskModal">@Localizer["AddNewTask"]</button>
-                    <button type="button" class="btn btn-secondary" @onclick="() => showTaskModal = false">@Localizer["Close"]</button>
+                    <button type="button" class="btn btn-primary" @onclick="ShowAddTaskModal">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        @Localizer["AddNewTask"]
+                    </button>
+                    <button type="button" class="btn btn-secondary" @onclick="() => showTaskModal = false">
+                        @Localizer["Close"]
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
     <AddTaskModal IsVisible="@showAddTaskModal" IsVisibleChanged="@(value => showAddTaskModal = value)" CustomerId="selectedCustomerId" InvoiceId="selectedInvoiceId" TaskType="@taskType" />
+
+    <!-- Sticky Note Dialogs -->
+    <StickyNoteDetailsDialog IsVisible="@showNoteDialog"
+                             Note="@selectedNote"
+                             OnClose="@CloseNoteDialog" />
+
+    <AddStickyNoteDialog IsVisible="@showAddNoteDialog"
+                         ProductId="@selectedRecordId"
+                         OnClose="@CloseAddNoteDialog"
+                         OnNoteSaved="@AddNote"
+                         OnNoteTextSaved="@HandleNoteSaved" />
+
+    <AllNotesDialog IsVisible="@showAllNotesDialog"
+                    ProductId="@selectedRecordForNotes"
+                    Notes="@currentNotes"
+                    OnClose="@CloseAllNotesDialog"
+                    OnNoteSaved="@AddNoteFromTimeline" />
 </div>
+
+<style>
+    .employee-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        border: 2px solid white;
+        display: inline-block;
+    }
+
+        .employee-avatar.add-note {
+            background-color: #3B82F6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .employee-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .employee-avatar:hover {
+            transform: scale(1.1);
+            z-index: 2;
+        }
+
+    .sticky-note-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 4px 0;
+    }
+
+    .note-button-wrapper {
+        display: flex;
+        justify-content: center;
+    }
+
+    .note-add-button {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #3B82F6;
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s, background-color 0.2s;
+    }
+
+        .note-add-button:hover {
+            transform: scale(1.1);
+            background-color: #2563EB;
+        }
+
+        .note-add-button i {
+            font-size: 18px;
+        }
+
+    .avatars-container {
+        display: flex;
+        position: relative;
+    }
+
+    .avatar-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid white;
+        position: relative;
+        margin-left: -8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+        .avatar-circle:first-child {
+            margin-left: 0;
+        }
+
+        .avatar-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    .employee-image {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+</style>
 
 @code {
     private int activeTab = 1;
@@ -268,7 +313,22 @@
     private bool showTaskModal = false;
     private string taskType = "other";
 
-    [Inject] private IDialogService DialogService { get; set; }
+    // Sticky note related variables
+    private GetStickyNoteViewModel selectedNote;
+    private bool showNoteDialog = false;
+    private bool showAddNoteDialog = false;
+    private string selectedRecordId;
+    private bool showAllNotesDialog = false;
+    private List<GetStickyNoteViewModel> currentNotes;
+    private string selectedRecordForNotes;
+    private bool isAddingNote = false;
+    private string newNoteText = "";
+    private DotNetObjectReference<CustomerInvoiceTrack> objRef;
+    private async Task HandleNoteSaved(string text)
+    {
+        newNoteText = text;
+        await AddNote();
+    }
 
     private async Task ShowInvoiceItems(InvoiceViewModel invoice)
     {
@@ -282,7 +342,7 @@
                 CloseButton = true,
                 MaxWidth = MaxWidth.Medium,
                 FullWidth = true,
-                //DisableBackdropClick = true
+            //DisableBackdropClick = true
             };
 
         var dialog = await DialogService.ShowAsync<InvoiceItemDialogg>("Invoice Items", parameters, options);
@@ -290,41 +350,58 @@
     }
 
     private List<ColumnDefinition<CustomerHiddenViewModel>> customerColumns = new List<ColumnDefinition<CustomerHiddenViewModel>>
-    {
-        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Id, Title = "Id" },
-        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Name, Title = "Full Name" },
-        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Type, Title = "Type" },
-        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastDate, Title = "Last Invoice Date" },
-        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
-        new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
-    };
+{
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Id, Title = "Id" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Name, Title = "Full Name" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Type, Title = "Type" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastDate, Title = "Last Invoice Date" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
+};
 
     private List<ColumnDefinition<DeptCustomerViewModel>> debtorColumns = new List<ColumnDefinition<DeptCustomerViewModel>>
-    {
-        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.Id, Title = "Id" },
-        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
-        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TotalTransTotalN, Title = "Amount", Formatter = x => x.TotalTransTotalN.ToString("C", new System.Globalization.CultureInfo("en-US")) },
-        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.HasRecentReceipt, Title = "Has Recent Receipt" },
-        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
-        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
-    };
+{
+    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.Id, Title = "Id" },
+    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
+    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TotalTransTotalN, Title = "Amount", Formatter = x => x.TotalTransTotalN.ToString("C", new System.Globalization.CultureInfo("en-US")) },
+    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.HasRecentReceipt, Title = "Has Recent Receipt" },
+    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
+    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
+    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
+};
 
     private List<ColumnDefinition<InvoiceViewModel>> invoiceColumns = new List<ColumnDefinition<InvoiceViewModel>>
-    {
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Id, Title = "Id" },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerType, Title = "Customer Type" },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Address, Title = "Address" },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.InvoiceBranch, Title = "Branch" },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Total, Title = "Total", Formatter = x => x.Total.ToString("C", new System.Globalization.CultureInfo("en-US")) },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.DateTime, Title = "Date" },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
-        new ColumnDefinition<InvoiceViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
-    };
+{
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.Id, Title = "Id" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerType, Title = "Customer Type" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.Address, Title = "Address" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.InvoiceBranch, Title = "Branch" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.Total, Title = "Total", Formatter = x => x.Total.ToString("C", new System.Globalization.CultureInfo("en-US")) },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.DateTime, Title = "Date" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
+    new ColumnDefinition<InvoiceViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
+};
 
     protected override async Task OnInitializedAsync()
     {
-        await SetActiveTab(activeTab);
+         await SetActiveTab(activeTab);
+    }
+
+
+    public void Dispose()
+    {
+        objRef?.Dispose();
+    }
+
+
+    private static CustomerInvoiceTrack _instance;
+
+    public CustomerInvoiceTrack()
+    {
+        _instance = this;
     }
 
     private async Task SetActiveTab(int tabIndex)
@@ -356,7 +433,7 @@
 
         try
         {
-            customerData = await Http.GetFromJsonAsync<List<CustomerHiddenViewModel>>("api/CustomerTracker/GetHiddenCustomer");
+            customerData = await CustomerInvoiceTrackService.GetHiddenCustomersAsync();
         }
         catch (Exception ex)
         {
@@ -375,7 +452,7 @@
 
         try
         {
-            invoiceData = await Http.GetFromJsonAsync<List<InvoiceViewModel>>("api/Invoice/GetUncompleteInvoices");
+            invoiceData = await CustomerInvoiceTrackService.GetUncompletedInvoicesAsync();
         }
         catch (Exception ex)
         {
@@ -394,7 +471,7 @@
 
         try
         {
-            debtorData = await Http.GetFromJsonAsync<List<DeptCustomerViewModel>>("api/CustomerTracker/GetCostumerRemainTotal");
+            debtorData = await CustomerInvoiceTrackService.GetCustomerRemainTotalAsync();
         }
         catch (Exception ex)
         {
@@ -412,7 +489,7 @@
         showAddTaskModal = true;
     }
 
-    private async void CustomerRowClicked(DataGridRowClickEventArgs<CustomerHiddenViewModel> args)
+    private async void CustomerRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<CustomerHiddenViewModel> args)
     {
         selectedCustomerId = args.Item.Id;
         selectedInvoiceId = null;
@@ -430,7 +507,7 @@
         StateHasChanged();
     }
 
-    private async void DebtorRowClicked(DataGridRowClickEventArgs<DeptCustomerViewModel> args)
+    private async void DebtorRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<DeptCustomerViewModel> args)
     {
         selectedCustomerId = args.Item.Id;
         selectedInvoiceId = null;
@@ -444,7 +521,7 @@
         StateHasChanged();
     }
 
-    private async void InvoiceRowClicked(DataGridRowClickEventArgs<InvoiceViewModel> args)
+    private async void InvoiceRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<InvoiceViewModel> args)
     {
         selectedInvoiceId = args.Item.Id;
         selectedCustomerId = null;
@@ -469,7 +546,168 @@
 
     private void SelectedInvoiceItemsChanged(HashSet<InvoiceViewModel> items) { }
 
-   
+    // Sticky Note Dialog Methods
+    private void ShowNoteDetails(GetStickyNoteViewModel note)
+    {
+        selectedNote = note;
+        showNoteDialog = true;
+    }
 
+    private void CloseNoteDialog()
+    {
+        showNoteDialog = false;
+        selectedNote = null;
+    }
 
-} 
+    private void CloseAddNoteDialog()
+    {
+        showAddNoteDialog = false;
+        selectedRecordId = null;
+        newNoteText = "";
+    }
+
+    private async Task AddNote()
+    {
+        if (string.IsNullOrWhiteSpace(newNoteText) || string.IsNullOrEmpty(selectedRecordId))
+            return;
+
+        try
+        {
+            var tableName = activeTab == 3 ? "Invoices" : "Customers";
+
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = tableName,
+                    RecordId = selectedRecordId,
+                    Note = newNoteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await StickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                ToastService.ShowToast("Note added successfully", "success");
+                await SetActiveTab(activeTab); // Refresh the current tab data
+                CloseAddNoteDialog();
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message ?? "Failed to add note", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error adding note: {ex.Message}", "error");
+        }
+    }
+
+    private void CloseAllNotesDialog()
+    {
+        showAllNotesDialog = false;
+        selectedRecordForNotes = null;
+        currentNotes = null;
+        newNoteText = "";
+    }
+
+    private async Task AddNoteFromTimeline()
+    {
+        if (string.IsNullOrWhiteSpace(newNoteText))
+        {
+            ToastService.ShowToast("Cannot add empty note", "warning");
+            return;
+        }
+
+        try
+        {
+            isAddingNote = true;
+            var tableName = activeTab == 3 ? "Invoices" : "Customers";
+
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = tableName,
+                    RecordId = selectedRecordForNotes,
+                    Note = newNoteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await StickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                // Refresh data
+                await SetActiveTab(activeTab);
+
+                // Update the current notes list
+                var notesResponse = await StickyNoteService.GetNotesByRecordAsync(tableName, Guid.Parse(selectedRecordForNotes));
+                if (notesResponse.Success)
+                {
+                    currentNotes = notesResponse.Data;
+                }
+
+                newNoteText = ""; // Clear the input
+                ToastService.ShowToast("Note added successfully", "success");
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message ?? "Failed to add note", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error adding note: {ex.Message}", "error");
+        }
+        finally
+        {
+            isAddingNote = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowAddNoteDialog(CustomerHiddenViewModel customer)
+    {
+        selectedRecordId = customer.Id.ToString();
+        showAddNoteDialog = true;
+        StateHasChanged();
+    }
+
+    private void ShowAllNotes(CustomerHiddenViewModel customer)
+    {
+        selectedRecordForNotes = customer.Id.ToString();
+        currentNotes = customer.StickyNotes;
+        showAllNotesDialog = true;
+        StateHasChanged();
+    }
+
+    // Similar methods for debtor and invoice items
+    private void ShowAddNoteDialog(DeptCustomerViewModel customer)
+    {
+        selectedRecordId = customer.Id.ToString();
+        showAddNoteDialog = true;
+        StateHasChanged();
+    }
+
+    private void ShowAllNotes(DeptCustomerViewModel customer)
+    {
+        selectedRecordForNotes = customer.Id.ToString();
+        currentNotes = customer.StickyNotes;
+        showAllNotesDialog = true;
+        StateHasChanged();
+    }
+
+    private void ShowAddNoteDialog(InvoiceViewModel invoice)
+    {
+        selectedRecordId = invoice.Id.ToString();
+        showAddNoteDialog = true;
+        StateHasChanged();
+    }
+
+    private void ShowAllNotes(InvoiceViewModel invoice)
+    {
+        selectedRecordForNotes = invoice.Id.ToString();
+        currentNotes = invoice.StickyNotes;
+        showAllNotesDialog = true;
+        StateHasChanged();
+    }
+
+}

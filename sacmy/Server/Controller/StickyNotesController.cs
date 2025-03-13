@@ -22,7 +22,7 @@ namespace sacmy.Server.Controller
         }
 
         [HttpGet]
-        public async Task<ActionResult<ApiResponse<List<GetStickyNoteViewModel>>>> GetByRecord([FromQuery] string tableName,[FromQuery] Guid recordId)
+        public async Task<ActionResult<ApiResponse<List<GetStickyNoteViewModel>>>> GetByRecord([FromQuery] string tableName,[FromQuery] string recordId)
         {
             try
             {

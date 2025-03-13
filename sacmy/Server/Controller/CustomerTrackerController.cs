@@ -6,6 +6,8 @@ using sacmy.Server.Models;
 using sacmy.Shared.ViewModels.CustomerTracker;
 using sacmy.Shared.ViewModels.TrackViewModel;
 using sacmy.Server.DatabaseContext;
+using sacmy.Shared.ViewModels.EmployeeViewModel;
+using sacmy.Shared.ViewModels.StickNoteViewModel;
 
 namespace sacmy.Server.Controller
 {
@@ -166,9 +168,9 @@ namespace sacmy.Server.Controller
         public async Task<ActionResult<List<CustomerHiddenViewModel>>> GetHidderCustomer()
         {
             var thresholdDate = DateTime.Now.AddDays(-25);
-
             try
             {
+                // Get customers first
                 var customers = await _context.Customers
                                     .Include(c => c.Tasks)
                                     .ThenInclude(t => t.Type)
@@ -181,6 +183,41 @@ namespace sacmy.Server.Controller
                                     .ToListAsync();
 
                 var invoices = await _context.BuyFatoras.ToListAsync();
+
+                // Initialize an empty dictionary for sticky notes
+                Dictionary<string, List<StickyNote>> stickyNotesGrouped = new Dictionary<string, List<StickyNote>>();
+
+                // Only try to get sticky notes if we have customers
+                if (customers.Any())
+                {
+                    try
+                    {
+                        // Collect all customer IDs
+                        var customerIds = customers.Select(c => c.Id.ToString()).ToList();
+
+                        // Get sticky notes for all these customers at once
+                        // Use a safer approach to query
+                        var stickyNotes = await _context.StickyNotes
+                            .Include(sn => sn.Employee)
+                            .Where(sn => sn.TableName == "Customers")
+                            .ToListAsync();
+
+                        // Then filter in memory to avoid SQL syntax issues
+                        stickyNotes = stickyNotes.Where(sn => customerIds.Contains(sn.RecordId)).ToList();
+
+                        // Group sticky notes by customer ID
+                        stickyNotesGrouped = stickyNotes
+                            .GroupBy(sn => sn.RecordId)
+                            .ToDictionary(g => g.Key, g => g.OrderByDescending(n => n.CreatedDate).ToList());
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log the error but continue - we don't want to fail the whole request
+                        // just because we couldn't get sticky notes
+                        Console.WriteLine($"Error retrieving sticky notes: {ex.Message}");
+                        // Continue with empty sticky notes
+                    }
+                }
 
                 var customerViewModels = new List<CustomerHiddenViewModel>();
 
@@ -195,11 +232,14 @@ namespace sacmy.Server.Controller
                     {
                         var lastTask = customer.Tasks?.LastOrDefault();
 
+                        // Look for sticky notes for this customer
+                        stickyNotesGrouped.TryGetValue(customer.Id.ToString(), out var customerNotes);
+
                         if (lastTask != null)
                         {
-                            var taskType = lastTask.Type?.TypeAr; // Ensure null-safety with ?. operator
-                            var taskStatus = lastTask.Status?.StateEn; 
-                            var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note; // Added null checks
+                            var taskType = lastTask.Type?.TypeAr;
+                            var taskStatus = lastTask.Status?.StateEn;
+                            var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
 
                             customerViewModels.Add(new CustomerHiddenViewModel
                             {
@@ -209,8 +249,25 @@ namespace sacmy.Server.Controller
                                 Type = customer.CostType,
                                 LastDate = lastInvoice.Datee,
                                 TaskId = lastTask.Id,
-                                TaskStatus = taskStatus, // Removed unnecessary null coalescing as ?. already ensures null safety
-                                LastComment = lastTaskComment, // Same here, ?. ensures null safety
+                                TaskStatus = taskStatus,
+                                LastComment = lastTaskComment,
+                                StickyNotes = customerNotes?.Select(n => new GetStickyNoteViewModel
+                                {
+                                    Id = n.Id,
+                                    TableName = n.TableName,
+                                    RecordId = n.RecordId,
+                                    EmployeeId = n.EmployeeId,
+                                    Note = n.Note,
+                                    CreatedDate = n.CreatedDate,
+                                    Employee = new GetEmployeeViewModel
+                                    {
+                                        Id = n.Employee.Id,
+                                        FirstName = n.Employee.FirstName,
+                                        LastName = n.Employee.LastName,
+                                        Image = n.Employee.Image,
+                                        JobTitle = n.Employee.JobTitle
+                                    }
+                                }).ToList() ?? new List<GetStickyNoteViewModel>()
                             });
                         }
                         else
@@ -225,6 +282,23 @@ namespace sacmy.Server.Controller
                                 TaskId = null,
                                 TaskStatus = null,
                                 LastComment = null,
+                                StickyNotes = customerNotes?.Select(n => new GetStickyNoteViewModel
+                                {
+                                    Id = n.Id,
+                                    TableName = n.TableName,
+                                    RecordId = n.RecordId,
+                                    EmployeeId = n.EmployeeId,
+                                    Note = n.Note,
+                                    CreatedDate = n.CreatedDate,
+                                    Employee = new GetEmployeeViewModel
+                                    {
+                                        Id = n.Employee.Id,
+                                        FirstName = n.Employee.FirstName,
+                                        LastName = n.Employee.LastName,
+                                        Image = n.Employee.Image,
+                                        JobTitle = n.Employee.JobTitle
+                                    }
+                                }).ToList() ?? new List<GetStickyNoteViewModel>()
                             });
                         }
                     }
@@ -384,6 +458,82 @@ namespace sacmy.Server.Controller
         }
 
 
+        [HttpGet("GetCustomerStickyNotes")]
+        public async Task<IActionResult> GetCustomerStickyNotes([FromQuery] int customerId)
+        {
+            try
+            {
+                var stickyNotes = await _context.StickyNotes
+                    .Include(sn => sn.Employee)
+                    .Where(sn => sn.TableName == "Customers" && sn.RecordId == customerId.ToString())
+                    .OrderByDescending(sn => sn.CreatedDate)
+                    .Select(note => new GetStickyNoteViewModel
+                    {
+                        Id = note.Id,
+                        TableName = note.TableName,
+                        RecordId = note.RecordId,
+                        EmployeeId = note.EmployeeId,
+                        Note = note.Note,
+                        CreatedDate = note.CreatedDate,
+                        Employee = new GetEmployeeViewModel
+                        {
+                            Id = note.Employee.Id,
+                            FirstName = note.Employee.FirstName,
+                            LastName = note.Employee.LastName,
+                            Image = note.Employee.Image,
+                            Branch = note.Employee.Branch,
+                            FirebaseToken = note.Employee.FirebaseToken,
+                            JobTitle = note.Employee.JobTitle,
+                        }
+                    })
+                    .ToListAsync();
+
+                return Ok(stickyNotes);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
+
+        [HttpGet("GetInvoiceStickyNotes")]
+        public async Task<IActionResult> GetInvoiceStickyNotes([FromQuery] int invoiceId)
+        {
+            try
+            {
+                var stickyNotes = await _context.StickyNotes
+                    .Include(sn => sn.Employee)
+                    .Where(sn => sn.TableName == "Invoices" && sn.RecordId == invoiceId.ToString())
+                    .OrderByDescending(sn => sn.CreatedDate)
+                    .Select(note => new GetStickyNoteViewModel
+                    {
+                        Id = note.Id,
+                        TableName = note.TableName,
+                        RecordId = note.RecordId,
+                        EmployeeId = note.EmployeeId,
+                        Note = note.Note,
+                        CreatedDate = note.CreatedDate,
+                        Employee = new GetEmployeeViewModel
+                        {
+                            Id = note.Employee.Id,
+                            FirstName = note.Employee.FirstName,
+                            LastName = note.Employee.LastName,
+                            Image = note.Employee.Image,
+                            Branch = note.Employee.Branch,
+                            FirebaseToken = note.Employee.FirebaseToken,
+                            JobTitle = note.Employee.JobTitle,
+                        }
+                    })
+                    .ToListAsync();
+
+                return Ok(stickyNotes);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
     }
 }
 

@@ -1,4 +1,5 @@
 ﻿using sacmy.Shared.ViewModels.InvoiceViewModel;
+using sacmy.Shared.ViewModels.StickNoteViewModel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,5 +32,6 @@ namespace sacmy.Shared.ViewModels.OrdersViewModel
         public DateTimeOffset CreatedDate { get; set; }
 
         public List<BuyFatoraViewModel> Invoices { get; set; } = new List<BuyFatoraViewModel>();
+        public List<GetStickyNoteViewModel>? StickyNotes { get; set; }
     }
 }

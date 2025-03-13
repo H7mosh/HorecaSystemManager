@@ -33,7 +33,7 @@ namespace sacmy.Server.Controller
                 Image = e.Image,
                 FirebaseToken = e.FirebaseToken,
                 CreatedDate = e.CreatedDate,
-            }).OrderByDescending(e => e.Id).ToListAsync();
+            }).OrderBy(e => e.FirstName).ToListAsync();
 
             return Ok(invoiceList);
         }

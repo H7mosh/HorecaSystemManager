@@ -12,15 +12,29 @@ namespace sacmy.Server.Service
             _configuration = configuration;
         }
 
-        public async Task<string> GetAccessTokenAsync(string configKey)
+        public async Task<string> GetAccessTokenAsync(bool isEmployeeNotification)
         {
+            // Choose the correct config key based on employee status
+            string configKey = isEmployeeNotification ? "SafinAhmedManagerNotificationKeys" : "SafinAhmedNotificationKeys";
+
             var firebaseConfig = _configuration.GetSection(configKey);
+            if (firebaseConfig == null)
+            {
+                throw new Exception($"Firebase configuration section '{configKey}' not found in app settings.");
+            }
+
+            var privateKey = firebaseConfig["private_key"];
+            if (string.IsNullOrEmpty(privateKey))
+            {
+                throw new Exception($"Private key is missing in '{configKey}' configuration.");
+            }
+
             var credentialJson = JsonConvert.SerializeObject(new
             {
                 type = firebaseConfig["type"],
                 project_id = firebaseConfig["project_id"],
                 private_key_id = firebaseConfig["private_key_id"],
-                private_key = firebaseConfig["private_key"].Replace("\\n", "\n"),
+                private_key = privateKey.Replace("\\n", "\n"), // Fix new line issue in private key
                 client_email = firebaseConfig["client_email"],
                 client_id = firebaseConfig["client_id"],
                 auth_uri = firebaseConfig["auth_uri"],
@@ -35,4 +49,5 @@ namespace sacmy.Server.Service
             return await credential.UnderlyingCredential.GetAccessTokenForRequestAsync();
         }
     }
+
 }

@@ -1,12 +1,18 @@
 @page "/Orders"
 @using sacmy.Client.Pages.Components.Dialogs
 @using sacmy.Client.Services
+@using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.InvoiceViewModel
 @using sacmy.Shared.ViewModels.OrdersViewModel
 @using System.Globalization
+@using sacmy.Shared.ViewModels.StickNoteViewModel
 @inject OrderService OrderService
 @inject IDialogService DialogService
 @inject IJSRuntime JSRuntime
+@inject UserGlobalClass UserGlobal
+@inject StickyNoteService stickyNoteService
+
+
 
 <script>
     window.openFileDialog = function () {
@@ -33,30 +39,30 @@
         background: none;
     }
 
-    .nav-tabs .nav-link.active {
-        color: #0D6EFD;
-        font-weight: 500;
-    }
+        .nav-tabs .nav-link.active {
+            color: #0D6EFD;
+            font-weight: 500;
+        }
 
-    .nav-tabs .nav-link.active::after {
-        content: '';
-        position: absolute;
-        bottom: -2px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background-color: #0D6EFD;
-    }
+            .nav-tabs .nav-link.active::after {
+                content: '';
+                position: absolute;
+                bottom: -2px;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background-color: #0D6EFD;
+            }
 
     /* Form Controls */
     .form-control {
         height: 42px;
     }
 
-    .form-control:focus {
-        box-shadow: none;
-        border-color: #ddd;
-    }
+        .form-control:focus {
+            box-shadow: none;
+            border-color: #ddd;
+        }
 
     /* Table Styles */
     .table > :not(caption) > * > * {
@@ -74,9 +80,9 @@
         border-color: #f0f0f0;
     }
 
-    .btn-light:hover {
-        background-color: #f0f0f0;
-    }
+        .btn-light:hover {
+            background-color: #f0f0f0;
+        }
 
     /* Pagination Styles */
     .pagination .page-link {
@@ -107,9 +113,9 @@
         transition: background-color 0.2s;
     }
 
-    .pdf-button:hover {
-        background-color: #c82333;
-    }
+        .pdf-button:hover {
+            background-color: #c82333;
+        }
 
     .delivered-button {
         background-color: #00a6fb;
@@ -120,32 +126,32 @@
         transition: background-color 0.2s;
     }
 
-        .pdf-button:hover {
+    .pdf-button:hover {
         background-color: #0582ca;
-        }
+    }
 
     /* Responsive Styles */
     @@media (max-width: 768px) {
         .table-responsive {
             overflow-x: auto;
         }
-        
+
         .hide-on-mobile {
             display: none;
         }
-        
+
         .table td, .table th {
             min-width: 100px;
         }
-        
+
         .customer-cell {
             min-width: 200px;
         }
-        
+
         .expanded-invoice-section {
             padding: 0 !important;
         }
-        
+
         .expanded-invoice-table {
             font-size: 0.875rem;
         }
@@ -160,6 +166,81 @@
             min-width: max-content;
         }
     }
+
+    .sticky-notes-container {
+        display: flex;
+        margin-left: -8px;
+    }
+
+    .sticky-note-wrapper {
+        position: relative;
+        margin-left: -8px;
+    }
+
+        .sticky-note-wrapper:first-child {
+            margin-left: 0;
+        }
+
+    .employee-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        border: 2px solid white;
+    }
+
+        .employee-avatar.add-note {
+            background-color: #3B82F6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .employee-avatar:hover {
+            transform: scale(1.1);
+            z-index: 2;
+        }
+
+    .sticky-note-tooltip {
+        position: absolute;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        padding: 12px;
+        width: 280px;
+        z-index: 1000;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 8px;
+        display: none;
+    }
+
+    .employee-avatar:hover .sticky-note-tooltip {
+        display: block;
+    }
+
+    .note-timeline-item {
+        padding: 1rem;
+        border-left: 2px solid #e5e7eb;
+        margin-left: 1rem;
+        position: relative;
+    }
+
+        .note-timeline-item::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #3b82f6;
+            border-radius: 50%;
+            left: -7px;
+            top: 1.5rem;
+        }
 </style>
 
 <div class="container-fluid py-4 px-5">
@@ -233,15 +314,18 @@
                     <th class="fw-normal hide-on-mobile">Address</th>
                     <th class="fw-normal">Total</th>
                     <th class="fw-normal hide-on-mobile">Products</th>
+                    <th class="fw-normal">Notes</th>
                     <th class="fw-normal">Created Date</th>
-                    @if (selectedStageId == Guid.Parse("3EA54A69-1168-4641-B8CE-AC6E40D0556D")) //order out to delivery
+                    @if (selectedStageId == Guid.Parse("3EA54A69-1168-4641-B8CE-AC6E40D0556D")) 
                     {
                         <th class="fw-normal">Actions</th>
                     }
-                    @if (selectedStageId == Guid.Parse("FB10171A-21CD-4D8D-8453-0AC58D31D95F")) //order out to delivery
+                    
+                    @if (selectedStageId == Guid.Parse("FB10171A-21CD-4D8D-8453-0AC58D31D95F"))
                     {
                         <th class="fw-normal">Actions</th>
                     }
+                
                 </tr>
             </thead>
             <tbody>
@@ -257,8 +341,8 @@
                                     @if (order.Invoices?.Any() == true)
                                     {
                                         <button class="btn btn-link p-0 text-muted"
-                                        @onclick="() => ToggleOrderExpansion(order.OrderId)"
-                                        @onclick:stopPropagation="true">
+                                                @onclick="() => ToggleOrderExpansion(order.OrderId)"
+                                                @onclick:stopPropagation="true">
                                             <i class="bi @(expandedOrders.Contains(order.OrderId) ? "bi-chevron-down" : "bi-chevron-right")"></i>
                                         </button>
                                     }
@@ -290,6 +374,43 @@
                                 @order.ItemCount items
                             </td>
 
+                            <td>
+                                @if (order.StickyNotes?.Any() == true)
+                                {
+                                    <div class="sticky-notes-container" @onclick="() => ShowAllNotes(order.OrderId, order.StickyNotes)">
+                                        @foreach (var note in order.StickyNotes)
+                                        {
+                                            <div class="sticky-note-wrapper">
+                                                <div class="employee-avatar" style="background-color: @(note == order.StickyNotes.First() ? "#FEE2E2" : "#D1FAE5")">
+                                                    <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                         alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
+
+                                                    <div class="sticky-note-tooltip">
+                                                        <div class="note-header">
+                                                            <img class="note-author-image"
+                                                                 src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
+                                                            <div class="note-author-info">
+                                                                <div class="note-author-name">@(note.Employee?.FirstName) @(note.Employee?.LastName)</div>
+                                                                <div class="note-author-title">@(note.Employee?.JobTitle ?? "Employee")</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="note-content">@note.Note</div>
+                                                        <div class="note-date">@note.CreatedDate.ToString("MMM dd, yyyy")</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="employee-avatar add-note" @onclick="() => ShowAddNoteDialog(order.OrderId)">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </div>
+                                }
+                            </td>
+
                             <td @onclick="() => OpenOrderDetails(order.OrderId, order.CustomerId, order.CostumerFirebaseToken)">
                                 @order.CreatedDate.ToString("MM/dd/yyyy HH:mm")
                             </td>
@@ -304,16 +425,19 @@
                                     </button>
                                 </td>
                             }
+    
+                            
                             @if (selectedStageId == Guid.Parse("FB10171A-21CD-4D8D-8453-0AC58D31D95F")) // order loaded into vehicle
                             {
-                            <td>
-                                <button class="delivered-button"
-                                        @onclick="() => MarkAsDelivered(order.OrderId)"
-                                        @onclick:stopPropagation="true">
-                                    <i class="bi bi-file-pdf me-1"></i>Mark as Delivered
-                                </button>
-                            </td>
+                                <td>
+                                    <button class="delivered-button"
+                                            @onclick="() => MarkAsDelivered(order.OrderId)"
+                                            @onclick:stopPropagation="true">
+                                        <i class="bi bi-file-pdf me-1"></i>Mark as Delivered
+                                    </button>
+                                </td>
                             }
+                
                         </tr>
 
                         @if (selectedStageId == Guid.Parse("480140E5-35DB-4887-B8F9-1EB5BA2977E9") && expandedOrders.Contains(order.OrderId) && order.Invoices?.Any() == true)
@@ -411,6 +535,7 @@
         </div>
     }
 
+
     <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050">
         @if (showNotification)
         {
@@ -426,18 +551,125 @@
     <OrderDetails OrderId="@selectedOrderId"
                   CustomerId="@selectedOrderCustomerId"
                   @bind-Visible="isOrderDetailsOpen"
-                  CustomerFirebaseToken ="@selectedOrderCustomerFirebaseToken"
+                  CustomerFirebaseToken="@selectedOrderCustomerFirebaseToken"
                   OnProcessingComplete="HandleProcessingComplete" />
 
     <FilteredOrder OrderId="@selectedOrderId"
-                  CustomerId="@selectedOrderCustomerId"
-                  @bind-Visible="showFilteredOrder"
-                  CustomerFirebaseToken = "@selectedOrderCustomerFirebaseToken"
-                  Results="@processingResults"
-                  OnRefreshOrders="LoadOrders" />
+                   CustomerId="@selectedOrderCustomerId"
+                   @bind-Visible="showFilteredOrder"
+                   CustomerFirebaseToken="@selectedOrderCustomerFirebaseToken"
+                   Results="@processingResults"
+                   OnRefreshOrders="LoadOrders" />
+
+
 </div>
 
 <InvoicePdfDialog @ref="_invoicePdfDialog" OrderId="@selectedOrderId" Invoices="@selectedInvoices" />
+
+
+@if (showAllNotesDialog)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Order Notes History</h5>
+                    <button type="button" class="btn-close" @onclick="() => showAllNotesDialog = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="notes-timeline">
+                        @if (currentOrderNotes?.Any() == true)
+                        {
+                            @foreach (var note in currentOrderNotes.OrderByDescending(n => n.CreatedDate))
+                            {
+                                <div class="note-timeline-item">
+                                    <div class="note-timeline-header">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img class="note-author-image"
+                                                 src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
+                                            <div>
+                                                <div class="note-author-name">
+                                                    @(note.Employee?.FirstName) @(note.Employee?.LastName)
+                                                </div>
+                                                <div class="note-author-title">
+                                                    @(note.Employee?.JobTitle ?? "Employee")
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="note-date">
+                                            @note.CreatedDate.ToString("MMM dd, yyyy HH:mm")
+                                        </div>
+                                    </div>
+                                    <div class="note-timeline-content">
+                                        @note.Note
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted p-4">
+                                No notes found for this order.
+                            </div>
+                        }
+                    </div>
+
+                    <div class="add-note-section mt-4 pt-4 border-top">
+                        <div class="d-flex gap-3">
+                            <textarea class="form-control"
+                                      rows="2"
+                                      placeholder="Add a new note..."
+                                      @bind="newNoteText"></textarea>
+                            <button class="btn btn-primary align-self-start"
+                                    @onclick="AddNote">
+                                Add Note
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+
+@if (showAddDialog)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add Note to Order</h5>
+                    <button type="button" class="btn-close" @onclick="() => showAddDialog = false"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="noteText" class="form-label">Note</label>
+                        <textarea id="noteText"
+                                  class="form-control"
+                                  rows="3"
+                                  @bind="newNoteText"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary"
+                            @onclick="() => showAddDialog = false">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            class="btn btn-primary"
+                            @onclick="AddNote">
+                        Add Note
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
 
 @code {
 
@@ -480,8 +712,6 @@
 
     private Dictionary<string, List<OrderViewerViewModel>> processingResults;
 
-    // Add these at the top of your @code block with other private fields
-
     private Dictionary<int, bool> loadingStates = new();
 
     private string notificationMessage = string.Empty;
@@ -489,6 +719,12 @@
     private string notificationType = string.Empty; // "success" or "error"
 
     private bool showNotification = false;
+
+    private bool showAllNotesDialog = false;
+    private bool showAddDialog = false;
+    private string newNoteText = "";
+    private List<GetStickyNoteViewModel> currentOrderNotes;
+    private bool isAddingNote = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -537,7 +773,7 @@
         StateHasChanged();
     }
 
-    private void OpenOrderDetails(int orderId, int customerId , string customerFirebaseToken)
+    private void OpenOrderDetails(int orderId, int customerId, string customerFirebaseToken)
     {
         if (selectedStageId == Guid.Parse("CC468327-47DF-4FA7-95B5-DE14D4C78C44"))
         {
@@ -549,7 +785,7 @@
         }
     }
 
-    private void ShowInvoiceItems(int invoiceId, string customerFirebaseToken , string customerId)
+    private void ShowInvoiceItems(int invoiceId, string customerFirebaseToken, string customerId)
     {
         selectedInvoiceId = invoiceId;
         selectedOrderCustomerFirebaseToken = customerFirebaseToken;
@@ -613,12 +849,12 @@
         };
 
         var options = new DialogOptions
-        {
-            CloseButton = true,
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
             //DisableBackdropClick = true
-        };
+            };
 
         var dialog = await DialogService.ShowAsync<InvoiceItemDialogg>("Invoice Items", parameters, options);
 
@@ -758,6 +994,111 @@
 
         }
 
+    }
+
+    private void ShowAddNoteDialog(int orderId)
+    {
+        selectedOrderId = orderId;
+        showAddDialog = true;
+    }
+
+    private void CloseAddDialog()
+    {
+        showAddDialog = false;
+        newNoteText = "";
+    }
+
+    private async Task AddNote()
+    {
+        if (string.IsNullOrWhiteSpace(newNoteText) || selectedOrderId == 0)
+            return;
+
+        try
+        {
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = "Orders",
+                    RecordId = selectedOrderId.ToString(),
+                    Note = newNoteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await stickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                await LoadOrders(); // Refreshes the data
+                CloseAddDialog();
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Error handling if needed
+            Console.WriteLine($"Error adding note: {ex.Message}");
+        }
+    }
+
+    private void ShowAllNotes(int orderId, List<GetStickyNoteViewModel> notes)
+    {
+        selectedOrderId = orderId;
+        currentOrderNotes = notes;
+        showAllNotesDialog = true;
+    }
+
+    private void CloseAllNotesDialog()
+    {
+        showAllNotesDialog = false;
+        currentOrderNotes = null;
+        newNoteText = "";
+    }
+
+    private async Task AddNoteFromTimeline()
+    {
+        if (string.IsNullOrWhiteSpace(newNoteText))
+        {
+            return;
+        }
+
+        try
+        {
+            isAddingNote = true;
+
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = "Orders",
+                    RecordId = selectedOrderId.ToString(),
+                    Note = newNoteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await stickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                // Refresh the order data
+                await LoadOrders();
+
+                // Get the updated order data
+                var order = orderResponse?.Items.FirstOrDefault(o => o.OrderId == selectedOrderId);
+                if (order != null)
+                {
+                    currentOrderNotes = order.StickyNotes;
+                    StateHasChanged();
+                }
+
+                newNoteText = ""; // Clear the input
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error adding note: {ex.Message}");
+        }
+        finally
+        {
+            isAddingNote = false;
+            StateHasChanged();
+        }
     }
 }
 

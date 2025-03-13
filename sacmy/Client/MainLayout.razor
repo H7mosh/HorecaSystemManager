@@ -1,6 +1,7 @@
 ﻿@using MudBlazor
 @using sacmy.Client.Pages
 @using sacmy.Client.Shared
+@using sacmy.Services
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModel.HorecaViewModel
 @using sacmy.Shared.ViewModels.UserViewModel
@@ -13,6 +14,8 @@
 @using Blazored.LocalStorage;
 @inject ILocalStorageService LocalStorage
 @using sacmy.Client.Shared.Toast
+@inject AuthService AuthService
+
 
 @inherits LayoutComponentBase
 
@@ -20,140 +23,174 @@
 @* <Appbar /> *@
 
 <MudThemeProvider />
-
 <MudPopoverProvider />
-
 <MudDialogProvider />
-
 <MudSnackbarProvider />
 
-<div class="d-flex flex-column h-100">
-    <div class="appbar bg-primary text-white d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center">
-            <button class="navbar-toggler" type="button" @onclick="ToggleDrawer">
-                <i class="bi bi-list"></i>
-            </button>
-            <span class="ms-3">@GetPageName()</span> <!-- Home or other page names -->
-        </div>
-        <div class="dropdown">
-            <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser2" data-bs-toggle="dropdown" aria-expanded="false">
-                <img src="@UserGlobal.User.Image" alt="User Avatar" width="32" height="32" class="rounded-circle me-2">
-                <strong>@UserGlobal.User.FirstName @UserGlobal.User.LastName</strong>
+<div class="page">
+    <header class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/HomeScreen">
+                SAFIN AHMED COMPANY
             </a>
-            <ul class="dropdown-menu text-small shadow" aria-labelledby="dropdownUser2">
-                <li><a class="dropdown-item" href="#">New project...</a></li>
-                <li><a class="dropdown-item" href="Setting">Settings</a></li>
-                <li><a class="dropdown-item" href="#">Profile</a></li>
-                <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="#">Sign out</a></li>
-            </ul>
-        </div>
-    </div>
-
-    <div class="d-flex h-100">
-        <div class="sidebar bg-light" id="sidebar">
-            <div class="sidebar-header">
-                <a href="/" class="d-flex align-items-center mb-3 mb-md-auto link-dark text-decoration-none">
-                    <span class="fs-4">SAFIN AHMED TECH</span>
-                </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    @if (UserGlobal.User.Role == "admin" && UserGlobal.User.JobTitle == "storage manager")
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice">
+                                <i class="bi bi-file-earmark-text me-1"></i> Invoice
+                            </a>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/HomeScreen")" href="/HomeScreen">
+                                <i class="bi bi-house-door me-1"></i> Home
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/Orders")" href="/Orders">
+                                <i class="bi bi-cart me-1"></i> Orders
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/Products")" href="/Products">
+                                <i class="bi bi-box me-1"></i> Products
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice">
+                                <i class="bi bi-file-earmark-text me-1"></i> Invoice
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/Horeca")" href="/Horeca">
+                                <i class="bi bi-shop me-1"></i> Horeca
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/Tasks")" href="/Tasks">
+                                <i class="bi bi-list-task me-1"></i> Tasks
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link @GetNavLinkClass("/CustomerInvoiceTrack")" href="/CustomerInvoiceTrack">
+                                <i class="bi bi-file-earmark-bar-graph me-1"></i> Invoice Track
+                            </a>
+                        </li>
+                    }
+                </ul>
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            <img src="@UserGlobal.User.Image" alt="User Avatar" width="32" height="32" class="rounded-circle me-2">
+                            <span>@UserGlobal.User.FirstName @UserGlobal.User.LastName</span>
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownUser">
+                            <li><a class="dropdown-item" href="Setting"><i class="bi bi-gear me-2"></i> Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i> Profile</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" @onclick="SignOutUser"><i class="bi bi-box-arrow-right me-2"></i> Sign out</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
-            <hr>
-            <ul class="nav nav-pills flex-column mb-auto">
-                @if (UserGlobal.User.Role == "admin" && UserGlobal.User.JobTitle == "storage manager")
-                {
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            Invoice
-                        </a>
-                    </li>
-                }
-                else
-                {
-                    <!-- Show all nav items -->
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/HomeScreen")" href="/HomeScreen" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-house-door me-2"></i>
-                            Home
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/Horeca")" href="/Horeca" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-shop me-2"></i>
-                            Horeca
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/Invoice")" href="/Invoice" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-file-earmark-text me-2"></i>
-                            Invoice
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/Tasks")" href="/Tasks" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-list-task me-2"></i>
-                            Tasks
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/CustomerInvoiceTrack")" href="/CustomerInvoiceTrack" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-list-task me-2"></i>
-                            Customer Invoice Track
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/Products")" href="/Products" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-list-task me-2"></i>
-                            Products
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link @GetNavLinkClass("/Orders")" href="/Orders" @onclick="() => ToggleDrawer()">
-                            <i class="bi bi-list-task me-2"></i>
-                            Orders
-                        </a>
-                    </li>
-                }
-            </ul>
         </div>
-        <div class="main-content flex-grow-1 p-3" id="main-content">
-            <main>
-                @Body
-            </main>
+    </header>
+    <main class="content">
+        <div class="container-fluid p-3">
+            @Body
         </div>
-    </div>
+    </main>
 </div>
 
 <ToastContainer />
 
-@code {
-    private UserViewModel CurrentUser => UserGlobal.User;
-
-    private async Task ToggleDrawer()
-    {
-        await JSRuntime.InvokeVoidAsync("toggleSidebar");
+<style>
+    .page {
+        min-height: 100vh;
+        background-color: #f8f9fa;
     }
 
+    .navbar {
+        padding: 0.5rem 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .navbar-brand {
+        font-weight: 600;
+        color: white;
+    }
+
+    .navbar-dark .navbar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.85);
+        padding: 0.5rem 1rem;
+        transition: all 0.2s ease;
+    }
+
+        .navbar-dark .navbar-nav .nav-link:hover {
+            color: #ffffff;
+        }
+
+        .navbar-dark .navbar-nav .nav-link.active {
+            color: #ffffff !important;
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            font-weight: 500;
+        }
+
+    .content {
+        padding-top: 1rem;
+    }
+
+    .dropdown-menu {
+        min-width: 200px;
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+    }
+
+    @@media (max-width: 992px) {
+        .navbar-collapse {
+            padding: 1rem 0;
+        }
+
+        .d-flex {
+            margin-top: 1rem;
+        }
+
+        .navbar-dark .navbar-nav .nav-link.active {
+            border-radius: 6px;
+        }
+    }
+</style>
+
+@code {
     private string GetNavLinkClass(string href)
     {
         var currentUri = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/');
-        return currentUri.Equals(href.Trim('/'), StringComparison.OrdinalIgnoreCase) ? "active" : null;
+        return currentUri.Equals(href.Trim('/'), StringComparison.OrdinalIgnoreCase) ? "active" : "";
     }
 
-    private string GetPageName()
+    private async Task SignOutUser()
     {
-        var currentUri = Navigation.ToBaseRelativePath(Navigation.Uri).Trim('/');
-        return currentUri switch
+        await AuthService.SignOutAsync();
+        Navigation.NavigateTo("/", true); // Force reload
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check if user is authenticated
+        var isAuthenticated = await AuthService.IsUserAuthenticatedAsync();
+        if (!isAuthenticated)
         {
-            "HomeScreen" => "Home",
-            "Horeca" => "Horeca",
-            "PurchaseManager" => "Purchase Manager",
-            "Invoice" => "Invoice",
-            "CustomerInvoiceTrack" => "Customer Invoice Track",
-            "Products" => "Products",
-            "Tasks" => "Tasks",
-            "Orders" => "Orders",
-            _ => "Dashboard",
-        };
+            Navigation.NavigateTo("/", true);
+        }
     }
 }

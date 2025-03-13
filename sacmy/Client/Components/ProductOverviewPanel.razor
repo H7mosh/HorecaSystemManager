@@ -1,0 +1,186 @@
+﻿@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.CustomerViewModel
+@using sacmy.Shared.ViewModels.Products
+@inject CustomerService customerService
+
+
+
+<div class="overview-card">
+    <h2 class="stat-header">Overview</h2>
+    <div>
+        <div class="stat-label">SKU Total</div>
+        <div class="stat-value">@(FilteredProducts?.Count() ?? 0)</div>
+    </div>
+    <div style="margin-top: 1.5rem;">
+        <div class="stat-row">
+            <span class="stat-label">Available</span>
+            <span class="stat-number" style="color: #10B981;">
+                @(FilteredProducts?.Count(p => p.Quantity > 0) ?? 0)
+            </span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill available" style="width: @(GetAvailablePercentage())%"></div>
+        </div>
+        <div class="stat-row">
+            <span class="stat-label">Out of Stock</span>
+            <span class="stat-number" style="color: #EF4444;">
+                @(FilteredProducts?.Count(p => p.Quantity == 0) ?? 0)
+            </span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill out-of-stock" style="width: @(GetOutOfStockPercentage())%"></div>
+        </div>
+    </div>
+
+    @if (SelectedProductId != null)
+    {
+        <div class="hot-products">
+            <div class="hot-header">
+                <i class="bi bi-tag-fill" style="color: #EF4444;"></i>
+                <h5 class="mb-0">Customer Pricing</h5>
+            </div>
+
+            @if (isLoadingPrices)
+            {
+                <div class="d-flex justify-content-center my-3">
+                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                </div>
+            }
+            else if (priceChanges?.Any() == true)
+            {
+                <div class="hot-stats mt-3">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Customer</th>
+                                <th class="text-end">Price Change</th>
+                                <th class="text-end">Final Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var priceChange in priceChanges)
+                            {
+                                <tr>
+                                    <td>@priceChange.CustomerName</td>
+                                    <td class="text-end">
+                                        <span class="@(priceChange.IsDiscounted ? "text-danger" : "text-success")">
+                                            @{
+                                                string displayValue = "0.00";
+                                                string priceChangeStr = priceChange.PriceChange.ToString();
+
+                                                // Check if the value contains a percentage sign
+                                                if (priceChangeStr.Contains("%"))
+                                                {
+                                                    // Remove the % symbol and try parsing
+                                                    string numValue = priceChangeStr.Replace("%", "").Trim();
+                                                    if (decimal.TryParse(numValue, out decimal percentValue))
+                                                    {
+                                                        displayValue = Math.Abs(percentValue).ToString("F2") + "%";
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    // Regular decimal parsing for non-percentage values
+                                                    if (decimal.TryParse(priceChangeStr, out decimal value))
+                                                    {
+                                                        displayValue = Math.Abs(value).ToString("F2");
+                                                    }
+                                                }
+                                            }
+                                            @(priceChange.IsDiscounted ? "-" : "+")$@displayValue
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        <span class="badge @(priceChange.IsDiscounted ? "bg-danger" : "bg-primary") p-2">
+                                            $@(decimal.TryParse(priceChange.FinalPrice.ToString(), out decimal final) ? final.ToString("F2") : "0.00")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-light text-center mt-3 p-3 border">
+                    <i class="bi bi-info-circle me-2"></i>No custom pricing found
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public IEnumerable<Product> FilteredProducts { get; set; }
+    [Parameter] public string SelectedProductId { get; set; }
+
+    private List<CustomerProductPriceChangeViewModel> priceChanges;
+    private bool isLoadingPrices = false;
+
+    private double GetAvailablePercentage()
+    {
+        var total = FilteredProducts?.Count() ?? 0;
+        if (total == 0) return 0;
+        var available = FilteredProducts?.Count(p => p.Quantity > 0) ?? 0;
+        return (double)available / total * 100;
+    }
+
+    private double GetOutOfStockPercentage()
+    {
+        var total = FilteredProducts?.Count() ?? 0;
+        if (total == 0) return 0;
+        var outOfStock = FilteredProducts?.Count(p => p.Quantity == 0) ?? 0;
+        return (double)outOfStock / total * 100;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!string.IsNullOrEmpty(SelectedProductId) &&
+            (priceChanges == null || SelectedProductIdChanged()))
+        {
+            await LoadPriceChanges();
+        }
+    }
+
+    private string previousProductId;
+    private bool SelectedProductIdChanged()
+    {
+        if (SelectedProductId != previousProductId)
+        {
+            previousProductId = SelectedProductId;
+            return true;
+        }
+        return false;
+    }
+
+    private async Task LoadPriceChanges()
+    {
+        try
+        {
+            isLoadingPrices = true;
+            StateHasChanged();
+
+            var response = await customerService.GetCustomerProductPriceChangesAsync(Guid.Parse(SelectedProductId));
+
+            if (response.Success)
+            {
+                priceChanges = response.Data;
+            }
+            else
+            {
+                priceChanges = new List<CustomerProductPriceChangeViewModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading price changes: {ex.Message}");
+            priceChanges = new List<CustomerProductPriceChangeViewModel>();
+        }
+        finally
+        {
+            isLoadingPrices = false;
+            StateHasChanged();
+        }
+    }
+}

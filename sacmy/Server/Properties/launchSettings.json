@@ -1,15 +1,5 @@
 {
   "profiles": {
-    "http": {
-      "commandName": "Project",
-      "launchBrowser": true,
-      "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      },
-      "dotnetRunMessages": true,
-      "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}",
-      "applicationUrl": "http://localhost:5206"
-    },
     "https": {
       "commandName": "Project",
       "launchBrowser": true,
@@ -17,7 +7,6 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       },
       "dotnetRunMessages": true,
-      "app.UseSwagger();": null,
       "applicationUrl": "https://localhost:7281;http://localhost:5206"
     },
     "IIS Express": {
@@ -28,10 +17,6 @@
       },
       "inspectUri": "{wsProtocol}://{url.hostname}:{url.port}/_framework/debug/ws-proxy?browser={browserInspectUri}"
     }
-  },
-  "iisExpress": {
-    "applicationUrl": "http://localhost:31533",
-    "sslPort": 44303
   },
   "iisSettings": {
     "windowsAuthentication": false,

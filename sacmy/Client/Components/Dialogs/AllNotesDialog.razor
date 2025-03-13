@@ -1,0 +1,200 @@
+﻿@using sacmy.Client.Components.DialogHeader
+@using sacmy.Client.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.StickNoteViewModel
+@inject StickyNoteService stickyNoteService
+@inject ToastService toastService
+@inject UserGlobalClass UserGlobal
+
+
+@if (IsVisible)
+{
+    <div class="modal fade show all-notes-dialog" style="display: block;" tabindex="-1" id="allnotesdialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-3 shadow">
+                <!-- Custom styled header that matches the blue design -->
+                <DialogHeader Title="Sticky Note Details"
+                              Icon="bi bi-sticky-fill"
+                              ShowCloseButton="true"
+                              OnClose="OnClose" />
+
+                <div class="modal-body p-0">
+                    <div class="notes-container">
+                        @if (Notes?.Any() == true)
+                        {
+                            @foreach (var note in Notes.OrderByDescending(n => n.CreatedDate))
+                            {
+                                <div class="note-item p-3 border-bottom">
+                                    <div class="d-flex">
+                                        <div class="note-avatar me-3">
+                                            <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")"
+                                                 class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;" />
+                                        </div>
+                                        <div class="note-content flex-grow-1">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <div class="note-author fw-bold">
+                                                    @(note.Employee?.FirstName) @(note.Employee?.LastName)
+                                                </div>
+                                                <div class="note-date text-muted small">
+                                                    @note.CreatedDate.ToString("MMM dd, yyyy HH:mm")
+                                                </div>
+                                            </div>
+                                            <div class="note-job-title text-muted small mb-2">
+                                                @(note.Employee?.JobTitle ?? "Employee")
+                                            </div>
+                                            <div class="note-text">
+                                                @note.Note
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="text-center text-muted p-4">
+                                No notes found for this product.
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Add new note section - styled to match the example -->
+                    <div class="add-note-section p-3">
+                        <textarea class="form-control mb-2"
+                                  rows="3"
+                                  placeholder="Add a new note..."
+                                  @bind="noteText"></textarea>
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-primary px-4"
+                                    style="background-color: #1a73e8; border-color: #1a73e8;"
+                                    @onclick="AddNote"
+                                    disabled="@isAddingNote">
+                                @if (isAddingNote)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Adding...</span>
+                                }
+                                else
+                                {
+                                    <span>Add Note</span>
+                                }
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style>
+    /* Custom styles for the sticky note dialog */
+    .all-notes-dialog .modal-content {
+        overflow: hidden;
+    }
+
+    .notes-container {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .note-item {
+        transition: background-color 0.2s;
+    }
+
+        .note-item:hover {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+    .add-note-section {
+        background-color: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .btn-primary:hover {
+        background-color: #0d62d1 !important;
+        border-color: #0d62d1 !important;
+    }
+
+    .modal-header .btn-close {
+        opacity: 0.8;
+    }
+
+        .modal-header .btn-close:hover {
+            opacity: 1;
+        }
+</style>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string ProductId { get; set; }
+    [Parameter] public List<GetStickyNoteViewModel> Notes { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnNoteSaved { get; set; }
+
+    private string noteText = "";
+    private bool isAddingNote = false;
+
+    private async Task AddNote()
+    {
+        if (string.IsNullOrWhiteSpace(noteText))
+        {
+            toastService.ShowToast("Cannot add empty note", "warning");
+            return;
+        }
+
+        try
+        {
+            isAddingNote = true;
+
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = "Products",
+                    RecordId = ProductId,
+                    Note = noteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await stickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                // Instead of reloading all data, just fetch notes for this product
+                var notesResponse = await stickyNoteService.GetNotesByRecordAsync("Products", Guid.Parse(ProductId));
+
+                if (notesResponse.Success)
+                {
+                    // Update the local notes collection
+                    Notes = notesResponse.Data;
+
+                    // Clear the input
+                    noteText = "";
+
+                    toastService.ShowToast("Note added successfully", "success");
+
+                    // Notify parent that notes were updated (optional)
+                    await OnNoteSaved.InvokeAsync();
+                }
+                else
+                {
+                    toastService.ShowToast("Added note but failed to refresh: " + notesResponse.Message, "warning");
+                }
+            }
+            else
+            {
+                toastService.ShowToast(response.Message ?? "Failed to add note", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            toastService.ShowToast($"Error adding note: {ex.Message}", "error");
+        }
+        finally
+        {
+            isAddingNote = false;
+            StateHasChanged();
+        }
+    }
+}

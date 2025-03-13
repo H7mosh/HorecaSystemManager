@@ -134,6 +134,10 @@
                     await Task.Run(() => File.Delete(filePath));
                     return true;
                 }
+                else if (!File.Exists(filePath))
+                {
+                    return true;
+                }
 
                 return false;
             }

@@ -1,5 +1,6 @@
 ﻿@using Blazored.LocalStorage
 @using MudBlazor
+@using sacmy.Client.Components.DialogHeader
 @using sacmy.Client.Services
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.EmployeeViewModel
@@ -65,12 +66,10 @@
                 else
                 {
                     <div>
-                        <div class="modal-header">
-                            <h5 class="modal-title" id="addTaskModalLabel">@Localizer["Add Task"]</h5>
-                            <button type="button" class="close" data-dismiss="modal" aria-label="Close" @onclick="CloseModal">
-                                <span aria-hidden="true">&times;</span>
-                            </button>
-                        </div>
+                        <DialogHeader 
+                            Title="@Localizer["Add Task"]"
+                            Icon="bi bi-list-check" 
+                            OnClose="@(CloseModal)"/>
                         <div class="modal-body">
                             <div class="form-group">
                                 <label for="taskType">@Localizer["Task Type"]</label>
@@ -169,6 +168,7 @@
                         </div>
                     </div>
                 }
+            
             </div>
         </div>
     </div>

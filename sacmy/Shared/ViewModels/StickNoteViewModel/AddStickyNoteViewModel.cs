@@ -13,7 +13,7 @@ namespace sacmy.Shared.ViewModels.StickNoteViewModel
         public string TableName { get; set; }
 
         [Required]
-        public Guid RecordId { get; set; }
+        public string RecordId { get; set; }
 
         [Required]
         public Guid EmployeeId { get; set; }

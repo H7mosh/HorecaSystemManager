@@ -1,36 +1,29 @@
 ﻿@page "/Products"
+@using sacmy.Client.Components
 @using sacmy.Client.Services
+@using sacmy.Client.Shared.Components.DialogHeader
 @using sacmy.Client.Shared.Toast
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.BrandViewModel
+@using sacmy.Shared.ViewModels.CustomerViewModel
+@using sacmy.Shared.ViewModels.LowStockViewModels
 @using sacmy.Shared.ViewModels.Products
 @using sacmy.Client.Pages.Components
+@using sacmy.Client.Components.Dialogs
 @using sacmy.Shared.ViewModels.StickNoteViewModel
 @inject ProductsService ProductsService
 @inject BrandService BrandService
 @inject StickyNoteService stickyNoteService
 @inject IJSRuntime JS
-@inject ToastService ToastService
 @inject UserGlobalClass UserGlobal
+@inject ToastService ToastService
+
 
 
 <style>
-    /* Updated & Combined Styles */
-
-    /* New/Updated styles from second snippet (overrides or replaces old ones where conflicts occur) */
+    /* Main Container and Header Styles */
     .container-fluid {
         padding: 1rem;
-    }
-
-    .actions-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 1rem;
-    }
-
-    .brand-select {
-        width: 180px;
     }
 
     .header-card {
@@ -41,17 +34,7 @@
         margin-bottom: 1rem;
     }
 
-    .controls-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-    }
-
-    .stock-filter {
-        display: flex;
-        align-items: center;
-    }
-
+    /* Search and Filter Controls */
     .search-box {
         position: relative;
         width: 280px;
@@ -72,6 +55,7 @@
             color: #6b7280;
         }
 
+    /* Product Table Styles */
     .product-table {
         width: 100%;
         border-collapse: separate;
@@ -97,6 +81,14 @@
             letter-spacing: 0.05em;
         }
 
+    .selected-row {
+        background-color: rgba(59, 130, 246, 0.05) !important;
+    }
+
+        .selected-row:hover {
+            background-color: rgba(59, 130, 246, 0.08) !important;
+        }
+
     .product-row {
         transition: background-color 0.15s;
     }
@@ -120,21 +112,7 @@
         padding: 0.25rem;
     }
 
-    .product-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .sku-main {
-        font-weight: 500;
-        color: #111827;
-    }
-
-    .sku-sub {
-        font-size: 0.875rem;
-        color: #6b7280;
-    }
-
+    /* Product Data Display */
     .category-badge {
         display: inline-block;
         padding: 0.25rem 0.75rem;
@@ -142,20 +120,6 @@
         color: #374151;
         border-radius: 9999px;
         font-size: 0.75rem;
-    }
-
-    .price-info {
-        text-align: right;
-    }
-
-    .price-main {
-        font-weight: 600;
-        color: #111827;
-    }
-
-    .price-dinar {
-        font-size: 0.875rem;
-        color: #059669;
     }
 
     .stock-badge {
@@ -168,14 +132,6 @@
         font-weight: 500;
     }
 
-    .table-footer {
-        background: white;
-        border-top: 1px solid #e5e7eb;
-        padding: 1rem;
-        margin-top: 1rem;
-        border-radius: 0 0 0.5rem 0.5rem;
-    }
-
         .stock-badge.in-stock {
             background: #def7ec;
             color: #065f46;
@@ -186,355 +142,7 @@
             color: #991b1b;
         }
 
-    .sticky-notes {
-        display: flex;
-        margin-left: -0.5rem;
-    }
-
-    .note-avatar {
-        width: 24px;
-        height: 24px;
-        border-radius: 50%;
-        border: 2px solid white;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }
-
-        .note-avatar:hover {
-            transform: scale(1.1);
-            z-index: 1;
-        }
-
-    .note-tooltip {
-        position: absolute;
-        background: white;
-        border-radius: 0.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);
-        padding: 1rem;
-        width: 280px;
-        z-index: 1000;
-        display: none;
-    }
-
-    .note-avatar:hover .note-tooltip {
-        display: block;
-    }
-
-    .overview-card {
-        background: white;
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .stat-header {
-        color: #6b7280;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-value {
-        font-size: 1.875rem;
-        font-weight: 600;
-        color: #2563eb;
-        line-height: 2.25rem;
-        margin-top: 0.25rem;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 0.5rem;
-        background: #f3f4f6;
-        border-radius: 9999px;
-        margin: 0.5rem 0 1rem;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        border-radius: 9999px;
-        transition: width 0.3s ease;
-    }
-
-        .progress-fill.available {
-            background: #10b981;
-        }
-
-        .progress-fill.out-of-stock {
-            background: #ef4444;
-        }
-
-    .stat-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .stat-number {
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    .page-info {
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .page-number {
-        min-width: 32px;
-        height: 32px;
-        padding: 0;
-        border: 1px solid #e5e7eb;
-        background: white;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #374151;
-        cursor: pointer;
-        margin: 0 2px;
-    }
-
-        .page-number:hover {
-            background: #f3f4f6;
-        }
-
-        .page-number.active {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
-
-    .pagination-info {
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .page-button {
-        min-width: 32px;
-        height: 32px;
-        padding: 0;
-        border: 1px solid #e5e7eb;
-        background: white;
-        border-radius: 0.25rem;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #374151;
-        cursor: pointer;
-    }
-
-        .page-button:hover {
-            background: #f9fafb;
-        }
-
-        .page-button.active {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
-
-    /* ----------------------------------------------------- */
-    /* Additional/Retained styles from original snippet that aren't overridden in the new code */
-
-    /* Expanded row highlight */
-    .expanded-row {
-        background-color: #EFF6FF; /* Light blue background */
-    }
-
-    /* Quick Edit Form */
-    .quick-edit-form {
-        padding: 1.5rem;
-        background: #F8FAFC; /* Slightly different background than the row */
-        border-radius: 0.5rem;
-        margin: 0.5rem 1rem;
-        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
-        border: 1px solid #E0E7FF; /* Light blue border */
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-        .form-row.three-columns {
-            grid-template-columns: 1fr 1fr 1fr;
-        }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-        .form-group label {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #1E40AF; /* Darker blue for labels */
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input,
-        .form-group select {
-            height: 2.5rem;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #BFDBFE; /* Light blue border */
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            color: #1E293B;
-            background-color: white;
-            transition: all 0.15s ease-in-out;
-        }
-
-            .form-group input:focus,
-            .form-group select:focus {
-                outline: none;
-                border-color: #60A5FA; /* Medium blue */
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            }
-
-            .form-group input:hover,
-            .form-group select:hover {
-                border-color: #93C5FD; /* Light blue hover */
-            }
-
-            .form-group input[type="number"] {
-                -moz-appearance: textfield;
-            }
-
-                .form-group input[type="number"]::-webkit-outer-spin-button,
-                .form-group input[type="number"]::-webkit-inner-spin-button {
-                    -webkit-appearance: none;
-                    margin: 0;
-                }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-start;
-        gap: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #E0E7FF;
-        margin-top: 1rem;
-    }
-
-        .form-actions .btn-secondary {
-            background-color: #F3F4F6;
-            color: #374151;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: 1px solid #D1D5DB;
-            transition: all 0.15s ease-in-out;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-            .form-actions .btn-secondary:hover {
-                background-color: #E5E7EB;
-                border-color: #9CA3AF;
-            }
-
-            .form-actions .btn-secondary i {
-                font-size: 0.875rem;
-            }
-
-        /* Push Save/Cancel buttons to the right */
-        .form-actions .btn-primary,
-        .form-actions .btn-link {
-            margin-left: auto;
-        }
-
-            /* Remove margin from Cancel button when next to Save */
-            .form-actions .btn-primary + .btn-link {
-                margin-left: 0;
-            }
-
-        .form-actions .btn-primary {
-            background-color: #2563EB; /* Slightly darker blue */
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: none;
-            transition: background-color 0.15s ease-in-out;
-        }
-
-            .form-actions .btn-primary:hover {
-                background-color: #1D4ED8; /* Even darker blue on hover */
-            }
-
-        .form-actions .btn-link {
-            color: #6B7280;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: color 0.15s ease-in-out;
-        }
-
-            .form-actions .btn-link:hover {
-                color: #1E40AF; /* Dark blue on hover */
-            }
-
-    /* Modal & progress bar */
-    #progressModal .modal-content {
-        border-radius: 1rem;
-    }
-
-    #progressModal .progress {
-        border-radius: 0.5rem;
-        background-color: #e9ecef;
-        overflow: hidden;
-    }
-
-    #progressModal .progress-bar {
-        border-radius: 0.5rem;
-        transition: width 0.3s ease;
-        min-width: 0%;
-    }
-
-    #progressModal .bi-file-pdf {
-        animation: pulse 2s infinite;
-    }
-
-    @@keyframes pulse {
-        0%
-
-    {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-
-    }
-
-    /* Sticky Notes (additional ones not overridden by the second snippet) */
+    /* Sticky Notes Display */
     .sticky-notes-container {
         display: flex;
         margin-left: -8px;
@@ -569,11 +177,11 @@
         }
 
         .employee-avatar:first-child {
-            background-color: #FEE2E2; /* Light red background for first avatar */
+            background-color: #FEE2E2;
         }
 
         .employee-avatar:last-child {
-            background-color: #0D6EFD; /* Light green background for second avatar */
+            background-color: #3B82F6;
         }
 
         .employee-avatar img {
@@ -644,27 +252,236 @@
         margin-bottom: 8px;
     }
 
-    .note-employee-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .note-employee-name {
-        font-weight: 500;
-        font-size: 14px;
-    }
-
-    .note-employee-title {
-        font-size: 12px;
-        color: #6B7280;
-    }
-
     .note-date {
         font-size: 12px;
         color: #6B7280;
     }
 
-    /* "Hot products" / Extra sections not in updated snippet */
+    /* Expanded Row and Quick Edit Form */
+    .expanded-row {
+        background-color: #EFF6FF;
+    }
+
+    .quick-edit-form {
+        padding: 1.5rem;
+        background: #F8FAFC;
+        border-radius: 0.5rem;
+        margin: 0.5rem 1rem;
+        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
+        border: 1px solid #E0E7FF;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+        .form-row.three-columns {
+            grid-template-columns: 1fr 1fr 1fr;
+        }
+
+    .form-group {
+        display: flex;
+        flex-direction: column;
+    }
+
+        .form-group label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #1E40AF;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-group input,
+        .form-group select {
+            height: 2.5rem;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #BFDBFE;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            color: #1E293B;
+            background-color: white;
+            transition: all 0.15s ease-in-out;
+        }
+
+            .form-group input:focus,
+            .form-group select:focus {
+                outline: none;
+                border-color: #60A5FA;
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+            .form-group input:hover,
+            .form-group select:hover {
+                border-color: #93C5FD;
+            }
+
+    .form-actions {
+        display: flex;
+        justify-content: flex-start;
+        gap: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #E0E7FF;
+        margin-top: 1rem;
+    }
+
+        .form-actions .btn-secondary {
+            background-color: #F3F4F6;
+            color: #374151;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: 1px solid #D1D5DB;
+            transition: all 0.15s ease-in-out;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+            .form-actions .btn-secondary:hover {
+                background-color: #E5E7EB;
+                border-color: #9CA3AF;
+            }
+
+        .form-actions .btn-primary,
+        .form-actions .btn-link {
+            margin-left: auto;
+        }
+
+            .form-actions .btn-primary + .btn-link {
+                margin-left: 0;
+            }
+
+        .form-actions .btn-primary {
+            background-color: #2563EB;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            border: none;
+            transition: background-color 0.15s ease-in-out;
+        }
+
+            .form-actions .btn-primary:hover {
+                background-color: #1D4ED8;
+            }
+
+        .form-actions .btn-link {
+            color: #6B7280;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: color 0.15s ease-in-out;
+        }
+
+            .form-actions .btn-link:hover {
+                color: #1E40AF;
+            }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-top: 1px solid #e5e7eb;
+    }
+
+    .page-number {
+        min-width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid #e5e7eb;
+        background: white;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #374151;
+        cursor: pointer;
+        margin: 0 2px;
+    }
+
+        .page-number:hover {
+            background: #f3f4f6;
+        }
+
+        .page-number.active {
+            background: #2563eb;
+            color: white;
+            border-color: #2563eb;
+        }
+
+    /* Overview Panel Styles */
+    .overview-card {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .stat-header {
+        color: #6b7280;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-value {
+        font-size: 1.875rem;
+        font-weight: 600;
+        color: #2563eb;
+        line-height: 2.25rem;
+        margin-top: 0.25rem;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 0.5rem;
+        background: #f3f4f6;
+        border-radius: 9999px;
+        margin: 0.5rem 0 1rem;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 9999px;
+        transition: width 0.3s ease;
+    }
+
+        .progress-fill.available {
+            background: #10b981;
+        }
+
+        .progress-fill.out-of-stock {
+            background: #ef4444;
+        }
+
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+        color: #6b7280;
+        font-size: 0.875rem;
+    }
+
+    .stat-number {
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    /* Hot Products Section */
     .hot-products {
         margin-top: 2rem;
         padding-top: 1.5rem;
@@ -683,53 +500,8 @@
     }
 
     .hot-stats {
-        background: #F9FAFB;
         border-radius: 0.5rem;
-        padding: 1rem;
     }
-
-    .note-detail-header {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid #E5E7EB;
-    }
-
-    .note-detail-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-    }
-
-    .note-detail-info {
-        flex: 1;
-    }
-
-    .note-detail-name {
-        font-weight: 600;
-        font-size: 16px;
-        color: #111827;
-    }
-
-    .note-detail-title {
-        font-size: 14px;
-        color: #6B7280;
-    }
-
-    .note-detail-content {
-        font-size: 16px;
-        line-height: 1.5;
-        color: #374151;
-        margin-bottom: 16px;
-    }
-
-    .note-detail-date {
-        font-size: 14px;
-        color: #6B7280;
-    }
-
 
     .views-row {
         display: flex;
@@ -753,29 +525,113 @@
         text-align: right;
     }
 
-    /* Responsive adjustments for the quick-edit-form and form-row */
-    @@media (max-width: 768px) {
-        .form-row, .form-row.three-columns
-
-    {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+    /* PDF Modal Styles */
+    #pdfProgressModal .modal-content {
+        border-radius: 1rem;
     }
 
-    .quick-edit-form {
-        padding: 1rem;
-        margin: 0.5rem;
+    #pdfProgressModal .progress {
+        border-radius: 0.5rem;
+        background-color: #e9ecef;
+        overflow: hidden;
+    }
+
+    #pdfProgressModal .progress-bar {
+        border-radius: 0.5rem;
+        transition: width 0.3s ease;
+        min-width: 0%;
+    }
+
+    #pdfProgressModal .bi-file-pdf {
+        animation: pulse 2s infinite;
+    }
+
+    @@keyframes pulse {
+        0%
+
+    {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+
+    }
+
+    /* Responsive Adjustments */
+    @@media (max-width: 992px) {
+        .d-flex.align-items-center.gap-4
+
+    {
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    }
+
+    @@media (max-width: 768px) {
+        .product-table
+
+    {
+        font-size: 0.875rem;
+    }
+
+    .product-image {
+        width: 40px;
+        height: 40px;
+    }
+
+    .category-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .stock-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    }
+
+    .selection-toolbar {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 
     }
 </style>
 
 <div class="container-fluid py-3">
+
     <div class="row">
         <!-- Brand Selection -->
         <div class="col-12">
-            <div class="d-flex align-items-center">
-                <select class="form-select bg-white border rounded-3" style="width: 180px;" @bind="selectedBrandId" @oninput="OnBrandSelected">
+            <div class="d-flex align-items-center gap-2">
+                <select class="form-select bg-white border rounded-3"
+                        style="width: 180px;"
+                        @bind="selectedBrandId"
+                        @oninput="OnBrandSelected">
                     <option value="">All Brands</option>
                     @if (brands != null)
                     {
@@ -785,6 +641,10 @@
                         }
                     }
                 </select>
+                <button class="btn btn-outline-primary btn-sm"
+                        @onclick="ShowAddBrandDialog">
+                    <i class="bi bi-plus-lg"></i>
+                </button>
             </div>
         </div>
 
@@ -824,21 +684,51 @@
                                    @bind:event="oninput" />
                         </div>
 
-                        <!-- Add Product Button -->
+                        <!-- Action Buttons -->
                         <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-primary d-flex align-items-center gap-2 px-3">
-                                <i class="bi bi-plus-lg"></i>
-                                <span>Add product</span>
-                            </button>
-
-                            <button class="btn btn-secondary d-flex align-items-center gap-2 px-3" @onclick="GeneratePDF">
+                            <button class="btn btn-primary d-flex align-items-center gap-2 px-3" @onclick="GeneratePDF">
                                 <i class="bi bi-file-pdf"></i>
                                 <span>Generate PDF</span>
+                            </button>
+
+                            <button class="btn btn-secondary d-flex align-items-center gap-2 px-3"
+                                    @onclick="ResetCache"
+                                    disabled="@isResettingCache">
+                                @if (isResettingCache)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                    <span>Resetting...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-arrow-clockwise"></i>
+                                    <span>Reset Cache</span>
+                                }
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
+
+            @if (selectedProductIds.Any())
+            {
+                <div class="bg-light p-2 rounded-3 shadow-sm mb-3 selection-toolbar">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="me-3 fw-medium">@selectedProductIds.Count products selected</span>
+                            <button class="btn btn-link text-decoration-none p-0" @onclick="() => { selectedProductIds.Clear(); StateHasChanged(); }">
+                                Clear selection
+                            </button>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" @onclick="ShowCustomizePriceDialog">
+                                <i class="bi bi-currency-dollar me-1"></i> Customize Price
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
 
             @if (isLoading)
             {
@@ -852,20 +742,40 @@
                     <table class="product-table">
                         <thead class="table-header">
                             <tr>
+                                <th style="width: 40px;">
+                                    <div class="form-check d-flex justify-content-center">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="selectAllProducts" 
+                                               checked="@AllProductsSelected"
+                                               @onchange="(e) => { AllProductsSelected = (bool)e.Value; }" />
+                                    </div>
+                                </th>
                                 <th style="width: 80px;">Image</th>
                                 <th style="width: 150px;">Sku</th>
                                 <th style="width: 200px;">Name</th>
                                 <th style="width: 150px;">Category</th>
                                 <th style="width: 150px;">Price</th>
-                                <th style="width: 120px;">Stock</th>        <!-- Stock column -->
-                                <th style="width: 100px;">Stick Notes</th>  <!-- Stick Notes column -->
+                                <th style="width: 120px;">Stock</th>        
+                                <th style="width: 100px;">Stick Notes</th>  
                                 <th style="width: 80px;">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var product in PaginatedProducts)
                             {
-                                <tr class="product-row">
+                                <tr class="product-row @(IsProductSelected(product.Id) ? "selected-row" : "")"
+                                    @onclick="() => SelectProduct(product.Id)">
+                                    <td>
+                                        <div class="form-check d-flex justify-content-center">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   id="select-@product.Id"
+                                                   checked="@IsProductSelected(product.Id)"
+                                                   @onchange="(e) => ToggleProductSelection(product.Id, e)"
+                                                   @onclick:stopPropagation="true" /> <!-- Stop propagation to prevent the row click handler from firing -->
+                                        </div>
+                                    </td>
                                     <td>
                                         <img src="@product.Image" class="product-image" alt="@product.Name" />
                                     </td>
@@ -882,7 +792,6 @@
                                         <div class="text-success small">@product.DinarPrice IQD</div>
                                     </td>
                                     <td>
-                                        <!-- Stock data goes here -->
                                         <span class="stock-badge @(product.Quantity > 0 ? "in-stock" : "out-of-stock")">
                                             @if (product.Quantity > 0)
                                             {
@@ -898,14 +807,13 @@
                                     <td>
                                         @if (product.StickyNotes?.Any() == true)
                                         {
-                                            <div class="sticky-notes-container">
+                                            <div class="sticky-notes-container" @onclick="() => ShowAllNotes(product.Id, product.StickyNotes)">
                                                 @foreach (var note in product.StickyNotes)
                                                 {
                                                     <div class="sticky-note-wrapper">
                                                         <div class="employee-avatar" style="background-color: @(note == product.StickyNotes.First() ? "#FEE2E2" : "#D1FAE5")">
                                                             <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
-                                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")"
-                                                                 @onclick="() => ShowNoteDetails(note)" />
+                                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
 
                                                             <div class="sticky-note-tooltip">
                                                                 <div class="note-header">
@@ -923,9 +831,6 @@
                                                         </div>
                                                     </div>
                                                 }
-                                                <div class="employee-avatar add-note" @onclick="() => ShowAddNoteDialog(product.Id)">
-                                                    <i class="bi bi-plus-lg"></i>
-                                                </div>
                                             </div>
                                         }
                                         else
@@ -934,98 +839,103 @@
                                                 <i class="bi bi-plus-lg"></i>
                                             </div>
                                         }
-                                    
                                     </td>
                                     <td>
-                                        <button class="btn btn-link p-0" @onclick="() => ToggleProductExpand(product.Id)">
-                                            <i class="bi @(IsProductExpanded(product.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
-                                        </button>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-link p-0" @onclick="() => ShowMonitorDialog(product.Id)">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            <button class="btn btn-link p-0" @onclick="() => ToggleProductExpand(product.Id)">
+                                                <i class="bi @(IsProductExpanded(product.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                                 @if (IsProductExpanded(product.Id))
                                 {
-                                                <tr class="expanded-row">
-                                                    <td colspan="8">
-                                                        <div class="quick-edit-form">
-                                                            <div class="form-row">
-                                                                <div class="form-group">
-                                                                    <label>Height</label>
-                                                                    <input type="number" step="0.01" @bind="@product.Height" />
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>Diameter</label>
-                                                                    <input type="number" step="0.01" @bind="@product.Diameter" />
-                                                                </div>
-                                                            </div>
+                                    <tr class="expanded-row">
+                                        <td colspan="9">
+                                            <div class="quick-edit-form">
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Height</label>
+                                                        <input type="number" step="0.01" @bind="@product.Height" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Diameter</label>
+                                                        <input type="number" step="0.01" @bind="@product.Diameter" />
+                                                    </div>
+                                                </div>
 
-                                                            <div class="form-row">
-                                                                <div class="form-group">
-                                                                    <label>Top</label>
-                                                                    <input type="number" step="0.01" @bind="@product.Top" />
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>Base</label>
-                                                                    <input type="number" step="0.01" @bind="@product.Base" />
-                                                                </div>
-                                                            </div>
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>Top</label>
+                                                        <input type="number" step="0.01" @bind="@product.Top" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Base</label>
+                                                        <input type="number" step="0.01" @bind="@product.Base" />
+                                                    </div>
+                                                </div>
 
-                                                            <div class="form-row three-columns">
-                                                                <div class="form-group">
-                                                                    <label>Volume</label>
-                                                                    <input type="number" step="0.01" @bind="@product.Volume" />
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>Weight</label>
-                                                                    <input type="number" step="0.01" @bind="@product.Weight" />
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>Area</label>
-                                                                    <input type="number" step="0.01" @bind="@product.Area" />
-                                                                </div>
-                                                            </div>
+                                                <div class="form-row three-columns">
+                                                    <div class="form-group">
+                                                        <label>Volume</label>
+                                                        <input type="number" step="0.01" @bind="@product.Volume" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Weight</label>
+                                                        <input type="number" step="0.01" @bind="@product.Weight" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>Area</label>
+                                                        <input type="number" step="0.01" @bind="@product.Area" />
+                                                    </div>
+                                                </div>
 
-                                                            <div class="form-row">
-                                                                <div class="form-group">
-                                                                    <label>EAN</label>
-                                                                    <input type="text" @bind="@product.Ean" />
-                                                                </div>
-                                                                <div class="form-group">
-                                                                    <label>UPC</label>
-                                                                    <input type="text" @bind="@product.Upc" />
-                                                                </div>
-                                                            </div>
+                                                <div class="form-row">
+                                                    <div class="form-group">
+                                                        <label>EAN</label>
+                                                        <input type="text" @bind="@product.Ean" />
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label>UPC</label>
+                                                        <input type="text" @bind="@product.Upc" />
+                                                    </div>
+                                                </div>
 
-                                                            <div class="form-actions">
-                                                                <button class="btn btn-secondary" @onclick="() => ShowAdvancedEdit(product)">
-                                                                    <i class="bi bi-sliders"></i> Advanced Edit
-                                                                </button>
-                                                                <button class="btn btn-primary position-relative"
-                                                                        @onclick="() => SaveChanges(product)"
-                                                                        disabled="@isUpdating">
+                                                <div class="form-actions">
+                                                    <button class="btn btn-secondary" @onclick="() => ShowAdvancedEdit(product)">
+                                                        <i class="bi bi-sliders"></i> Advanced Edit
+                                                    </button>
+                                                    <button class="btn btn-primary position-relative"
+                                                            @onclick="() => SaveChanges(product)"
+                                                            disabled="@isUpdating">
                                                         @if (isUpdating)
                                                         {
-                                                                            <span class="spinner-border spinner-border-sm me-2"
-                                                                                  role="status"
-                                                                                  aria-hidden="true">
-                                                                            </span>
-                                                                            <span>Saving...</span>
+                                                            <span class="spinner-border spinner-border-sm me-2"
+                                                                  role="status"
+                                                                  aria-hidden="true">
+                                                            </span>
+                                                            <span>Saving...</span>
                                                         }
                                                         else
                                                         {
-                                                                            <span>Save Changes</span>
+                                                            <span>Save Changes</span>
                                                         }
-                                                                </button>
-                                                                <button class="btn btn-link"
-                                                                        @onclick="() => ToggleProductExpand(product.Id)"
-                                                                        disabled="@isUpdating">
-                                                                    Cancel
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
+                                                    </button>
+                                                    <button class="btn btn-link"
+                                                            @onclick="() => ToggleProductExpand(product.Id)"
+                                                            disabled="@isUpdating">
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
                                 }
                             }
+                        
                         </tbody>
                     </table>
 
@@ -1034,36 +944,11 @@
                             Showing @(((CurrentPage - 1) * PageSize) + 1) to @Math.Min(CurrentPage * PageSize, FilteredProducts.Count())
                             of @FilteredProducts.Count() items
                         </div>
-                        <div class="pagination">
-                            @{
-                                var totalPages = (int)Math.Ceiling(FilteredProducts.Count() / (double)PageSize);
-                                var windowStart = Math.Max(1, Math.Min(CurrentPage - 5, totalPages - 9));
-                                var windowEnd = Math.Min(totalPages, windowStart + 9);
-
-                                if (CurrentPage > 1)
-                                {
-                                    <button class="page-number" @onclick="() => NavigateToPage(CurrentPage - 1)">
-                                        <i class="bi bi-chevron-left"></i>
-                                    </button>
-                                }
-
-                                @for (int i = windowStart; i <= windowEnd; i++)
-                                {
-                                    var pageNumber = i;
-                                    <button class="page-number @(CurrentPage == pageNumber ? "active" : "")"
-                                            @onclick="() => NavigateToPage(pageNumber)">
-                                        @pageNumber
-                                    </button>
-                                }
-
-                                if (CurrentPage < totalPages)
-                                {
-                                    <button class="page-number" @onclick="() => NavigateToPage(CurrentPage + 1)">
-                                        <i class="bi bi-chevron-right"></i>
-                                    </button>
-                                }
-                            }
-                        </div>
+                        <sacmy.Client.Components.PaginationComponent 
+                            CurrentPage="@CurrentPage"
+                            TotalItems="@FilteredProducts.Count()"
+                            PageSize="@PageSize"
+                            OnPageChanged="@NavigateToPage" />
                     </div>
                 </div>
             }
@@ -1080,67 +965,20 @@
                 <div class="alert alert-success">@successMessage</div>
             }
 
+
             @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
                 <div class="alert alert-danger">@errorMessage</div>
             }
+        
         </div>
 
         <div class="col-xl-3">
-            <div class="overview-card">
-                <h2 class="stat-header">Overview</h2>
-
-                <div>
-                    <div class="stat-label">SKU Total</div>
-                    <div class="stat-value">@(FilteredProducts?.Count() ?? 0)</div>
-                </div>
-
-                <div style="margin-top: 1.5rem;">
-                    <div class="stat-row">
-                        <span class="stat-label">Available</span>
-                        <span class="stat-number" style="color: #10B981;">
-                            @(FilteredProducts?.Count(p => p.Quantity > 0) ?? 0)
-                        </span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill available" style="width: @(GetAvailablePercentage())%"></div>
-                    </div>
-
-                    <div class="stat-row">
-                        <span class="stat-label">Out of Stock</span>
-                        <span class="stat-number" style="color: #EF4444;">
-                            @(FilteredProducts?.Count(p => p.Quantity == 0) ?? 0)
-                        </span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill out-of-stock" style="width: @(GetOutOfStockPercentage())%"></div>
-                    </div>
-                </div>
-
-                <div class="hot-products">
-                    <div class="hot-header">
-                        <i class="bi bi-arrow-up-right hot-icon"></i>
-                        <span class="views-label">Hot Products</span>
-                    </div>
-
-                    <div class="hot-stats">
-                        <div class="views-row">
-                            <div>
-                                <div class="views-label">Top SKU Performance</div>
-                                <div class="views-sublabel">Last 7 days</div>
-                            </div>
-                            <div>
-                                <div class="views-number">349</div>
-                                <div class="views-sublabel">Views This Week</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <ProductOverviewPanel FilteredProducts="@FilteredProducts" SelectedProductId="@selectedProductIdforPriceChange" />
         </div>
     </div>
 
-    <!-- Progress Modal -->
+    <!-- Progress Modal (Kept in main page since it's using JS interactions) -->
     <div class="modal" id="pdfProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
@@ -1248,91 +1086,61 @@
         </div>
     </div>
 
-    @if (showNoteDialog)
-    {
-        <div class="modal fade show" style="display: block;" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Sticky Note Details</h5>
-                        <button type="button" class="btn-close" @onclick="CloseNoteDialog"></button>
-                    </div>
-                    <div class="modal-body">
-                        @if (selectedNote != null)
-                        {
-                            <div class="note-detail-header">
-                                <img class="note-detail-avatar"
-                                     src="@(selectedNote.Employee?.Image ?? "/images/placeholder-avatar.png")"
-                                     alt="Employee" />
-                                <div class="note-detail-info">
-                                    <div class="note-detail-name">
-                                        @(selectedNote.Employee?.FirstName) @(selectedNote.Employee?.LastName)
-                                    </div>
-                                    <div class="note-detail-title">
-                                        @(selectedNote.Employee?.JobTitle ?? "Employee")
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="note-detail-content">
-                                @selectedNote.Note
-                            </div>
-                            <div class="note-detail-date">
-                                Created on @selectedNote.CreatedDate.ToString("MMMM dd, yyyy")
-                            </div>
-                        }
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseNoteDialog">Close</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-backdrop fade show"></div>
-    }
 
 
-    @if (showAddDialog)
-    {
-        <div class="modal fade show" style="display: block;" tabindex="-1">
-            <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Add Sticky Note</h5>
-                        <button type="button" class="btn-close" @onclick="CloseAddDialog"></button>
-                    </div>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="noteText" class="form-label">Note</label>
-                            <textarea id="noteText"
-                                      class="form-control"
-                                      rows="3"
-                                      @bind="newNoteText"></textarea>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseAddDialog">Cancel</button>
-                        <button type="button" class="btn btn-primary" @onclick="AddNote">Add Note</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal-backdrop fade show"></div>
-    }
+    <!-- Modals/Dialogs -->
+    <StickyNoteDetailsDialog 
+        IsVisible="@showNoteDialog" 
+        Note="@selectedNote" 
+        OnClose="@CloseNoteDialog" />
 
+    <AddStickyNoteDialog 
+        IsVisible="@showAddDialog" 
+        ProductId="@selectedProductId" 
+        OnClose="@CloseAddDialog" 
+        OnNoteSaved="@AddNote" />
 
+    <AllNotesDialog 
+        IsVisible="@showAllNotesDialog" 
+        ProductId="@selectedProductForNotes"
+        Notes="@currentProductNotes"
+        OnClose="@CloseAllNotesDialog"
+        OnNoteSaved="@AddNoteFromTimeline" />
+
+    <StockMonitorDialog 
+        IsVisible="@showMonitorDialog" 
+        Model="@monitorModel" 
+        OnClose="@CloseMonitorDialog" 
+        OnSave="@SaveMonitoring" />
+
+    <AddBrandDialog 
+        IsVisible="@showAddBrandDialog" 
+        Brand="@newBrand" 
+        Error="@brandError"
+        IsCreating="@isCreatingBrand"
+        OnClose="@CloseAddBrandDialog" 
+        OnSave="@CreateBrand" />
+
+    <AdvancedEditDialog 
+        Product="@selectedProduct"
+        IsVisible="@showAdvancedEdit"
+        IsVisibleChanged="(value) => showAdvancedEdit = value"
+        OnSaved="@HandleAdvancedEditSaved"
+        Categories="@brandResponse?.Data?.Categories"
+        Collections="@brandResponse?.Data?.Collections"
+        Brands="@brands" />
+
+    <CustomizePriceDialog IsVisible="@showCustomizePriceDialog"
+                          SelectedCount="@selectedProductIds.Count"
+                          SelectedProductIds="@selectedProductIds.ToList()"
+                          OnClose="CloseCustomizePriceDialog"
+                          OnApplyCustomPrice="ApplyCustomPrice" />
 </div>
-
-<AdvancedEditDialog Product="selectedProduct"
-                    IsVisible="showAdvancedEdit"
-                    IsVisibleChanged="(value) => showAdvancedEdit = value"
-                    OnSaved="HandleAdvancedEditSaved"
-                    Categories="brandResponse?.Data?.Categories"
-                    Collections="brandResponse?.Data?.Collections"
-                    Brands="brands" />
 
 @code {
     private List<BrandViewModel> brands;
     private string selectedBrandId;
+    private string selectedProductIdforPriceChange;
     private bool isLoading = true;
     private string searchString = "";
     private string SelectedCategory = "";
@@ -1346,74 +1154,109 @@
     private string errorMessage = null;
     private IJSObjectReference _jsModule;
     private bool showOnlyInStock = false;
-    private Product selectedProduct;
+    private Product selectedProduct = new Product();
     private bool showAdvancedEdit;
-    private GetStickyNoteViewModel selectedNote;  // Changed from StickNote to GetStickyNoteViewModel
+    private GetStickyNoteViewModel selectedNote;
     private bool showNoteDialog = false;
     private bool showAddDialog = false;
     private string newNoteText = "";
     private string selectedProductId;
-
-    private void ShowNoteDetails(GetStickyNoteViewModel note)  // Changed parameter type
+    private bool showMonitorDialog = false;
+    private MonitorProductViewModel monitorModel = new();
+    private string selectedProductIdForMonitoring;
+    private bool showAllNotesDialog = false;
+    private List<GetStickyNoteViewModel> currentProductNotes;
+    private string selectedProductForNotes;
+    private bool isAddingNote = false;
+    private bool showAddBrandDialog = false;
+    private bool isCreatingBrand = false;
+    private string brandError = "";
+    private BrandViewModel newBrand = new();
+    private bool isResettingCache = false;
+    private bool showCustomizePriceDialog = false;
+    private void ShowCustomizePriceDialog()
     {
-        selectedNote = note;
-        showNoteDialog = true;
+        showCustomizePriceDialog = true;
     }
 
-    private void CloseNoteDialog()
+    private void CloseCustomizePriceDialog()
     {
-        showNoteDialog = false;
-        selectedNote = null;
+        showCustomizePriceDialog = false;
+        StateHasChanged();
     }
 
-    private void ShowAddNoteDialog(string productId)
+    private void SelectProduct(string productId)
     {
         selectedProductId = productId;
-        showAddDialog = true;
+        selectedProductIdforPriceChange = productId;
+        selectedProduct = FilteredProducts.FirstOrDefault(p => p.Id == productId);
+        StateHasChanged();
     }
 
-    private void CloseAddDialog()
+    private async Task ApplyCustomPrice(CustomPriceViewModel model)
     {
-        showAddDialog = false;
-        newNoteText = "";
-        selectedProductId = null;
-    }
-
-    private async Task AddNote()
-    {
-        if (string.IsNullOrWhiteSpace(newNoteText) || string.IsNullOrEmpty(selectedProductId))
-            return;
-
         try
         {
-            var model = new AddStickyNoteViewModel
-                {
-                    TableName = "Products",
-                    RecordId = Guid.Parse(selectedProductId),
-                    Note = newNoteText,
-                    EmployeeId = UserGlobal.User.Id
-                };
+            ToastService.ShowToast($"Custom pricing applied for {selectedProductIds.Count} products for customer {model.CustomerName}", "success");
 
-            var response = await stickyNoteService.CreateStickyNoteAsync(model);
+            // Optionally, refresh product data here
+            // await LoadBrands();
+            // await SetDefaultBrandAndLoadProducts();
 
-            if (response.Success)
-            {
-                ToastService.ShowToast("Note added successfully", "success");
-                await LoadBrands();
-                CloseAddDialog();
-            }
-            else
-            {
-                ToastService.ShowToast(response.Message ?? "Failed to add note", "error");
-            }
+            showCustomizePriceDialog = false;
+            StateHasChanged();
         }
         catch (Exception ex)
         {
-            ToastService.ShowToast($"Error adding note: {ex.Message}", "error");
+            ToastService.ShowToast($"Error applying custom prices: {ex.Message}", "error");
+        }
+    }
+    
+    // Selection properties
+    private HashSet<string> selectedProductIds = new HashSet<string>();
+    private bool AllProductsSelected
+    {
+        get => FilteredProducts.Any() && selectedProductIds.Count == FilteredProducts.Count();
+        set
+        {
+            if (value)
+            {
+                selectedProductIds = new HashSet<string>(FilteredProducts.Select(p => p.Id));
+            }
+            else
+            {
+                selectedProductIds.Clear();
+            }
+            StateHasChanged();
         }
     }
 
-   
+    // Selection methods
+    private bool IsProductSelected(string productId) => selectedProductIds.Contains(productId);
+
+    private void ToggleProductSelection(string productId, ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked)
+        {
+            if (isChecked)
+            {
+                selectedProductIds.Add(productId);
+            }
+            else
+            {
+                selectedProductIds.Remove(productId);
+            }
+        }
+        StateHasChanged();
+    }
+
+    // Method to get selected products (for future use)
+    private List<Product> GetSelectedProducts()
+    {
+        return FilteredProducts
+            .Where(p => selectedProductIds.Contains(p.Id))
+            .ToList();
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -1426,37 +1269,6 @@
         catch (Exception ex)
         {
             Console.WriteLine($"Error loading data: {ex.Message}");
-        }
-    }
-
-    private async Task GeneratePDF()
-    {
-        try
-        {
-            var productsToExport = FilteredProducts?.Select(p => new
-            {
-                sku = p.Sku,
-                patternNumber = p.PatternNumber,
-                price = p.Price,
-                image = p.Image,
-                boxCount = p.BoxCount,
-                pieceCount = p.PieceCount
-            }).ToList();
-
-            if (productsToExport == null || !productsToExport.Any())
-            {
-                errorMessage = "No products available to generate PDF.";
-                StateHasChanged();
-                return;
-            }
-
-            // Show modal with price adjustment option
-            await JS.InvokeVoidAsync("showPdfModal", productsToExport);
-        }
-        catch (Exception ex)
-        {
-            errorMessage = $"Error generating PDF: {ex.Message}";
-            StateHasChanged();
         }
     }
 
@@ -1550,22 +1362,37 @@
     private bool IsProductExpanded(string productId) =>
         expandedProductIds.Contains(productId);
 
-    private double GetAvailablePercentage()
+    private async Task GeneratePDF()
     {
-        var total = FilteredProducts?.Count() ?? 0;
-        if (total == 0) return 0;
-        var available = FilteredProducts?.Count(p => p.Quantity > 0) ?? 0;
-        return (double)available / total * 100;
-    }
+        try
+        {
+            var productsToExport = FilteredProducts?.Select(p => new
+            {
+                sku = p.Sku,
+                patternNumber = p.PatternNumber,
+                price = p.Price,
+                image = p.Image,
+                boxCount = p.BoxCount,
+                pieceCount = p.PieceCount
+            }).ToList();
 
-    private double GetOutOfStockPercentage()
-    {
-        var total = FilteredProducts?.Count() ?? 0;
-        if (total == 0) return 0;
-        var outOfStock = FilteredProducts?.Count(p => p.Quantity == 0) ?? 0;
-        return (double)outOfStock / total * 100;
-    }
+            if (productsToExport == null || !productsToExport.Any())
+            {
+                errorMessage = "No products available to generate PDF.";
+                StateHasChanged();
+                return;
+            }
 
+            // Show modal with price adjustment option
+            await JS.InvokeVoidAsync("showPdfModal", productsToExport);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error generating PDF: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+    
     private async Task ShowAdvancedEdit(Product product)
     {
         try
@@ -1583,8 +1410,8 @@
 
     private async Task HandleAdvancedEditSaved()
     {
-        await LoadBrands();
-        await SetDefaultBrandAndLoadProducts();
+        showAdvancedEdit = false;
+        StateHasChanged();
     }
 
     private async Task SaveChanges(Product product)
@@ -1595,20 +1422,21 @@
         try
         {
             var updateModel = new UpdateProductViewModel
-                {
-                    ProductId = Guid.Parse(product.Id),
-                    Name = product.Name,
-                    PatternNumber = product.PatternNumber,
-                    Price = double.Parse(product.Price.ToString()),
-                    CategoryId = product.CategoryId,
-                    CollectionId = product.SeriesOrCollectionId,
-                    Quantity = product.Quantity,
-                    OuterTypeCount = product.BoxCount ?? 0,
-                    InnerTypeCount = product.PieceCount ?? 0,
-                    Points = product.Points,
-
-                    Volume = double.Parse(product.Volume.ToString())
-                };
+            {
+                ProductId = Guid.Parse(product.Id),
+                Name = product.Name,
+                PatternNumber = product.PatternNumber,
+                Price = double.Parse(product.Price.ToString()),
+                CategoryId = product.CategoryId,
+                CollectionId = product.SeriesOrCollectionId,
+                Quantity = product.Quantity,
+                OuterTypeCount = product.BoxCount ?? 0,
+                InnerTypeCount = product.PieceCount ?? 0,
+                Upc = product.Upc,
+                Ean = product.Ean,
+                Points = product.Points,
+                Volume = double.Parse(product.Volume.ToString())
+            };
 
             var response = await ProductsService.UpdateProductAsync(updateModel);
 
@@ -1632,7 +1460,273 @@
             isUpdating = false;
             ToggleProductExpand(product.Id);
             StateHasChanged();
+        }
+    }
 
+    #region Dialog Management
+
+    // Sticky Note Details Dialog
+    private void ShowNoteDetails(GetStickyNoteViewModel note)
+    {
+        selectedNote = note;
+        showNoteDialog = true;
+    }
+
+    private void CloseNoteDialog()
+    {
+        showNoteDialog = false;
+        selectedNote = null;
+    }
+
+    // Add Note Dialog
+    private void ShowAddNoteDialog(string productId)
+    {
+        selectedProductId = productId;
+        showAddDialog = true;
+    }
+
+    private void CloseAddDialog()
+    {
+        showAddDialog = false;
+        newNoteText = "";
+        selectedProductId = null;
+    }
+
+    private async Task AddNote()
+    {
+        if (string.IsNullOrWhiteSpace(newNoteText) || string.IsNullOrEmpty(selectedProductId))
+            return;
+
+        try
+        {
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = "Products",
+                    RecordId = selectedProductId,
+                    Note = newNoteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await stickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                ToastService.ShowToast("Note added successfully", "success");
+                await LoadBrands();
+                CloseAddDialog();
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message ?? "Failed to add note", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error adding note: {ex.Message}", "error");
+        }
+    }
+
+    // All Notes Dialog
+    private void ShowAllNotes(string productId, List<GetStickyNoteViewModel> notes)
+    {
+        selectedProductForNotes = productId;
+        currentProductNotes = notes;
+        showAllNotesDialog = true;
+    }
+
+    private void CloseAllNotesDialog()
+    {
+        showAllNotesDialog = false;
+        selectedProductForNotes = null;
+        currentProductNotes = null;
+        newNoteText = "";
+    }
+
+    private async Task AddNoteFromTimeline()
+    {
+        if (string.IsNullOrWhiteSpace(newNoteText))
+        {
+            ToastService.ShowToast("Cannot add empty note", "warning");
+            return;
+        }
+
+        try
+        {
+            isAddingNote = true;
+
+            var model = new AddStickyNoteViewModel
+                {
+                    TableName = "Products",
+                    RecordId = selectedProductForNotes,
+                    Note = newNoteText,
+                    EmployeeId = UserGlobal.User.Id
+                };
+
+            var response = await stickyNoteService.CreateStickyNoteAsync(model);
+
+            if (response.Success)
+            {
+                // Refresh the product data
+                await LoadBrands();
+
+                // Get the updated product data
+                brandResponse = await ProductsService.GetProductsByBrandAsync(selectedBrandId);
+
+                // Find the current product and update the notes list
+                var updatedProduct = brandResponse?.Data?.Products?
+                    .FirstOrDefault(p => p.Id == selectedProductForNotes);
+
+                if (updatedProduct != null)
+                {
+                    currentProductNotes = updatedProduct.StickyNotes;
+                    StateHasChanged();
+                }
+
+                newNoteText = ""; // Clear the input
+                ToastService.ShowToast("Note added successfully", "success");
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message ?? "Failed to add note", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error adding note: {ex.Message}", "error");
+        }
+        finally
+        {
+            isAddingNote = false;
+            StateHasChanged();
+        }
+    }
+
+    // Stock Monitor Dialog
+    private void ShowMonitorDialog(string productId)
+    {
+        selectedProductIdForMonitoring = productId;
+        monitorModel = new MonitorProductViewModel
+            {
+                ProductID = Guid.Parse(productId),
+                EmployeeID = UserGlobal.User.Id,
+                Threshold = 10 // Default suggested threshold
+            };
+        showMonitorDialog = true;
+    }
+
+    private void CloseMonitorDialog()
+    {
+        showMonitorDialog = false;
+        selectedProductIdForMonitoring = null;
+        monitorModel = new();
+    }
+
+    private async Task SaveMonitoring()
+    {
+        if (monitorModel.Threshold <= 0)
+        {
+            ToastService.ShowToast("Threshold must be greater than 0", "warning");
+            return;
+        }
+
+        try
+        {
+            var response = await ProductsService.MonitorProductAsync(monitorModel);
+
+            if (response.Success)
+            {
+                ToastService.ShowToast("Stock alert threshold set successfully", "success");
+                CloseMonitorDialog();
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message ?? "Failed to set stock alert threshold", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error setting stock alert threshold: {ex.Message}", "error");
+        }
+    }
+
+    // Add Brand Dialog
+    private void ShowAddBrandDialog()
+    {
+        showAddBrandDialog = true;
+        newBrand = new BrandViewModel();
+        brandError = "";
+    }
+
+    private void CloseAddBrandDialog()
+    {
+        showAddBrandDialog = false;
+        newBrand = new BrandViewModel();
+        brandError = "";
+    }
+
+    private async Task CreateBrand()
+    {
+        if (string.IsNullOrWhiteSpace(newBrand.NameEn) ||
+            string.IsNullOrWhiteSpace(newBrand.NameAr) ||
+            string.IsNullOrWhiteSpace(newBrand.Image))
+        {
+            brandError = "Please fill in all fields";
+            return;
+        }
+
+        try
+        {
+            isCreatingBrand = true;
+            brandError = "";
+
+            var response = await BrandService.CreateBrandAsync(newBrand);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await LoadBrands(); // Refresh the brands list
+                ToastService.ShowToast("Brand created successfully", "success");
+                CloseAddBrandDialog();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                brandError = $"Failed to create brand: {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            brandError = $"Error creating brand: {ex.Message}";
+        }
+        finally
+        {
+            isCreatingBrand = false;
+            StateHasChanged();
+        }
+    }
+    #endregion
+
+    private async Task ResetCache()
+    {
+        try
+        {
+            isResettingCache = true;
+            StateHasChanged();
+
+            await ProductsService.ResetCacheAsync();
+
+            // Refresh data after cache clear
+            await SetDefaultBrandAndLoadProducts();
+
+            ToastService.ShowToast("Cache reset and data refreshed successfully", "success");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error resetting cache: {ex.Message}", "error");
+        }
+        finally
+        {
+            isResettingCache = false;
+            StateHasChanged();
         }
     }
 }

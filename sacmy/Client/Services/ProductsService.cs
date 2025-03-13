@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using sacmy.Shared.Core;
 using sacmy.Shared.ViewModels.BrandViewModel;
+using sacmy.Shared.ViewModels.LowStockViewModels;
 using sacmy.Shared.ViewModels.Products;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -29,52 +30,94 @@ namespace sacmy.Client.Services
                 // Construct the endpoint with only brandId
                 var url = $"api/Product/{brandId}";
 
-                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+                // Create a custom HttpClient with extended timeout
+                using var customClient = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+                customClient.Timeout = TimeSpan.FromMinutes(5); // Extend timeout to 5 minutes
 
                 // Log the full request details
-                Console.WriteLine($"Base Address: {client.BaseAddress}");
+                Console.WriteLine($"[{DateTime.Now}] Starting request");
+                Console.WriteLine($"Base Address: {customClient.BaseAddress}");
                 Console.WriteLine($"Relative URL: {url}");
-                Console.WriteLine($"Full URL: {new Uri(client.BaseAddress, url)}");
+                Console.WriteLine($"Full URL: {new Uri(customClient.BaseAddress, url)}");
+                Console.WriteLine($"Timeout set to: {customClient.Timeout}");
 
-                // Make the request
-                var response = await client.GetAsync(url);
-                var responseContent = await response.Content.ReadAsStringAsync();
+                // Make the request with cancellation token that respects the timeout
+                Console.WriteLine($"[{DateTime.Now}] Sending request...");
+                var response = await customClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+                Console.WriteLine($"[{DateTime.Now}] Response headers received");
 
-                // Log the raw response
-                Console.WriteLine($"Response Status: {response.StatusCode}");
-                Console.WriteLine($"Raw Response Content: {responseContent}");
+                // Read content as stream to avoid memory issues with large responses
+                using var contentStream = await response.Content.ReadAsStreamAsync();
+                Console.WriteLine($"[{DateTime.Now}] Response stream opened");
 
                 if (response.IsSuccessStatusCode)
                 {
-                    // If successful, deserialize the JSON into BrandResponse
-                    var content = await response.Content.ReadFromJsonAsync<BrandResponse>();
-                    return content;
+                    Console.WriteLine($"Response Status: {response.StatusCode}");
+
+                    // Use System.Text.Json directly with stream for better performance
+                    var options = new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        AllowTrailingCommas = true
+                    };
+
+                    Console.WriteLine($"[{DateTime.Now}] Deserializing response...");
+                    var content = await System.Text.Json.JsonSerializer.DeserializeAsync<BrandResponse>(contentStream, options);
+                    Console.WriteLine($"[{DateTime.Now}] Deserialization complete");
+
+                    if (content != null)
+                    {
+                        var productCount = content.Data?.Products?.Count ?? 0;
+                        Console.WriteLine($"Received {productCount} products");
+                        return content;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Warning: Deserialized content is null");
+                        return CreateEmptyBrandResponse(brandId);
+                    }
                 }
                 else
                 {
-                    // Log any error text
-                    Console.WriteLine($"Error Response: {responseContent}");
+                    // Read error content differently to avoid issues
+                    using var reader = new StreamReader(contentStream);
+                    var errorContent = await reader.ReadToEndAsync();
 
-                    // Return an "empty" BrandResponse to avoid null exceptions in the UI
-                    return new BrandResponse
-                    {
-                        Data = new BrandData
-                        {
-                            Products = new List<Product>(),
-                            Categories = new List<Category>(),
-                            Collections = new List<Collection>(),
-                            Advertises = new List<Advertise>()
-                        }
-                    };
+                    // Log any error text
+                    Console.WriteLine($"Error Response Status: {response.StatusCode}");
+                    Console.WriteLine($"Error Response: {errorContent}");
+
+                    return CreateEmptyBrandResponse(brandId);
                 }
+            }
+            catch (TaskCanceledException ex)
+            {
+                Console.WriteLine($"[{DateTime.Now}] Request timed out: {ex.Message}");
+                return CreateEmptyBrandResponse(brandId);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Exception type: {ex.GetType().Name}");
+                Console.WriteLine($"[{DateTime.Now}] Exception type: {ex.GetType().Name}");
                 Console.WriteLine($"Exception message: {ex.Message}");
                 Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 throw;
             }
+        }
+
+        // Helper method to create empty brand response
+        private BrandResponse CreateEmptyBrandResponse(string brandId)
+        {
+            return new BrandResponse
+            {
+                Id = brandId,
+                Data = new BrandData
+                {
+                    Products = new List<Product>(),
+                    Categories = new List<Category>(),
+                    Collections = new List<Collection>(),
+                    Advertises = new List<Advertise>()
+                }
+            };
         }
 
         public async Task<ApiResponse> UpdateProductAsync(UpdateProductViewModel model)
@@ -145,7 +188,36 @@ namespace sacmy.Client.Services
             }
         }
 
-        public async Task<ApiResponse> AddProductImageAsync(string productId, Stream imageStream, string fileName)
+        public async Task<ApiResponse> MonitorProductAsync(MonitorProductViewModel model)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+
+                // ✅ Make POST request
+                var response = await client.PostAsJsonAsync("api/lowstock/monitor", model);
+
+                // ✅ Debug Logging
+                Console.WriteLine($"Request URL: {client.BaseAddress}api/lowstock/monitor");
+                Console.WriteLine($"Request payload: {JsonConvert.SerializeObject(model)}");
+
+                // ✅ Deserialize response directly as `ApiResponse`
+                var responseContent = await response.Content.ReadFromJsonAsync<ApiResponse>();
+
+                return responseContent ?? new ApiResponse { Success = false, Message = "Empty response from API" };
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception: {ex.Message}");
+                return new ApiResponse
+                {
+                    Success = false,
+                    Message = $"Request failed: {ex.Message}"
+                };
+            }
+        }
+
+        public async Task<ApiResponse> AddProductImageAsync(string productId, Stream imageStream, string fileName, string brand)
         {
             try
             {
@@ -161,9 +233,17 @@ namespace sacmy.Client.Services
 
                 // Add the product ID
                 content.Add(new StringContent(productId), "productId");
+                HttpResponseMessage response;
 
                 // Send the request
-                var response = await client.PostAsync("api/Product/AddProductImage", content);
+                if (brand == "boona")
+                {
+                    response = await client.PostAsync("api/Product/AddProductImage", content);
+                }
+                else
+                {
+                    response = await client.PostAsync("api/Product/AddBonnaImage", content);
+                }
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -257,5 +337,4 @@ namespace sacmy.Client.Services
         }
 
     }
-
 }

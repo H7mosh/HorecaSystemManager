@@ -1,0 +1,279 @@
+﻿/* Common Modal Styles */
+.modal-backdrop {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-header .dialog-icon {
+    margin-right: 0.5rem;
+}
+
+.btn-close-white {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Animation for all dialogs */
+.modal.fade .modal-dialog {
+    transition: transform 0.2s ease-out;
+    transform: translate(0, -25px);
+}
+
+.modal.show .modal-dialog {
+    transform: translate(0, 0);
+}
+
+/* ==========================================
+   Dialog Styles - Common for all dialog types
+   ========================================== */
+.modal-header {
+    background-color: #3B82F6;
+    color: white;
+}
+
+    .modal-header .modal-title {
+        font-weight: 600;
+    }
+
+    .modal-header .btn-close-white {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+
+.dialog-icon {
+    margin-right: 0.5rem;
+}
+
+/* Note Details Dialog */
+.note-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #E5E7EB;
+}
+
+.note-detail-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+}
+
+.note-detail-info {
+    flex: 1;
+}
+
+.note-detail-name {
+    font-weight: 600;
+    font-size: 16px;
+    color: #111827;
+}
+
+.note-detail-title {
+    font-size: 14px;
+    color: #6B7280;
+}
+
+.note-detail-content {
+    font-size: 16px;
+    line-height: 1.5;
+    color: #374151;
+    margin-bottom: 16px;
+}
+
+.note-detail-date {
+    font-size: 14px;
+    color: #6B7280;
+}
+
+/* Notes Timeline */
+.notes-timeline {
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 0.5rem;
+}
+
+.note-timeline-item {
+    padding: 1rem;
+    border-left: 2px solid #e5e7eb;
+    margin-left: 1rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+    .note-timeline-item::before {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: #3b82f6;
+        border-radius: 50%;
+        left: -7px;
+        top: 1.5rem;
+    }
+
+.note-timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.5rem;
+}
+
+.note-timeline-content {
+    margin-left: 3.5rem;
+    color: #374151;
+}
+
+.note-author-image {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+}
+
+.note-author-name {
+    font-weight: 600;
+    color: #111827;
+    font-size: 14px;
+    line-height: 1.25;
+}
+
+.note-author-title {
+    color: #6B7280;
+    font-size: 12px;
+}
+
+.note-date {
+    font-size: 12px;
+    color: #6B7280;
+}
+
+/* Add Note Section */
+.add-note-section {
+    background: #f9fafb;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
+}
+
+    .add-note-section textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+/* Form Controls */
+.form-label {
+    font-weight: 500;
+    color: #374151;
+}
+
+.form-control-lg {
+    font-size: 1.125rem;
+    height: calc(1.5em + 1rem + 2px);
+}
+
+.input-group-text {
+    font-weight: 500;
+    background-color: #F3F4F6;
+    border-color: #D1D5DB;
+    color: #6B7280;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6B7280;
+    margin-top: 0.5rem;
+}
+
+/* Alert Boxes */
+.alert {
+    display: flex;
+    align-items: center;
+    border-radius: 0.5rem;
+}
+
+.alert-info {
+    background-color: #EFF6FF;
+    color: #1E40AF;
+    border-color: #BFDBFE;
+}
+
+.alert-danger {
+    background-color: #FEF2F2;
+    color: #991B1B;
+    border-color: #FEE2E2;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+/* ==========================================
+   Button Styles
+   ========================================== */
+.modal-footer .btn-primary {
+    background-color: #3B82F6;
+    border-color: #3B82F6;
+    font-weight: 500;
+}
+
+    .modal-footer .btn-primary:hover:not(:disabled) {
+        background-color: #2563EB;
+        border-color: #2563EB;
+    }
+
+.modal-footer .btn-secondary,
+.modal-footer .btn-light {
+    background-color: #F3F4F6;
+    border-color: #D1D5DB;
+    color: #374151;
+    font-weight: 500;
+}
+
+    .modal-footer .btn-secondary:hover,
+    .modal-footer .btn-light:hover {
+        background-color: #E5E7EB;
+        border-color: #9CA3AF;
+    }
+
+/* ==========================================
+   Responsive Adjustments
+   ========================================== */
+@media (max-width: 768px) {
+    .note-timeline-content {
+        margin-left: 0;
+    }
+
+    .note-timeline-header {
+        flex-direction: column;
+    }
+
+        .note-timeline-header .note-date {
+            margin-top: 0.5rem;
+        }
+
+    .add-note-section {
+        flex-direction: column;
+    }
+
+        .add-note-section button {
+            margin-top: 0.5rem;
+            align-self: flex-end;
+        }
+
+    .modal-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+        .modal-footer .btn {
+            width: 100%;
+        }
+
+    .form-row,
+    .form-row.three-columns {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .quick-edit-form {
+        padding: 1rem;
+        margin: 0.5rem;
+    }
+}

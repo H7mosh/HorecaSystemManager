@@ -22,34 +22,40 @@ namespace sacmy.Server.Controller
         [HttpPost("signin")]
         public async Task<IActionResult> SignIn([FromBody] SigninPostRequestViewModel signinPostRequestViewModel)
         {
-            var employee = await _context.Employees
-                .Select(e => new UserViewModel
-                {
-                    Id = e.Id,
-                    FirstName = e.FirstName,
-                    LastName = e.LastName,
-                    Branch = e.Branch,
-                    Brand = e.Brand,
-                    Code = e.Code,
-                    Image = e.Image,
-                    FirebaseToken = e.FirebaseToken,
-                    JobTitle = e.JobTitle,
-                    CreatedDate = e.CreatedDate,
-                    PhoneNumber = e.PhoneNumber,
-                    Role = e.Role.Role
-                })
-                .FirstOrDefaultAsync(e => e.PhoneNumber == signinPostRequestViewModel.PhoneNumber && e.Code == signinPostRequestViewModel.Password);
+            try
+            {
+                var employee = await _context.Employees
+                    .Select(e => new UserViewModel
+                    {
+                        Id = e.Id,
+                        FirstName = e.FirstName,
+                        LastName = e.LastName,
+                        Branch = e.Branch,
+                        Brand = e.Brand,
+                        Code = e.Code,
+                        Image = e.Image,
+                        FirebaseToken = e.FirebaseToken,
+                        JobTitle = e.JobTitle,
+                        CreatedDate = e.CreatedDate,
+                        PhoneNumber = e.PhoneNumber,
+                        Role = e.Role.Role
+                    })
+                    .FirstOrDefaultAsync(e => e.PhoneNumber == signinPostRequestViewModel.PhoneNumber && e.Code == signinPostRequestViewModel.Password);
 
-            if (employee != null)
-            {
-                return Ok(employee);
+                if (employee != null)
+                {
+                    return Ok(employee);
+                }
+                else
+                {
+                    return NotFound("Username or password are incorrect");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                return NotFound("username or password are incorrect");
+                // Log the exception (consider using a logging framework like Serilog, NLog, or built-in ILogger)
+                return StatusCode(500, "An error occurred while processing your request. Please try again later.");
             }
         }
-
-
     }
 }

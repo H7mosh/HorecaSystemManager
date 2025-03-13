@@ -29,17 +29,13 @@ builder.Services.AddScoped<FileService>();
 builder.Services.AddScoped<ReportService>();
 builder.Services.AddScoped<StoreService>();
 builder.Services.AddScoped<RedisCacheService>();
+builder.Services.AddHostedService<LowStockCheckerService>();
+builder.Services.AddHostedService<LowStockNotificationService>();
 
 
 builder.Services.AddStackExchangeRedisCache(options =>
 {
-    options.Configuration = "46.165.247.249:6379";
-    options.InstanceName = "RedisCacheInstance";
-});
-
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = "46.165.247.249:6379";
+    options.Configuration = "46.165.247.249:6379,password=Hamosh1995";
     options.InstanceName = "RedisCacheInstance";
 });
 

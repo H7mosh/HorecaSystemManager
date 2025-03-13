@@ -1,0 +1,733 @@
+﻿@using System.Linq.Expressions
+@typeparam TItem
+@using sacmy.Client.Services
+@using sacmy.Client.Shared.Components.CustomDataGrid
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.CustomerTracker
+@using sacmy.Shared.ViewModels.InvoiceViewModel
+@using sacmy.Shared.ViewModels.TasksViewModel
+@inject UserGlobalClass UserGlobal
+@inject IJSRuntime JSRuntime
+@inject TaskService TaskService
+
+<style>
+    /* DataGrid Container */
+    .data-grid-container {
+        background-color: #fff;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin-bottom: 2rem;
+    }
+
+    /* Toolbar Styling */
+    .toolbar {
+        min-height: 60px;
+        background-color: #fff;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    /* Search Field Styling */
+    .search-field {
+        min-width: 250px;
+        background-color: #f9fafb;
+        border-color: #e5e7eb;
+        transition: all 0.2s ease;
+    }
+
+        .search-field:hover, .search-field:focus {
+            background-color: #fff;
+            border-color: #3b82f6;
+        }
+
+    /* Table Styling */
+    .table {
+        margin-bottom: 0;
+    }
+
+        .table thead {
+            background-color: #5D9EFD;
+        }
+
+            .table thead th {
+                color: #121212;
+                font-weight: 600;
+                font-size: 0.875rem;
+                padding: 12px;
+                border-bottom: 1px solid #64b5f6;
+            }
+
+        .table tbody td {
+            padding: 12px;
+            color: #1f2937;
+            font-size: 0.875rem;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s ease;
+            height: 60px;
+        }
+
+            .table tbody tr:hover {
+                background-color: #C9DEFE;
+            }
+
+            /* Even row styling */
+            .table tbody tr:nth-child(even) {
+                background-color: #F4F9FF;
+            }
+
+    /* Pagination Styling */
+    .pagination .page-link {
+        color: #3b82f6;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+        color: white;
+    }
+
+    .pagination .page-link:focus {
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+
+    /* Form Controls */
+    .form-check-input:checked {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+    .form-check-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+
+    .form-select:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+
+    /* Selection Highlighting */
+    .table-primary {
+        --bs-table-bg: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Row Buttons */
+    .btn-primary {
+        background-color: #3b82f6;
+        border-color: #3b82f6;
+    }
+
+        .btn-primary:hover {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+
+    /* Animation for Row Selection */
+    .table tr.table-primary {
+        animation: selectPulse 0.4s ease-out;
+    }
+
+    @@keyframes selectPulse {
+        0%
+
+    {
+        background-color: rgba(96, 165, 250, 0.3);
+    }
+
+    100% {
+        background-color: rgba(59, 130, 246, 0.1);
+    }
+
+    }
+
+    /* Tab styling */
+    .custom-active-link.active {
+        background-color: transparent !important;
+        color: blue !important;
+        border-bottom: 2px solid blue !important;
+    }
+
+    .custom-inactive-link {
+        color: darkgrey;
+    }
+
+        .custom-inactive-link:hover {
+            color: blue;
+            border-bottom: 2px solid blue;
+        }
+
+    /* Employee image in task modal */
+    .employee-image {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 5px;
+        vertical-align: middle;
+    }
+
+    /* Sticky Notes styling */
+    .note-button {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: #3B82F6;
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin: 0 auto;
+        transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+        .note-button:hover {
+            transform: scale(1.1);
+            background-color: #2563EB;
+        }
+
+    .note-avatars-row {
+        display: flex;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .note-avatar-item {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 2px solid white;
+        margin-left: -8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+        .note-avatar-item:first-child {
+            margin-left: 0;
+        }
+
+        .note-avatar-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+    /* Responsive Adjustments */
+    @@media (max-width: 768px) {
+        .toolbar
+
+    {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: stretch !important;
+        padding: 1rem;
+    }
+
+    .search-field {
+        min-width: 100%;
+    }
+
+    .table thead th, .table tbody td {
+        padding: 0.75rem;
+    }
+
+    .pagination .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    }
+
+    /* Print Styles */
+    @@media print {
+        .data-grid-container
+
+    {
+        box-shadow: none;
+        background-color: white;
+    }
+
+    .toolbar, .pagination {
+        display: none !important;
+    }
+
+    .table {
+        border: none !important;
+    }
+
+    }</style>
+
+<div class="data-grid-container">
+    <!-- Toolbar -->
+    <div class="toolbar d-flex justify-content-between align-items-center mb-3 p-3 bg-white border-bottom">
+        <div>
+            @if (ShowSwitch)
+            {
+                <div class="form-check form-switch me-4">
+                    <input class="form-check-input" type="checkbox" id="gridSwitch"
+                           checked="@SwitchValue" disabled="@SwitchDisabled"
+                           @onchange="OnBootstrapSwitchChanged">
+                    <label class="form-check-label" for="gridSwitch">@SwitchLabel</label>
+                </div>
+            }
+        </div>
+        <div>
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control search-field"
+                       placeholder="Search"
+                       @bind-value="SearchString"
+                       @bind-value:event="oninput"
+                       @onkeyup="UpdateQuickFilter">
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
+                <tr>
+                    @if (MultiSelection)
+                    {
+                        <th width="40">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox"
+                                       checked="@(SelectAll)" @onchange="ToggleSelectAll" id="selectAll">
+                                <label class="form-check-label" for="selectAll"></label>
+                            </div>
+                        </th>
+                    }
+                    @foreach (var column in Columns)
+                    {
+                        <th @onclick="() => SortTable(column)" style="cursor: pointer;">
+                            @column.Title
+                            @if (SortField == column.Property.ToString())
+                            {
+                                <span>
+                                    @if (SortDirection == sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending)
+                                    {
+                                        <i class="bi bi-caret-up-fill"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-caret-down-fill"></i>
+                                    }
+                                </span>
+                            }
+                        </th>
+                    }
+                    @if (ShowRowButton)
+                    {
+                        <th>@RowButtonTitle</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @if (FilteredItems.Any())
+                {
+                    @foreach (var item in PagedItems)
+                    {
+                        <tr class="@(SelectedItems.Contains(item) ? "table-primary" : "")"
+                            @onclick="(e) => OnRowItemClick(item, e)">
+                            @if (MultiSelection)
+                            {
+                                <td @onclick:stopPropagation="true">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox"
+                                               checked="@(SelectedItems.Contains(item))"
+                                               @onchange="(e) => ToggleSelection(item, e)"
+                                               id="check-@GetItemId(item)">
+                                        <label class="form-check-label" for="check-@GetItemId(item)"></label>
+                                    </div>
+                                </td>
+                            }
+                            @foreach (var column in Columns)
+                            {
+                                @if (column.IsStickyNoteColumn)
+                                {
+                                    <td class="text-center" @onclick:stopPropagation="true">
+                                        @{
+                                            var notesValue = column.Property.Compile().Invoke(item);
+                                            var notes = notesValue as System.Collections.Generic.IEnumerable<object>;
+                                            bool hasNotes = notes != null && notes.Any();
+                                        }
+                                        @if (!hasNotes)
+                                        {
+                                            <button type="button" class="note-button" @onclick="() => OnAddNoteHandler(item)">
+                                                <i class="bi bi-plus"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <div class="note-avatars-row" @onclick="() => OnViewNotesHandler(item)">
+                                                @foreach (dynamic note in notes.Take(5))
+                                                {
+                                                    <div class="note-avatar-item">
+                                                        <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")" alt="Employee" />
+                                                    </div>
+                                                }
+                                            </div>
+                                        }
+                                    </td>
+                                }
+                                else
+                                {
+                                    <td>
+                                        @{
+                                            var value = column.Property.Compile().Invoke(item);
+                                            var displayValue = column.Formatter != null
+                                            ? column.Formatter(item)
+                                            : value?.ToString();
+                                        }
+                                        @displayValue
+                                    </td>
+                                }
+                            }
+                            @if (ShowRowButton)
+                            {
+                                <td @onclick:stopPropagation="true">
+                                    <button class="btn btn-primary btn-sm"
+                                            @onclick="() => OnRowButtonClickHandler(item)">
+                                        @if (!string.IsNullOrEmpty(RowButtonIcon))
+                                        {
+                                            <i class="@RowButtonIcon me-1"></i>
+                                        }
+                                        @RowButtonText
+                                    </button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="@(Columns.Count + (MultiSelection ? 1 : 0) + (ShowRowButton ? 1 : 0))" class="text-center py-4">
+                            No data available
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center p-2 bg-light border-top">
+        <div>
+            Showing @(FilteredItems.Any() ? (CurrentPage - 1) * PageSize + 1 : 0) to @Math.Min(CurrentPage * PageSize, FilteredItems.Count()) of @FilteredItems.Count() entries
+        </div>
+        <nav>
+            <ul class="pagination mb-0">
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(1)" disabled="@(CurrentPage == 1)">First</button>
+                </li>
+                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">Previous</button>
+                </li>
+
+                @for (int i = Math.Max(1, CurrentPage - 2); i <= Math.Min(TotalPages, CurrentPage + 2); i++)
+                {
+                    int pageNumber = i;
+                    <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
+                        <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
+                    </li>
+                }
+
+                <li class="page-item @(CurrentPage == TotalPages || TotalPages == 0 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages || TotalPages == 0)">Next</button>
+                </li>
+                <li class="page-item @(CurrentPage == TotalPages || TotalPages == 0 ? "disabled" : "")">
+                    <button class="page-link" @onclick="() => ChangePage(TotalPages)" disabled="@(CurrentPage == TotalPages || TotalPages == 0)">Last</button>
+                </li>
+            </ul>
+        </nav>
+        <div>
+            <select class="form-select form-select-sm" @bind="PageSize">
+                <option value="5">5</option>
+                <option value="10">10</option>
+                <option value="25">25</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+@code {
+    // Parameters for data
+    [Parameter] public IEnumerable<TItem> Items { get; set; } = new List<TItem>();
+    [Parameter] public List<ColumnDefinition<TItem>> Columns { get; set; } = new List<ColumnDefinition<TItem>>();
+    [Parameter] public Func<TItem, bool> QuickFilter { get; set; }
+    [Parameter] public bool MultiSelection { get; set; } = true;
+    [Parameter] public bool Filterable { get; set; } = true;
+
+    // Search functionality
+    [Parameter] public string SearchString { get; set; } = string.Empty;
+    [Parameter] public EventCallback<string> SearchStringChanged { get; set; }
+
+    // Row click handlers
+    [Parameter] public EventCallback<sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<TItem>> OnRowClick { get; set; }
+    [Parameter] public EventCallback<HashSet<TItem>> OnSelectedItemsChanged { get; set; }
+
+    // Switch parameters
+    [Parameter] public bool ShowSwitch { get; set; }
+    [Parameter] public bool SwitchValue { get; set; }
+    [Parameter] public EventCallback<bool> SwitchValueChanged { get; set; }
+    [Parameter] public string SwitchLabel { get; set; } = "Toggle";
+    [Parameter] public string SwitchClassName { get; set; }
+    [Parameter] public bool SwitchDisabled { get; set; }
+
+    // Row Button Parameters
+    [Parameter] public bool ShowRowButton { get; set; }
+    [Parameter] public string RowButtonText { get; set; } = "Action";
+    [Parameter] public string RowButtonTitle { get; set; } = "Actions";
+    [Parameter] public string RowButtonIcon { get; set; } = "bi bi-pencil";
+    [Parameter] public EventCallback<TItem> OnRowButtonClick { get; set; }
+
+    // Sticky Note handlers
+    [Parameter] public EventCallback<TItem> OnAddNote { get; set; }
+    [Parameter] public EventCallback<TItem> OnViewNotes { get; set; }
+
+    // Pagination
+    private int PageSize { get; set; } = 10;
+    private int CurrentPage { get; set; } = 1;
+    private int TotalPages => FilteredItems.Any() ? (int)Math.Ceiling(FilteredItems.Count() / (double)PageSize) : 0;
+
+    // Selection
+    private HashSet<TItem> SelectedItems { get; set; } = new HashSet<TItem>();
+    private bool SelectAll { get; set; } = false;
+
+    // Sorting
+    private string SortField { get; set; } = string.Empty;
+    private sacmy.Client.Shared.Components.CustomDataGrid.SortDirection SortDirection { get; set; } = sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending;
+
+    // Computed properties
+    private IEnumerable<TItem> FilteredItems
+    {
+        get
+        {
+            var items = Items ?? new List<TItem>();
+            if (!string.IsNullOrWhiteSpace(SearchString) && QuickFilter != null)
+            {
+                items = items.Where(QuickFilter);
+            }
+
+            if (!string.IsNullOrEmpty(SortField))
+            {
+                var property = typeof(TItem).GetProperty(SortField);
+                if (property != null)
+                {
+                    items = SortDirection == sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending
+                        ? items.OrderBy(x => property.GetValue(x))
+                        : items.OrderByDescending(x => property.GetValue(x));
+                }
+            }
+
+            return items;
+        }
+    }
+
+    private IEnumerable<TItem> PagedItems => FilteredItems
+        .Skip((CurrentPage - 1) * PageSize)
+        .Take(PageSize);
+
+    protected override void OnParametersSet()
+    {
+        // Create a default filter if none is provided
+        if (QuickFilter == null && Filterable)
+        {
+            QuickFilter = CreateDefaultQuickFilter();
+        }
+    }
+
+    private Func<TItem, bool> CreateDefaultQuickFilter()
+    {
+        return item =>
+        {
+            if (string.IsNullOrWhiteSpace(SearchString))
+                return true;
+
+            // Search in all string/object properties
+            var properties = typeof(TItem).GetProperties()
+                .Where(p => p.PropertyType == typeof(string) ||
+                           p.PropertyType == typeof(object) ||
+                           (!p.PropertyType.IsValueType && p.PropertyType != typeof(DateTime)));
+
+            foreach (var prop in properties)
+            {
+                var value = prop.GetValue(item)?.ToString();
+                if (!string.IsNullOrEmpty(value) &&
+                    value.Contains(SearchString, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        };
+    }
+
+    private async Task OnBootstrapSwitchChanged(ChangeEventArgs e)
+    {
+        if (e.Value is bool value)
+        {
+            SwitchValue = value;
+            if (SwitchValueChanged.HasDelegate)
+            {
+                await SwitchValueChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    private async Task UpdateQuickFilter()
+    {
+        if (SearchStringChanged.HasDelegate)
+        {
+            await SearchStringChanged.InvokeAsync(SearchString);
+        }
+        CurrentPage = 1;
+        StateHasChanged();
+    }
+
+    private async Task OnRowItemClick(TItem item, MouseEventArgs e)
+    {
+        if (OnRowClick.HasDelegate)
+        {
+            var args = new sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<TItem>
+                {
+                    Item = item,
+                    MouseEventArgs = e
+                };
+            await OnRowClick.InvokeAsync(args);
+        }
+    }
+
+    private async Task OnRowButtonClickHandler(TItem item)
+    {
+        if (OnRowButtonClick.HasDelegate)
+        {
+            await OnRowButtonClick.InvokeAsync(item);
+        }
+    }
+
+    private async Task OnAddNoteHandler(TItem item)
+    {
+        if (OnAddNote.HasDelegate)
+        {
+            await OnAddNote.InvokeAsync(item);
+        }
+    }
+
+    private async Task OnViewNotesHandler(TItem item)
+    {
+        if (OnViewNotes.HasDelegate)
+        {
+            await OnViewNotes.InvokeAsync(item);
+        }
+    }
+
+    private void SortTable(ColumnDefinition<TItem> column)
+    {
+        if (column == null || !column.Sortable) return;
+
+        string propertyName = GetPropertyName(column.Property);
+
+        if (SortField == propertyName)
+        {
+            // Toggle direction
+            SortDirection = SortDirection == sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending
+                ? sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Descending
+                : sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending;
+        }
+        else
+        {
+            SortField = propertyName;
+            SortDirection = sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending;
+        }
+
+        StateHasChanged();
+    }
+
+    private string GetPropertyName(Expression<Func<TItem, object>> expression)
+    {
+        if (expression.Body is MemberExpression memberExpression)
+        {
+            return memberExpression.Member.Name;
+        }
+        else if (expression.Body is UnaryExpression unaryExpression && unaryExpression.Operand is MemberExpression memberExpr)
+        {
+            return memberExpr.Member.Name;
+        }
+
+        return string.Empty;
+    }
+
+    private void ChangePage(int page)
+    {
+        CurrentPage = Math.Max(1, Math.Min(page, Math.Max(1, TotalPages)));
+        StateHasChanged();
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        SelectAll = (bool)e.Value;
+        SelectedItems.Clear();
+
+        if (SelectAll)
+        {
+            foreach (var item in FilteredItems)
+            {
+                SelectedItems.Add(item);
+            }
+        }
+
+        NotifySelectionChanged();
+    }
+
+    private void ToggleSelection(TItem item, ChangeEventArgs e)
+    {
+        bool isSelected = (bool)e.Value;
+
+        if (isSelected)
+        {
+            SelectedItems.Add(item);
+        }
+        else
+        {
+            SelectedItems.Remove(item);
+        }
+
+        SelectAll = FilteredItems.Count() > 0 && SelectedItems.Count == FilteredItems.Count();
+        NotifySelectionChanged();
+    }
+
+    private async void NotifySelectionChanged()
+    {
+        if (OnSelectedItemsChanged.HasDelegate)
+        {
+            await OnSelectedItemsChanged.InvokeAsync(SelectedItems);
+        }
+    }
+
+    private string GetItemId(TItem item)
+    {
+        // Try to get an ID property if it exists
+        var idProp = typeof(TItem).GetProperty("Id");
+        if (idProp != null)
+        {
+            return idProp.GetValue(item)?.ToString();
+        }
+
+        // Fallback to GetHashCode
+        return item.GetHashCode().ToString();
+    }
+}
+
+

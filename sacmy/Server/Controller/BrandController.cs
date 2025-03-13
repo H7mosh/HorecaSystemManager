@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using sacmy.Server.DatabaseContext;
+using sacmy.Server.Models;
 using sacmy.Shared.ViewModels.BrandViewModel;
 
 namespace sacmy.Server.Controller
@@ -15,6 +16,8 @@ namespace sacmy.Server.Controller
         {
             _context = context;
         }
+
+
         [HttpGet]
         public async Task<IActionResult> GetBrands() {
             try
@@ -37,6 +40,38 @@ namespace sacmy.Server.Controller
             catch (Exception ex)
             {
                 return BadRequest(ex);
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CreateBrand([FromBody] BrandViewModel model)
+        {
+            if (model == null)
+            {
+                return BadRequest("Invalid brand data.");
+            }
+
+            try
+            {
+                var brand = new Brand
+                {
+                    Id = Guid.NewGuid(),
+                    NameEn = model.NameEn,
+                    NameAr = model.NameAr,
+                    NameKr = model.NameKr,
+                    NameTr = model.NameTr,
+                    Image = model.Image,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                _context.Brands.Add(brand);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetBrands), new { id = brand.Id }, brand);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
     }
