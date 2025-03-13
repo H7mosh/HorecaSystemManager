@@ -2,6 +2,7 @@
 using FastReport;
 
 using sacmy.Shared.ViewModels.InvoiceViewModel;
+using FastReport.Table;
 
 namespace sacmy.Server.Service
 {
@@ -24,15 +25,12 @@ namespace sacmy.Server.Service
             {
                 FastReport.Utils.Config.WebMode = true;
                 var report = new FastReport.Report();
-
                 string rootpath = Path.Combine(_webHostEnvironment.WebRootPath, "assets", "invoice", "SafinAhmed.frx");
-
                 if (!System.IO.File.Exists(rootpath))
                 {
                     _logger.LogError($"Report template not found at path: {rootpath}");
                     throw new FileNotFoundException($"Report template not found at path: {rootpath}");
                 }
-
                 report.Load(rootpath);
 
                 // Set report parameters
@@ -48,9 +46,6 @@ namespace sacmy.Server.Service
                 (report.FindObject("totalCube") as TextObject).Text = invoiceItems.Count.ToString();
                 (report.FindObject("qtyTotal") as TextObject).Text = invoiceItems.Sum(i => i.Quantity).ToString();
                 (report.FindObject("totalWeight") as TextObject).Text = "0";
-                (report.FindObject("remainOfInvoice") as TextObject).Text = $"$ {invoice.Remaing:N2}";
-                (report.FindObject("remainOfLast") as TextObject).Text = "$ 0.0";
-                (report.FindObject("totalRemain") as TextObject).Text = $"$ {invoice.Remaing:N2}";
 
                 // Create data table
                 var dataTable = new System.Data.DataTable("Invoice");
@@ -62,17 +57,24 @@ namespace sacmy.Server.Service
                 dataTable.Columns.Add("sku", typeof(string));
                 dataTable.Columns.Add("no", typeof(string));
 
-                // Add data rows
+                // Add data rows with trimmed name
                 foreach (var item in invoiceItems)
                 {
+                    // Trim the Name to a maximum of 25 characters
+                    string trimmedName = item.Name;
+                    if (!string.IsNullOrEmpty(trimmedName) && trimmedName.Length > 25)
+                    {
+                        trimmedName = trimmedName.Substring(0, 25) + "...";
+                    }
+
                     dataTable.Rows.Add(
                         item.Total.ToString("N2"),
                         item.Price.ToString("N2"),
                         item.Quantity.ToString(),
-                        "0",
-                        item.PatternCode,
+                        item.BoxContain,
+                        trimmedName,   // Use the trimmed name here
                         item.Sku,
-                        "0"
+                        item.PatternCode
                     );
                 }
 
@@ -83,7 +85,18 @@ namespace sacmy.Server.Service
                 var dataBand = report.FindObject("DataInvoice") as DataBand;
                 if (dataBand != null)
                 {
-                    dataBand.DataSource = report.GetDataSource("Invoice");
+                    var ds = report.GetDataSource("Invoice");
+                    ds.Enabled = true;  // This is the crucial line!
+                    dataBand.DataSource = ds;
+                }
+
+                // Find the table and set its row count
+                var table = report.FindObject("Table2") as TableObject;
+                if (table != null)
+                {
+                    // Set the number of rows in the table
+                    // This will add more rows if needed
+                    table.RowCount = invoiceItems.Count + 1; // +1 for header row
                 }
 
                 report.Prepare();
@@ -93,7 +106,6 @@ namespace sacmy.Server.Service
                 var pdfExport = new PDFSimpleExport();
                 pdfExport.Title = "New Invoice Report";
                 report.Export(pdfExport, stream);
-
                 return stream.ToArray();
             }
             catch (Exception ex)

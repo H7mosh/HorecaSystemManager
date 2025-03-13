@@ -16,11 +16,11 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// Configure HttpClient
-builder.Services.AddHttpClient("sacmy.ServerAPI", client => 
+builder.Services.AddHttpClient("sacmy.ServerAPI", client =>
 {
     client.BaseAddress = new Uri(builder.HostEnvironment.BaseAddress);
     client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.Timeout = TimeSpan.FromMinutes(3); // Set default timeout to 3 minutes
 });
 
 
@@ -41,14 +41,14 @@ builder.Services.AddScoped<TaskService>();
 builder.Services.AddScoped<EmployeeService>();
 builder.Services.AddScoped<OrderService>();
 builder.Services.AddSingleton<UserGlobalClass>();
-builder.Services.AddSingleton<AuthService>();
+builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<ProductsService>();
 builder.Services.AddScoped<BrandService>();
 builder.Services.AddScoped<ToastService>();
 builder.Services.AddScoped<StickyNoteService>();
-
-
-// Configure MudBlazor
+builder.Services.AddScoped<InvoiceService>();
+builder.Services.AddScoped<CustomerService>();
+builder.Services.AddScoped<CustomerInvoiceTrackService>();
 builder.Services.AddMudServices(config =>
 {
     config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;

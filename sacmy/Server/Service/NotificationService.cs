@@ -1,31 +1,23 @@
-using System;
-using System.Collections.Generic;
-using System.IdentityModel.Tokens.Jwt;
-using System.IO;
-using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Security.Claims;
-using System.Security.Cryptography;
+﻿using System.Net.Http.Headers;
 using System.Text;
-using System.Threading.Tasks;
-using Google.Apis.Auth.OAuth2;
 using Hangfire;
-using Microsoft.Extensions.Configuration;
-using Microsoft.IdentityModel.Tokens;
 using Newtonsoft.Json;
+using Pipelines.Sockets.Unofficial.Arenas;
 using sacmy.Server.Service;
 using sacmy.Shared.ViewModels.Notification;
+
 
 public class NotificationService
 {
     private readonly IConfiguration _configuration;
     private readonly string _configKey;
-    private readonly string _projectId;
     private readonly GoogleCredentialProvider _credentialProvider;
     private readonly ILogger<NotificationService> _logger;
 
-    public NotificationService(IConfiguration configuration,string configurationKey,ILogger<NotificationService> logger)
+    private readonly string _employeeProjectId;
+    private readonly string _defaultProjectId;
+
+    public NotificationService(IConfiguration configuration, string configurationKey, ILogger<NotificationService> logger)
     {
         _configuration = configuration;
         _configKey = configurationKey;
@@ -34,18 +26,21 @@ public class NotificationService
 
         try
         {
-            var firebaseConfig = configuration.GetSection(configurationKey);
-            _projectId = firebaseConfig["project_id"];
+            var defaultConfig = configuration.GetSection("SafinAhmedNotificationKeys");
+            var employeeConfig = configuration.GetSection("SafinAhmedManagerNotificationKeys");
 
-            if (string.IsNullOrEmpty(_projectId))
+            _defaultProjectId = defaultConfig["project_id"];
+            _employeeProjectId = employeeConfig["project_id"];
+
+            if (string.IsNullOrEmpty(_defaultProjectId) || string.IsNullOrEmpty(_employeeProjectId))
             {
-                _logger.LogError($"Project ID is null or empty for config key: {configurationKey}");
-                throw new InvalidOperationException($"Firebase project_id not found in configuration for key: {configurationKey}");
+                _logger.LogError("One or both Firebase project IDs are missing in the configuration.");
+                throw new InvalidOperationException("Firebase project_id not found in configuration.");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, $"Error initializing NotificationService with key {configurationKey}");
+            _logger.LogError(ex, "Error initializing NotificationService");
             throw;
         }
     }
@@ -56,7 +51,7 @@ public class NotificationService
 
         try
         {
-            var accessToken = await _credentialProvider.GetAccessTokenAsync(_configKey);
+            var accessToken = await _credentialProvider.GetAccessTokenAsync(payload.IsEmployeeNotification);
             _logger.LogInformation("Successfully obtained access token");
 
             foreach (var token in firebaseTokens)
@@ -82,6 +77,9 @@ public class NotificationService
 
     private async Task SendSingleNotificationAsync(string token, NotificationPayload payload, string accessToken)
     {
+        string projectId = payload.IsEmployeeNotification ? _employeeProjectId : _defaultProjectId;
+
+
         var messagePayload = new
         {
             message = new
@@ -119,7 +117,7 @@ public class NotificationService
         };
 
         using var client = new HttpClient();
-        var url = $"https://fcm.googleapis.com/v1/projects/{_projectId}/messages:send";
+        var url = $"https://fcm.googleapis.com/v1/projects/{projectId}/messages:send";
 
         _logger.LogInformation($"Sending FCM request to: {url}");
 

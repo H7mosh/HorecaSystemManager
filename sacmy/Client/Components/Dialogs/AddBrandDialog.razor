@@ -1,0 +1,88 @@
+﻿@using sacmy.Shared.ViewModels.BrandViewModel
+@if (IsVisible)
+{
+    <div class="modal fade show add-brand-dialog" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-tag dialog-icon"></i> Add New Brand</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="OnClose"></button>
+                </div>
+                <div class="modal-body">
+                    @if (!string.IsNullOrEmpty(Error))
+                    {
+                        <div class="alert alert-danger">
+                            @Error
+                        </div>
+                    }
+                    <div class="mb-3">
+                        <label for="nameEn" class="form-label">English Name</label>
+                        <input type="text"
+                               class="form-control"
+                               id="nameEn"
+                               @bind="Brand.NameEn" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="nameAr" class="form-label">Arabic Name</label>
+                        <input type="text"
+                               class="form-control"
+                               id="nameAr"
+                               @bind="Brand.NameAr" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="nameTr" class="form-label">Turkish Name</label>
+                        <input type="text"
+                               class="form-control"
+                               id="nameTr"
+                               @bind="Brand.NameTr" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="nameKr" class="form-label">Kurdish Name</label>
+                        <input type="text"
+                               class="form-control"
+                               id="nameKr"
+                               @bind="Brand.NameKr" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Image</label>
+                        <input type="text"
+                               class="form-control"
+                               id="image"
+                               @bind="Brand.Image" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-secondary"
+                            @onclick="OnClose">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            class="btn btn-primary"
+                            @onclick="OnSave"
+                            disabled="@IsCreating">
+                        @if (IsCreating)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            <span>Creating...</span>
+                        }
+                        else
+                        {
+                            <span>Create Brand</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public BrandViewModel Brand { get; set; }
+    [Parameter] public string Error { get; set; }
+    [Parameter] public bool IsCreating { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+}

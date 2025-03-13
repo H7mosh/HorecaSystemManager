@@ -36,6 +36,7 @@ namespace sacmy.Client.Services
             var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskNotes>>($"api/tasks/GetTaskNotes?taskId={taskId}");
             return response ?? new List<GetTaskNotes>();
         }
+
         public async Task<PostTaskNoteViewModel> PostTaskNoteAsync(PostTaskNoteViewModel model, string taskTitle)
         {
             var jsonContent = JsonSerializer.Serialize(model);
@@ -47,16 +48,19 @@ namespace sacmy.Client.Services
 
             return await response.Content.ReadFromJsonAsync<PostTaskNoteViewModel>();
         }
+
         public async Task<List<GetTaskStatus>> GetTaskStatusAsync()
         {
             var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskStatus>>("api/Tasks/GetTaskStatus");
             return response ?? new List<GetTaskStatus>();
         }
+
         public async Task<List<GetTaskType>> GetTaskTypesAsync()
         {
             var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskType>>("api/Tasks/GetTaskType");
             return response ?? new List<GetTaskType>();
         }
+
         public async Task<UpdateTaskViewModel> UpdateTaskAsync(UpdateTaskViewModel taskViewModel)
         {
             var jsonContent = JsonSerializer.Serialize(taskViewModel);
@@ -68,6 +72,7 @@ namespace sacmy.Client.Services
 
             return await response.Content.ReadFromJsonAsync<UpdateTaskViewModel>();
         }
+
         public async Task PostTaskAsync(PostTaskViewModel postTaskViewModel)
         {
             var jsonContent = JsonSerializer.Serialize(postTaskViewModel);
@@ -76,6 +81,40 @@ namespace sacmy.Client.Services
             var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").PostAsync("api/Tasks", content);
 
             response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<List<GetTaskViewModel>> GetTasksByOrderOrCustomerAsync(int userId, int? customerId, int? invoiceId)
+        {
+            try
+            {
+                string url = "api/Task/GetTasksByOrderOrCustomer";
+
+                // Add query parameters
+                var queryParams = new List<string>();
+                queryParams.Add($"userId={userId}");
+
+                if (customerId.HasValue)
+                {
+                    queryParams.Add($"customerId={customerId.Value}");
+                }
+
+                if (invoiceId.HasValue)
+                {
+                    queryParams.Add($"invoiceId={invoiceId.Value}");
+                }
+
+                // Combine query parameters
+                url = $"{url}?{string.Join("&", queryParams)}";
+
+                var response =  await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<GetTaskViewModel>>(url);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                
+                return new List<GetTaskViewModel>();
+            }
         }
 
     }

@@ -17,5 +17,12 @@ namespace sacmy.Client.Services
             var response = await _httpClientFactory.CreateClient("sacmy.ServerAPI").GetFromJsonAsync<List<BrandViewModel>>("api/Brand");
             return response ?? new List<BrandViewModel>();
         }
+
+        public async Task<HttpResponseMessage> CreateBrandAsync(BrandViewModel model)
+        {
+            var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
+            var response = await client.PostAsJsonAsync("api/Brand", model);
+            return response;
+        }
     }
 }

@@ -13,7 +13,7 @@ namespace sacmy.Server.Models
         public string TableName { get; set; }  // E.g., "Products", "Orders"
 
         [Required]
-        public Guid RecordId { get; set; }  // ID of the related record (foreign key)
+        public string RecordId { get; set; }  // ID of the related record (foreign key)
 
         [Required]
         public Guid EmployeeId { get; set; }  // ID of the employee who created the note

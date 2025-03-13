@@ -1,0 +1,51 @@
+﻿
+@if (IsVisible)
+{
+    <div class="modal fade show add-sticky-note-dialog" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-plus-circle dialog-icon"></i> Add Sticky Note</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="OnClose"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="noteText" class="form-label">Note</label>
+                        <textarea id="noteText"
+                                  class="form-control"
+                                  rows="3"
+                                  @bind="noteText"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnClose">Cancel</button>
+                    <button type="button" class="btn btn-primary" @onclick="SaveNote">Add Note</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public string ProductId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnNoteSaved { get; set; }
+    [Parameter] public EventCallback<string> OnNoteTextSaved { get; set; }
+
+    private string noteText = "";
+
+    private async Task SaveNote()
+    {
+        if (string.IsNullOrWhiteSpace(noteText))
+            return;
+
+        // Support both callback patterns
+        if (OnNoteSaved.HasDelegate)
+            await OnNoteTextSaved.InvokeAsync(noteText);
+
+        if (OnNoteSaved.HasDelegate)
+            await OnNoteSaved.InvokeAsync();
+    }
+}

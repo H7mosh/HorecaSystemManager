@@ -92,37 +92,55 @@ namespace sacmy.Client.Services
             return apiResponse;
         }
 
+        // 3. Get notes by record ID
         public async Task<ApiResponse<List<GetStickyNoteViewModel>>> GetNotesByRecordAsync(string tableName, Guid recordId)
         {
-            var response = await _httpClient.GetAsync($"api/StickyNotes/record?tableName={tableName}&recordId={recordId}");
-
-            if (!response.IsSuccessStatusCode)
+            try
             {
-                var errorString = await response.Content.ReadAsStringAsync();
-                try
-                {
-                    var apiError = JsonSerializer.Deserialize<ApiResponse>(errorString);
-                    return new ApiResponse<List<GetStickyNoteViewModel>>
-                    {
-                        Success = false,
-                        Message = apiError?.Message ?? "Unknown error",
-                        Data = null
-                    };
-                }
-                catch
-                {
-                    return new ApiResponse<List<GetStickyNoteViewModel>>
-                    {
-                        Success = false,
-                        Message = $"HTTP error: {response.StatusCode}",
-                        Data = null
-                    };
-                }
-            }
+                var encodedTableName = Uri.EscapeDataString(tableName);
+                var encodedRecordId = recordId.ToString();
 
-            var apiResponse = await response.Content
-                .ReadFromJsonAsync<ApiResponse<List<GetStickyNoteViewModel>>>();
-            return apiResponse;
+                var response = await _httpClient.GetAsync(
+                    $"api/StickyNotes?tableName={encodedTableName}&recordId={encodedRecordId}");
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorString = await response.Content.ReadAsStringAsync();
+                    try
+                    {
+                        var apiError = JsonSerializer.Deserialize<ApiResponse>(errorString);
+                        return new ApiResponse<List<GetStickyNoteViewModel>>
+                        {
+                            Success = false,
+                            Message = apiError?.Message ?? "Unknown error",
+                            Data = null
+                        };
+                    }
+                    catch
+                    {
+                        return new ApiResponse<List<GetStickyNoteViewModel>>
+                        {
+                            Success = false,
+                            Message = $"HTTP error: {response.StatusCode}",
+                            Data = null
+                        };
+                    }
+                }
+
+                var apiResponse = await response.Content
+                    .ReadFromJsonAsync<ApiResponse<List<GetStickyNoteViewModel>>>();
+
+                return apiResponse;
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<List<GetStickyNoteViewModel>>
+                {
+                    Success = false,
+                    Message = $"Exception getting notes: {ex.Message}",
+                    Data = null
+                };
+            }
         }
     }
 }

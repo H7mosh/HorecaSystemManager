@@ -1,4 +1,5 @@
-﻿using System;
+﻿using sacmy.Shared.ViewModels.StickNoteViewModel;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,6 +17,7 @@ namespace sacmy.Shared.ViewModels.CustomerTracker
         public string? TaskType { get; set; }
         public string? TaskStatus { get; set; }
         public string? LastComment { get; set; }
+        public List<GetStickyNoteViewModel> StickyNotes { get; set; } = new List<GetStickyNoteViewModel>();
     }
 
 }

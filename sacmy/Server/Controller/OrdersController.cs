@@ -5,8 +5,10 @@ using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
 using sacmy.Shared;
+using sacmy.Shared.ViewModels.EmployeeViewModel;
 using sacmy.Shared.ViewModels.InvoiceViewModel;
 using sacmy.Shared.ViewModels.OrdersViewModel;
+using sacmy.Shared.ViewModels.StickNoteViewModel;
 
 namespace sacmy.Server.Controller
 {
@@ -24,7 +26,7 @@ namespace sacmy.Server.Controller
         CustomerBillPoint customerBill = new CustomerBillPoint();
         private readonly ReportService _reportService;
 
-        public OrdersController(SafeenCompanyDbContext context, ILogger<OrdersController> logger , ReportService reportService)
+        public OrdersController(SafeenCompanyDbContext context, ILogger<OrdersController> logger, ReportService reportService)
         {
             _context = context;
             _logger = logger;
@@ -124,12 +126,56 @@ namespace sacmy.Server.Controller
                                 Tootal = oti.BuyFatora.Tootal,
                                 IsPdfGenerated = oti.IsPdfGenerated,
                                 branch = oti.BuyFatora.Subb
-                            })
-                            .ToList() // Fetch to memory first
+                            }).ToList(),
                     })
                     .ToListAsync();
 
-                // Apply IsItTheMainOne after fetching data
+                var allOrderStickyNotes = await _context.StickyNotes
+                    .Include(n => n.Employee)
+                    .Where(n => n.TableName == "Orders")
+                    .OrderByDescending(n => n.CreatedDate)
+                    .ToListAsync();
+
+
+                var orderIdStrings = ordersData.Select(o => o.OrderId.ToString()).ToList();
+                var stickyNotes = allOrderStickyNotes
+                    .Where(n => orderIdStrings.Contains(n.RecordId))
+                    .Select(note => new {
+                        OrderId = note.RecordId,
+                        Note = new GetStickyNoteViewModel
+                        {
+                            Id = note.Id,
+                            TableName = note.TableName,
+                            RecordId = note.RecordId,
+                            EmployeeId = note.EmployeeId,
+                            Note = note.Note,
+                            CreatedDate = note.CreatedDate,
+                            Employee = new GetEmployeeViewModel
+                            {
+                                Id = note.Employee.Id,
+                                FirstName = note.Employee.FirstName,
+                                LastName = note.Employee.LastName,
+                                Image = note.Employee.Image,
+                                JobTitle = note.Employee.JobTitle,
+                                Branch = note.Employee.Branch
+                            }
+                        }
+                    })
+                    .ToList();
+
+                // Group sticky notes by order ID and assign to orders
+                var notesByOrder = stickyNotes.GroupBy(n => n.OrderId)
+                    .ToDictionary(g => g.Key, g => g.Select(n => n.Note).ToList());
+
+                // Assign sticky notes to each order
+                foreach (var order in ordersData)
+                {
+                    if (notesByOrder.TryGetValue(order.OrderId.ToString(), out var notes))
+                    {
+                        order.StickyNotes = notes;
+                    }
+                }
+
                 foreach (var order in ordersData)
                 {
                     if (order.Invoices != null && order.Invoices.Any())
@@ -142,7 +188,6 @@ namespace sacmy.Server.Controller
                 var response = new PaginatedResponse<OrderViewModel>(
                     ordersData, totalCount, filter.PageNumber, filter.PageSize);
 
-                _logger.LogInformation($"Retrieved {ordersData.Count} orders for page {filter.PageNumber}. Total: {totalCount}");
                 return Ok(response);
             }
             catch (Exception ex)
@@ -163,11 +208,11 @@ namespace sacmy.Server.Controller
                     {
                         ItemId = oi.ItemId,
                         Sku = oi.Item1.Sku,
-                        PatternCode = oi.Item1.PatternNumber,  
+                        PatternCode = oi.Item1.PatternNumber,
                         Quantity = oi.Qtty ?? 0,
                         Price = oi.Price ?? 0,
                         Total = oi.Total ?? 0,
-                        Point = oi.Item1.Points??0,
+                        Point = oi.Item1.Points ?? 0,
                     })
                     .ToListAsync();
 
@@ -314,12 +359,12 @@ namespace sacmy.Server.Controller
         {
             try
             {
-                int total_points = 0; 
-                BuyFatora buyFatora = new BuyFatora(); 
-                EventCostumer eventCostumer = new EventCostumer(); 
-                CustomerBillPoint customerBill = new CustomerBillPoint(); 
+                int total_points = 0;
+                BuyFatora buyFatora = new BuyFatora();
+                EventCostumer eventCostumer = new EventCostumer();
+                CustomerBillPoint customerBill = new CustomerBillPoint();
                 OnlineOrder online_order = await _context.OnlineOrders.FindAsync(fatoraViewModel.OrderId);
-                
+
                 foreach (var fatoraItem in fatoraViewModel.invoiceFromOrderItemsViewModel)
                 {
                     KpStore item1 = await _context.KpStores.FirstOrDefaultAsync(e => e.Sku == fatoraItem.Sku);
@@ -336,7 +381,7 @@ namespace sacmy.Server.Controller
                     return NotFound($"Customer with ID {fatoraViewModel.CustomerId} not found.");
                 }
 
-                
+
                 int lastId = await _context.BuyFatoras.OrderByDescending(f => f.Id).Select(f => f.Id).FirstOrDefaultAsync();
                 buyFatora.Id = lastId + 10;
 
@@ -440,7 +485,7 @@ namespace sacmy.Server.Controller
                                 IsDeleted = false,
                                 TtalPoints = (int)(item!.Points * fatoraItem.Quantity)
                             };
-                            
+
                             _context.BuyFatoraItems.Add(buyFatoraItem);
 
                             if (onlineOrder != null)
@@ -466,7 +511,7 @@ namespace sacmy.Server.Controller
                     _context.EventCostumers.Add(eventCostumer);
                 }
 
-                
+
                 await _context.SaveChangesAsync();
 
                 if (fatoraViewModel.Sub != "undefined")
@@ -513,7 +558,7 @@ namespace sacmy.Server.Controller
                         _context.OrderTrackingInvoices.Add(orderTrackingInvoice);
                     }
 
-                    
+
                     await _context.SaveChangesAsync();
                 }
 
@@ -545,9 +590,9 @@ namespace sacmy.Server.Controller
                     // Update the StageId
                     orderTracking.StageId = stageId;
                 }
-                
+
                 var OrderTrackingInvoices = orderTracking.OrderTrackingInvoices.FirstOrDefault(e => e.BuyFatoraId == invoiceId);
-                
+
                 OrderTrackingInvoices.IsPdfGenerated = true;
 
                 // Save changes to the database
@@ -607,7 +652,7 @@ namespace sacmy.Server.Controller
                 {
                     Id = Guid.NewGuid(),
                     OrderTrackingId = orderTracking.Id,
-                    Attachment = "https://api.safinahmedtech.com/assets/Invoices/"+fileName,  // Store the full file path instead of just the filename
+                    Attachment = "https://api.safinahmedtech.com/assets/Invoices/" + fileName,  // Store the full file path instead of just the filename
                     CreatedDate = DateTime.Now
                 };
 
@@ -657,6 +702,55 @@ namespace sacmy.Server.Controller
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error generating invoice PDF");
+                return StatusCode(500, "Error generating invoice PDF");
+            }
+        }
+
+        [HttpGet("generate-invoice-report/{invoiceId}")]
+        public async Task<ActionResult<InvoiceViewModel>> GenerateInvoiceReport(int invoiceId)
+        {
+            _logger.LogInformation("GenerateInvoiceReport endpoint hit for invoiceId: {invoiceId}", invoiceId);
+            try
+            {
+                var invoice = await _context.BuyFatoras
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.Type)
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.TaskNotes)
+                    .Include(c => c.Tasks)
+                    .ThenInclude(t => t.Status)
+                    .FirstOrDefaultAsync(e => e.Id == invoiceId);
+
+                if (invoice == null)
+                {
+                    return NotFound($"Invoice with ID {invoiceId} not found");
+                }
+
+                invoice.IsPdfGenerated = true;
+                await _context.SaveChangesAsync();
+
+                var lastTask = invoice.Tasks?.LastOrDefault();
+                var invoiceViewModel = new InvoiceViewModel
+                {
+                    Id = invoice.Id,
+                    CustomerName = invoice.Customer,
+                    CustomerType = invoice.CostType,
+                    Address = invoice.Address,
+                    InvoiceBranch = invoice.Subb,
+                    Total = Convert.ToDouble(invoice.Tootal.ToString()),
+                    IsCompleted = invoice.Checkeed ?? false,
+                    IsPdfGenerated = invoice.IsPdfGenerated ?? false,
+                    DateTime = invoice.Now ?? DateTime.Today,
+                    TaskId = lastTask?.Id,
+                    TaskStatus = lastTask?.Status?.StateEn,
+                    LastComment = lastTask?.TaskNotes?.LastOrDefault()?.Note
+                };
+
+                return Ok(invoiceViewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating invoice PDF for invoiceId: {invoiceId}", invoiceId);
                 return StatusCode(500, "Error generating invoice PDF");
             }
         }

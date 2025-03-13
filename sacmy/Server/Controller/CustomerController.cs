@@ -6,6 +6,8 @@ using sacmy.Shared.ViewModels.CustomerViewModel;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using sacmy.Shared.ViewModels.Notification;
+using sacmy.Shared.Core;
+using sacmy.Server.Models;
 
 namespace sacmy.Server.Controller
 {
@@ -97,5 +99,228 @@ namespace sacmy.Server.Controller
                 return StatusCode(500, "An error occurred while sending the notification.");
             }
         }
+
+        [HttpGet("GetCustomers")]
+        public async Task<ActionResult<ApiResponse<List<CustomerViewModel>>>> GetCustomers(int pageNumber = 1, int pageSize = 10)
+        {
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest(new ApiResponse<List<CustomerViewModel>>
+                {
+                    Success = false,
+                    Message = "Invalid page number or page size",
+                    Data = null
+                });
+            }
+
+            var query = _context.Customers.Select(e => new CustomerViewModel
+            {
+                Id = e.Id,
+                Name = e.Customer1,
+                PhoneNumber = e.Mob,
+                Address = e.Address,
+                Branch = e.Subb,
+                CostType = e.CostType,
+                UserName = e.UserAcc,
+                Password = e.Password,
+                ConstProfit = e.PlusOne,
+                ProfitPercentage = e.Nsba,
+                ExtraProfitPercentage = e.OtherNsba,
+                DeviceId = e.DeviceId,
+                Active = e.Active,
+                FirebaseToken = e.FirebaseToken
+            });
+
+            var totalRecords = await query.CountAsync();
+            var customers = await query.OrderByDescending(e => e.Id)
+                                       .Skip((pageNumber - 1) * pageSize)
+                                       .Take(pageSize)
+                                       .ToListAsync();
+
+            var response = new ApiResponse<List<CustomerViewModel>>
+            {
+                Success = true,
+                Message = "Customers retrieved successfully",
+                Data = customers
+            };
+
+            return Ok(response);
+        }
+
+        [HttpPost("BulkAddCustomerProductRelations")]
+        public async Task<ActionResult<ApiResponse<object>>> BulkAddCustomerProductRelations([FromBody] List<CustomerProductRelationViewModel> relations)
+        {
+            if (relations == null || !relations.Any())
+            {
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Invalid input. The list cannot be empty.",
+                    Data = null
+                });
+            }
+
+            try
+            {
+                var entities = relations.Select(r => new CustomerProductRelation
+                {
+                    Id = r.Id == Guid.Empty ? Guid.NewGuid() : r.Id,
+                    CustomerId = r.CustomerId,
+                    ProductId = r.ProductId,
+                    DiscountPercentage = r.DiscountPercentage,
+                    IsDiscounted = r.IsDiscounted,
+                    RaisePercentage = r.RaisePercentage,
+                    IsRaised = r.IsRaised,
+                    IsDeleted = false,
+                    CreatedDate = DateTime.Now
+                }).ToList();
+
+                await _context.CustomerProductRelations.AddRangeAsync(entities);
+                await _context.SaveChangesAsync();
+
+                // Return ApiResponse with appropriate data
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Bulk insert successful",
+                    Data = new { Count = entities.Count, RelationIds = entities.Select(e => e.Id).ToList() }
+                });
+            }
+            catch (Exception ex)
+            {
+                // Return error response
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = $"An error occurred while processing your request: {ex.Message}",
+                    Data = null
+                });
+            }
+        }
+
+        [HttpGet("SearchCustomers")]
+        public async Task<ActionResult<ApiResponse<List<CustomerViewModel>>>> SearchCustomers(string searchQuery = "", int pageNumber = 1, int pageSize = 10)
+        {
+            if (pageNumber < 1 || pageSize < 1)
+            {
+                return BadRequest(new ApiResponse<List<CustomerViewModel>>
+                {
+                    Success = false,
+                    Message = "Invalid page number or page size",
+                    Data = null
+                });
+            }
+
+            try
+            {
+                var query = _context.Customers.AsQueryable();
+
+                // Apply search filter if query is provided
+                if (!string.IsNullOrWhiteSpace(searchQuery))
+                {
+                    searchQuery = searchQuery.Trim().ToLower();
+                    query = query.Where(c =>
+                        c.Customer1.ToLower().Contains(searchQuery) ||
+                        c.Mob.Contains(searchQuery) ||
+                        c.Address.ToLower().Contains(searchQuery) ||
+                        c.Subb.ToLower().Contains(searchQuery)
+                    );
+                }
+
+                // Count total records after filtering
+                var totalRecords = await query.CountAsync();
+
+                // Get paginated results
+                var customers = await query.Select(e => new CustomerViewModel
+                {
+                    Id = e.Id,
+                    Name = e.Customer1,
+                    PhoneNumber = e.Mob,
+                    Address = e.Address,
+                    Branch = e.Subb,
+                    CostType = e.CostType,
+                    UserName = e.UserAcc,
+                    Password = e.Password,
+                    ConstProfit = e.PlusOne,
+                    ProfitPercentage = e.Nsba,
+                    ExtraProfitPercentage = e.OtherNsba,
+                    DeviceId = e.DeviceId,
+                    Active = e.Active,
+                    FirebaseToken = e.FirebaseToken
+                })
+                .OrderByDescending(e => e.Id)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+                // Prepare and return response
+                var response = new ApiResponse<List<CustomerViewModel>>
+                {
+                    Success = true,
+                    Message = customers.Any()
+                        ? "Customers retrieved successfully"
+                        : "No customers match your search criteria",
+                    Data = customers,
+                    TotalCount = totalRecords
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<List<CustomerViewModel>>
+                {
+                    Success = false,
+                    Message = $"An error occurred while searching customers: {ex.Message}",
+                    Data = null
+                });
+            }
+        }
+
+        [HttpGet("GetCustomerProductPriceChanges/{productId}")]
+        public async Task<ActionResult<ApiResponse<List<CustomerProductPriceChangeViewModel>>>> GetCustomerProductPriceChanges(Guid productId)
+        {
+            try
+            {
+                var result = await _context.CustomerProductRelations
+                    .Include(cpr => cpr.Customer)
+                    .Include(cpr => cpr.Product)
+                    .Where(cpr => cpr.ProductId == productId)
+                    .Select(cpr => new CustomerProductPriceChangeViewModel
+                    {
+                        CustomerName = cpr.Customer.Customer1,
+                        ProductName = cpr.Product.Name,
+                        ProductSku = cpr.Product.Sku,
+                        ProductPatternNumber = cpr.Product.PatternNumber,
+                        IsDiscounted = cpr.IsDiscounted,
+                        IsRaised = cpr.IsRaised,
+                        PriceChange = cpr.IsDiscounted ? $"-{cpr.DiscountPercentage}%" : cpr.IsRaised ? $"+{cpr.RaisePercentage}%" : "0%",
+                        FinalPrice = cpr.IsDiscounted
+                            ? (double)cpr.Product.Price - ((double)cpr.Product.Price * (double)(cpr.DiscountPercentage ?? 0) / 100.0)
+                            : cpr.IsRaised
+                                ? (double)cpr.Product.Price + ((double)cpr.Product.Price * (double)(cpr.RaisePercentage ?? 0) / 100.0)
+                                : (double)cpr.Product.Price
+                    })
+                    .ToListAsync();
+
+                return Ok(new ApiResponse<List<CustomerProductPriceChangeViewModel>>
+                {
+                    Success = true,
+                    Message = "Customer product price changes retrieved successfully",
+                    Data = result
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<List<CustomerProductPriceChangeViewModel>>
+                {
+                    Success = false,
+                    Message = $"An error occurred while retrieving data: {ex.Message}",
+                    Data = null
+                });
+            }
+        }
+
+
     }
 }

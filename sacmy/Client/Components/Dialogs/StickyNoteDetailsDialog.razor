@@ -1,0 +1,51 @@
+﻿@using sacmy.Shared.ViewModels.StickNoteViewModel
+@using sacmy.Client.Components.DialogHeader
+
+@if (IsVisible)
+{
+    <div class="modal fade show sticky-note-details-dialog" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <DialogHeader
+                    Title="Sticky Note Details"
+                    Icon="bi bi-sticky-fill"
+                    ShowCloseButton="true"
+                    OnClose="OnClose" />
+                <div class="modal-body">
+                    @if (Note != null)
+                    {
+                        <div class="note-detail-header">
+                            <img class="note-detail-avatar"
+                                 src="@(Note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                 alt="Employee" />
+                            <div class="note-detail-info">
+                                <div class="note-detail-name">
+                                    @(Note.Employee?.FirstName) @(Note.Employee?.LastName)
+                                </div>
+                                <div class="note-detail-title">
+                                    @(Note.Employee?.JobTitle ?? "Employee")
+                                </div>
+                            </div>
+                        </div>
+                        <div class="note-detail-content">
+                            @Note.Note
+                        </div>
+                        <div class="note-detail-date">
+                            Created on @Note.CreatedDate.ToString("MMMM dd, yyyy")
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="OnClose">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public GetStickyNoteViewModel Note { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+}

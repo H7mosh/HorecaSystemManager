@@ -88,6 +88,7 @@ public partial class BuyFatora
     public string? Sender { get; set; }
 
     public string? Bankinfo { get; set; }
+    public bool? IsPdfGenerated { get; set; }
 
     public virtual ICollection<OrderTrackingInvoice> OrderTrackingInvoices { get; set; } = new List<OrderTrackingInvoice>();
 

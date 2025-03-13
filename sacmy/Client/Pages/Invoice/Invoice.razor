@@ -1,11 +1,10 @@
 ﻿@page "/Invoice"
-@using Newtonsoft.Json
 @using System.Text
+@using Newtonsoft.Json
 @using sacmy.Client.Configuraion
-@using sacmy.Client.Pages.Components.CustomDataGrid
 @using sacmy.Client.Pages.Components.Dialogs
+@using sacmy.Client.Shared.Components.CustomDataGrid
 @using sacmy.Shared.ViewModels.InvoiceViewModel
-
 @using static MudBlazor.CategoryTypes
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
@@ -304,7 +303,7 @@
     };
 </script>
 
-<sacmy.Client.Pages.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
+<sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
                                                              Items="@InvoiceList"
                                                              SearchString="@_searchInvoiceString"
                                                              OnRowClick="InvoiceRowClicked"
@@ -356,7 +355,7 @@
     }
 
 
-    private async void InvoiceRowClicked(DataGridRowClickEventArgs<InvoiceViewModel> args)
+    private async void InvoiceRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<InvoiceViewModel> args)
     {
         // Row click handling code here
     }
@@ -449,4 +448,6 @@
         }
         StateHasChanged();
     }
+
+
 }
