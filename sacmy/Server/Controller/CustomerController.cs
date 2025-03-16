@@ -159,31 +159,79 @@ namespace sacmy.Server.Controller
                     Data = null
                 });
             }
-
             try
             {
-                var entities = relations.Select(r => new CustomerProductRelation
-                {
-                    Id = r.Id == Guid.Empty ? Guid.NewGuid() : r.Id,
-                    CustomerId = r.CustomerId,
-                    ProductId = r.ProductId,
-                    DiscountPercentage = r.DiscountPercentage,
-                    IsDiscounted = r.IsDiscounted,
-                    RaisePercentage = r.RaisePercentage,
-                    IsRaised = r.IsRaised,
-                    IsDeleted = false,
-                    CreatedDate = DateTime.Now
-                }).ToList();
+                // First get all existing customer-product relations that aren't deleted
+                var existingRelations = await _context.CustomerProductRelations
+                    .Where(r => !r.IsDeleted)
+                    .ToListAsync();
 
-                await _context.CustomerProductRelations.AddRangeAsync(entities);
+                // Now filter in memory to find exact matches
+                var existingRelationsDict = new Dictionary<string, CustomerProductRelation>();
+                foreach (var relation in existingRelations)
+                {
+                    var key = $"{relation.CustomerId}_{relation.ProductId}";
+                    existingRelationsDict[key] = relation;
+                }
+
+                var entitiesToAdd = new List<CustomerProductRelation>();
+                var entitiesToUpdate = new List<CustomerProductRelation>();
+
+                foreach (var relation in relations)
+                {
+                    var key = $"{relation.CustomerId}_{relation.ProductId}";
+
+                    if (existingRelationsDict.TryGetValue(key, out var existingRelation))
+                    {
+                        // Update existing relation
+                        existingRelation.DiscountPercentage = relation.DiscountPercentage;
+                        existingRelation.IsDiscounted = relation.IsDiscounted;
+                        existingRelation.RaisePercentage = relation.RaisePercentage;
+                        existingRelation.IsRaised = relation.IsRaised;
+                        existingRelation.IsDeleted = false;
+                        // Don't update CreatedDate, but you might want to add UpdatedDate property
+
+                        entitiesToUpdate.Add(existingRelation);
+                    }
+                    else
+                    {
+                        // Add new relation
+                        var newEntity = new CustomerProductRelation
+                        {
+                            Id = relation.Id == Guid.Empty ? Guid.NewGuid() : relation.Id,
+                            CustomerId = relation.CustomerId,
+                            ProductId = relation.ProductId,
+                            DiscountPercentage = relation.DiscountPercentage,
+                            IsDiscounted = relation.IsDiscounted,
+                            RaisePercentage = relation.RaisePercentage,
+                            IsRaised = relation.IsRaised,
+                            IsDeleted = false,
+                            CreatedDate = DateTime.Now
+                        };
+
+                        entitiesToAdd.Add(newEntity);
+                    }
+                }
+
+                // Add new relations if any
+                if (entitiesToAdd.Any())
+                {
+                    await _context.CustomerProductRelations.AddRangeAsync(entitiesToAdd);
+                }
+
+                // Save changes
                 await _context.SaveChangesAsync();
 
                 // Return ApiResponse with appropriate data
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Bulk insert successful",
-                    Data = new { Count = entities.Count, RelationIds = entities.Select(e => e.Id).ToList() }
+                    Message = $"Operation successful. Added {entitiesToAdd.Count} new relations, updated {entitiesToUpdate.Count} existing relations.",
+                    Data = new
+                    {
+                        NewRelations = entitiesToAdd.Select(e => e.Id).ToList(),
+                        UpdatedRelations = entitiesToUpdate.Select(e => e.Id).ToList()
+                    }
                 });
             }
             catch (Exception ex)

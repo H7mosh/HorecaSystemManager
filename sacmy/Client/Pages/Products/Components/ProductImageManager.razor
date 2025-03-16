@@ -1,0 +1,374 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.Products
+@inject IJSRuntime JS
+@inject ToastService ToastService
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="card-title d-flex align-items-center gap-2 text-primary mb-0">
+                <i class="bi bi-images"></i>
+                <span>Product Images</span>
+            </h6>
+        </div>
+
+        <!-- Image Gallery -->
+        <div class="product-images mb-4">
+            @if (Images?.Any() == true)
+            {
+                <div class="row g-3">
+                    @foreach (var image in Images)
+                    {
+                        <div class="col-auto">
+                            <div class="position-relative image-container">
+                                <img src="@image.ImageLink"
+                                     alt="Product Image"
+                                     class="rounded shadow-sm product-thumbnail"
+                                     @onclick="() => ShowImagePreview(image.ImageLink)" />
+
+                                <button class="position-absolute top-0 end-0 p-1 bg-danger border-0 rounded-circle d-flex align-items-center justify-content-center delete-btn"
+                                        @onclick="() => DeleteImage(image.Id)"
+                                        disabled="@(IsDeletingImage == image.Id)">
+                                    @if (IsDeletingImage == image.Id)
+                                    {
+                                        <div class="spinner-border spinner-border-sm text-white"
+                                             style="width: 12px; height: 12px;"
+                                             role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-trash text-white" style="font-size: 12px;"></i>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted text-center py-4 bg-light rounded">
+                    <i class="bi bi-image" style="font-size: 2rem;"></i>
+                    <p class="mb-0 mt-2">No images available</p>
+                </div>
+            }
+        </div>
+
+        <!-- Improved Upload Zone -->
+        <div class="upload-container">
+            <InputFile OnChange="@HandleFileSelected"
+                       multiple
+                       accept="image/*"
+                       class="d-none"
+                       id="@fileInputId" />
+
+            <div class="upload-zone @(IsDragging ? "dragging" : "") @(IsUploading ? "uploading" : "")"
+            @ondragenter:preventDefault
+                 @ondragenter="HandleDragEnter"
+            @ondragleave:preventDefault
+                 @ondragleave="HandleDragLeave"
+            @ondragover:preventDefault
+            @ondrop:preventDefault
+                 @ondrop="HandleDrop"
+                 @onclick="ClickFileInput">
+                <div class="text-center p-4">
+                    @if (IsUploading)
+                    {
+                        <div class="spinner-border text-primary mb-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mb-0">Uploading images... @(UploadProgress > 0 ? $"{UploadProgress}%" : "")</p>
+                        @if (UploadProgress > 0)
+                        {
+                            <div class="progress mt-2" style="height: 10px;">
+                                <div class="progress-bar"
+                                     role="progressbar"
+                                     style="width: @UploadProgress%"
+                                     aria-valuenow="@UploadProgress"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100"></div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <i class="bi bi-cloud-upload text-primary" style="font-size: 2rem;"></i>
+                        <p class="mt-2 mb-1">Drag and drop images here</p>
+                        <p class="text-muted small mb-2">or</p>
+                        <button type="button" class="btn btn-outline-primary btn-sm px-3">
+                            Browse Files
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Preview Modal -->
+@if (ShowPreview)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.7);">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content bg-transparent border-0">
+                <div class="text-end p-2">
+                    <button type="button" class="btn btn-outline-light btn-sm" @onclick="CloseImagePreview">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+                <div class="d-flex justify-content-center">
+                    <img src="@PreviewImageUrl"
+                         alt="Product Image Preview"
+                         class="img-fluid rounded preview-image" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+<style>
+    .product-thumbnail {
+        width: 120px;
+        height: 120px;
+        object-fit: contain;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .product-thumbnail:hover {
+            transform: scale(1.05);
+        }
+
+    .image-container {
+        position: relative;
+    }
+
+    .delete-btn {
+        width: 24px;
+        height: 24px;
+        margin: 4px;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .image-container:hover .delete-btn {
+        opacity: 1;
+    }
+
+    .preview-image {
+        max-height: 80vh;
+    }
+
+    .upload-zone {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        background: #f8f9fa;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+
+        .upload-zone:hover {
+            border-color: #6c757d;
+            background: #f1f3f5;
+        }
+
+        .upload-zone.dragging {
+            border-color: #0d6efd;
+            background: #e9ecef;
+        }
+
+        .upload-zone.uploading {
+            pointer-events: none;
+            opacity: 0.7;
+        }
+
+    .progress {
+        height: 10px;
+        background-color: #e9ecef;
+        border-radius: 0.5rem;
+    }
+
+    .progress-bar {
+        background-color: #0d6efd;
+        border-radius: 0.5rem;
+    }
+</style>
+
+@code {
+    [Parameter] public string ProductId { get; set; }
+    [Parameter] public List<ProductImage> Images { get; set; } = new();
+    [Parameter] public string IsDeletingImage { get; set; }
+    [Parameter] public string BrandId { get; set; }
+    [Parameter] public EventCallback<string> OnDeleteImageCallback { get; set; }
+    [Parameter] public EventCallback<(MemoryStream, string, string)> OnUploadImageCallback { get; set; }
+
+    private string fileInputId = "fileInput_" + Guid.NewGuid().ToString("N");
+    private bool IsDragging = false;
+    private bool IsUploading = false;
+    private int UploadProgress = 0;
+    private bool ShowPreview = false;
+    private string PreviewImageUrl = "";
+
+    private async Task ClickFileInput()
+    {
+        await JS.InvokeVoidAsync("imageUploadHelpers.clickInput", fileInputId);
+    }
+
+    private void HandleDragEnter()
+    {
+        IsDragging = true;
+        StateHasChanged();
+    }
+
+    private void HandleDragLeave()
+    {
+        IsDragging = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        try
+        {
+            IsDragging = false;
+            IsUploading = true;
+            UploadProgress = 0;
+            StateHasChanged();
+
+            if (string.IsNullOrEmpty(ProductId)) return;
+
+            // Get the dropped files using JS interop
+            var files = await JS.InvokeAsync<string[]>("imageUploadHelpers.handleDrop", e);
+
+            if (files == null || files.Length == 0) return;
+
+            int totalFiles = files.Length;
+            int processedFiles = 0;
+
+            foreach (var fileData in files)
+            {
+                try
+                {
+                    // Convert the base64 string to a byte array
+                    byte[] fileBytes = Convert.FromBase64String(fileData);
+                    using var memoryStream = new MemoryStream(fileBytes);
+
+                    // Update progress
+                    processedFiles++;
+                    UploadProgress = (int)((float)processedFiles / totalFiles * 100);
+                    StateHasChanged();
+
+                    // Call the upload callback
+                    await OnUploadImageCallback.InvokeAsync((memoryStream, "dropped_image.jpg", BrandId));
+                }
+                catch (Exception ex)
+                {
+                    ToastService.ShowToast($"Error processing file: {ex.Message}", "error");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error uploading files: {ex.Message}", "error");
+        }
+        finally
+        {
+            IsUploading = false;
+            UploadProgress = 0;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            IsUploading = true;
+            UploadProgress = 0;
+            StateHasChanged();
+
+            if (string.IsNullOrEmpty(ProductId)) return;
+
+            int totalFiles = e.FileCount;
+            int processedFiles = 0;
+
+            foreach (var file in e.GetMultipleFiles(10))
+            {
+                try
+                {
+                    if (file.Size > 10485760) // 10MB limit
+                    {
+                        ToastService.ShowToast($"File {file.Name} is too large. Maximum size is 10MB.", "error");
+                        continue;
+                    }
+
+                    using var stream = file.OpenReadStream(maxAllowedSize: 10485760);
+                    using var memoryStream = new MemoryStream();
+                    await stream.CopyToAsync(memoryStream);
+                    memoryStream.Position = 0;
+
+                    // Update progress
+                    processedFiles++;
+                    UploadProgress = (int)((float)processedFiles / totalFiles * 100);
+                    StateHasChanged();
+
+                    // Call the upload callback
+                    await OnUploadImageCallback.InvokeAsync((memoryStream, file.Name, BrandId));
+                }
+                catch (Exception ex)
+                {
+                    ToastService.ShowToast($"Error processing file {file.Name}: {ex.Message}", "error");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error selecting files: {ex.Message}", "error");
+        }
+        finally
+        {
+            IsUploading = false;
+            UploadProgress = 0;
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteImage(string imageId)
+    {
+        try
+        {
+            await OnDeleteImageCallback.InvokeAsync(imageId);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error deleting image: {ex.Message}", "error");
+        }
+    }
+
+    private void ShowImagePreview(string imageUrl)
+    {
+        PreviewImageUrl = imageUrl;
+        ShowPreview = true;
+        StateHasChanged();
+    }
+
+    private void CloseImagePreview()
+    {
+        ShowPreview = false;
+        PreviewImageUrl = "";
+        StateHasChanged();
+    }
+
+    // Define a class for product images if not already defined elsewhere
+    public class ProductImage
+    {
+        public string Id { get; set; }
+        public string ImageLink { get; set; }
+        public DateTime CreatedDate { get; set; }
+    }
+}
