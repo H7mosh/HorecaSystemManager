@@ -1,5 +1,6 @@
 ﻿@page "/Products"
 @using sacmy.Client.Components
+@using sacmy.Client.Pages.Products.Components
 @using sacmy.Client.Services
 @using sacmy.Client.Shared.Components.DialogHeader
 @using sacmy.Client.Shared.Toast
@@ -20,610 +21,8 @@
 
 
 
-<style>
-    /* Main Container and Header Styles */
-    .container-fluid {
-        padding: 1rem;
-    }
-
-    .header-card {
-        background: white;
-        padding: 1rem;
-        border-radius: 0.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        margin-bottom: 1rem;
-    }
-
-    /* Search and Filter Controls */
-    .search-box {
-        position: relative;
-        width: 280px;
-    }
-
-        .search-box input {
-            width: 100%;
-            padding: 0.5rem 1rem 0.5rem 2.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 0.75rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #6b7280;
-        }
-
-    /* Product Table Styles */
-    .product-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        background: white;
-        border-radius: 0.5rem;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .table-header {
-        background: #f9fafb;
-    }
-
-        .table-header th {
-            padding: 0.75rem 1rem;
-            font-weight: 600;
-            color: #374151;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-            font-size: 0.875rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-    .selected-row {
-        background-color: rgba(59, 130, 246, 0.05) !important;
-    }
-
-        .selected-row:hover {
-            background-color: rgba(59, 130, 246, 0.08) !important;
-        }
-
-    .product-row {
-        transition: background-color 0.15s;
-    }
-
-        .product-row:hover {
-            background-color: #f9fafb;
-        }
-
-        .product-row td {
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: middle;
-        }
-
-    .product-image {
-        width: 48px;
-        height: 48px;
-        object-fit: cover;
-        border-radius: 0.375rem;
-        background: #f9fafb;
-        padding: 0.25rem;
-    }
-
-    /* Product Data Display */
-    .category-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        background: #f3f4f6;
-        color: #374151;
-        border-radius: 9999px;
-        font-size: 0.75rem;
-    }
-
-    .stock-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.25rem 0.75rem;
-        border-radius: 9999px;
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-        .stock-badge.in-stock {
-            background: #def7ec;
-            color: #065f46;
-        }
-
-        .stock-badge.out-of-stock {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-    /* Sticky Notes Display */
-    .sticky-notes-container {
-        display: flex;
-        margin-left: -8px;
-    }
-
-    .sticky-note-wrapper {
-        position: relative;
-        margin-left: -8px;
-    }
-
-        .sticky-note-wrapper:first-child {
-            margin-left: 0;
-        }
-
-    .employee-avatar {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-        overflow: hidden;
-        position: relative;
-        cursor: pointer;
-        transition: transform 0.2s ease;
-        border: 2px solid white;
-    }
-
-        .employee-avatar.add-note {
-            background-color: #3B82F6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
-
-        .employee-avatar:first-child {
-            background-color: #FEE2E2;
-        }
-
-        .employee-avatar:last-child {
-            background-color: #3B82F6;
-        }
-
-        .employee-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .employee-avatar:hover {
-            transform: scale(1.1);
-            z-index: 2;
-        }
-
-    .sticky-note-tooltip {
-        position: absolute;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        padding: 12px;
-        width: 280px;
-        z-index: 1000;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        margin-top: 8px;
-        display: none;
-    }
-
-    .employee-avatar:hover .sticky-note-tooltip {
-        display: block;
-    }
-
-    .note-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid #E5E7EB;
-    }
-
-    .note-author-image {
-        width: 35px;
-        height: 35px;
-        border-radius: 50%;
-    }
-
-    .note-author-info {
-        flex: 1;
-    }
-
-    .note-author-name {
-        font-weight: 600;
-        color: #111827;
-        font-size: 14px;
-        line-height: 1.25;
-    }
-
-    .note-author-title {
-        color: #6B7280;
-        font-size: 12px;
-    }
-
-    .note-content {
-        color: #374151;
-        font-size: 14px;
-        line-height: 1.5;
-        margin-bottom: 8px;
-    }
-
-    .note-date {
-        font-size: 12px;
-        color: #6B7280;
-    }
-
-    /* Expanded Row and Quick Edit Form */
-    .expanded-row {
-        background-color: #EFF6FF;
-    }
-
-    .quick-edit-form {
-        padding: 1.5rem;
-        background: #F8FAFC;
-        border-radius: 0.5rem;
-        margin: 0.5rem 1rem;
-        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
-        border: 1px solid #E0E7FF;
-    }
-
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
-
-        .form-row.three-columns {
-            grid-template-columns: 1fr 1fr 1fr;
-        }
-
-    .form-group {
-        display: flex;
-        flex-direction: column;
-    }
-
-        .form-group label {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: #1E40AF;
-            margin-bottom: 0.5rem;
-        }
-
-        .form-group input,
-        .form-group select {
-            height: 2.5rem;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #BFDBFE;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            color: #1E293B;
-            background-color: white;
-            transition: all 0.15s ease-in-out;
-        }
-
-            .form-group input:focus,
-            .form-group select:focus {
-                outline: none;
-                border-color: #60A5FA;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            }
-
-            .form-group input:hover,
-            .form-group select:hover {
-                border-color: #93C5FD;
-            }
-
-    .form-actions {
-        display: flex;
-        justify-content: flex-start;
-        gap: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #E0E7FF;
-        margin-top: 1rem;
-    }
-
-        .form-actions .btn-secondary {
-            background-color: #F3F4F6;
-            color: #374151;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: 1px solid #D1D5DB;
-            transition: all 0.15s ease-in-out;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-            .form-actions .btn-secondary:hover {
-                background-color: #E5E7EB;
-                border-color: #9CA3AF;
-            }
-
-        .form-actions .btn-primary,
-        .form-actions .btn-link {
-            margin-left: auto;
-        }
-
-            .form-actions .btn-primary + .btn-link {
-                margin-left: 0;
-            }
-
-        .form-actions .btn-primary {
-            background-color: #2563EB;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: none;
-            transition: background-color 0.15s ease-in-out;
-        }
-
-            .form-actions .btn-primary:hover {
-                background-color: #1D4ED8;
-            }
-
-        .form-actions .btn-link {
-            color: #6B7280;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: color 0.15s ease-in-out;
-        }
-
-            .form-actions .btn-link:hover {
-                color: #1E40AF;
-            }
-
-    /* Pagination */
-    .pagination {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem;
-        border-top: 1px solid #e5e7eb;
-    }
-
-    .page-number {
-        min-width: 32px;
-        height: 32px;
-        padding: 0;
-        border: 1px solid #e5e7eb;
-        background: white;
-        border-radius: 4px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #374151;
-        cursor: pointer;
-        margin: 0 2px;
-    }
-
-        .page-number:hover {
-            background: #f3f4f6;
-        }
-
-        .page-number.active {
-            background: #2563eb;
-            color: white;
-            border-color: #2563eb;
-        }
-
-    /* Overview Panel Styles */
-    .overview-card {
-        background: white;
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .stat-header {
-        color: #6b7280;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 1.5rem;
-    }
-
-    .stat-value {
-        font-size: 1.875rem;
-        font-weight: 600;
-        color: #2563eb;
-        line-height: 2.25rem;
-        margin-top: 0.25rem;
-    }
-
-    .progress-bar {
-        width: 100%;
-        height: 0.5rem;
-        background: #f3f4f6;
-        border-radius: 9999px;
-        margin: 0.5rem 0 1rem;
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        border-radius: 9999px;
-        transition: width 0.3s ease;
-    }
-
-        .progress-fill.available {
-            background: #10b981;
-        }
-
-        .progress-fill.out-of-stock {
-            background: #ef4444;
-        }
-
-    .stat-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 0.5rem;
-    }
-
-    .stat-label {
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .stat-number {
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    /* Hot Products Section */
-    .hot-products {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #E5E7EB;
-    }
-
-    .hot-header {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        margin-bottom: 1rem;
-    }
-
-    .hot-icon {
-        color: #EF4444;
-    }
-
-    .hot-stats {
-        border-radius: 0.5rem;
-    }
-
-    .views-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-    }
-
-    .views-label {
-        font-size: 0.875rem;
-        font-weight: 500;
-    }
-
-    .views-sublabel {
-        font-size: 0.75rem;
-        color: #6B7280;
-    }
-
-    .views-number {
-        font-size: 1.25rem;
-        font-weight: 600;
-        text-align: right;
-    }
-
-    /* PDF Modal Styles */
-    #pdfProgressModal .modal-content {
-        border-radius: 1rem;
-    }
-
-    #pdfProgressModal .progress {
-        border-radius: 0.5rem;
-        background-color: #e9ecef;
-        overflow: hidden;
-    }
-
-    #pdfProgressModal .progress-bar {
-        border-radius: 0.5rem;
-        transition: width 0.3s ease;
-        min-width: 0%;
-    }
-
-    #pdfProgressModal .bi-file-pdf {
-        animation: pulse 2s infinite;
-    }
-
-    @@keyframes pulse {
-        0%
-
-    {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
-
-    100% {
-        transform: scale(1);
-    }
-
-    }
-
-    /* Responsive Adjustments */
-    @@media (max-width: 992px) {
-        .d-flex.align-items-center.gap-4
-
-    {
-        flex-wrap: wrap;
-    }
-
-    .search-box {
-        width: 100%;
-        margin-top: 0.5rem;
-    }
-
-    }
-
-    @@media (max-width: 768px) {
-        .product-table
-
-    {
-        font-size: 0.875rem;
-    }
-
-    .product-image {
-        width: 40px;
-        height: 40px;
-    }
-
-    .category-badge {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.5rem;
-    }
-
-    .stock-badge {
-        font-size: 0.7rem;
-        padding: 0.2rem 0.5rem;
-    }
-
-    }
-
-    .selection-toolbar {
-        animation: fadeIn 0.3s ease-in-out;
-    }
-
-    @@keyframes fadeIn {
-        from
-
-    {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    }
-</style>
 
 <div class="container-fluid py-3">
-
     <div class="row">
         <!-- Brand Selection -->
         <div class="col-12">
@@ -649,66 +48,18 @@
         </div>
 
         <div class="col-xl-9">
-            <!-- Header Section -->
-            <div class="bg-white p-3 rounded-3 shadow-sm mb-4">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="text-dark mb-0 fw-semibold">IN STOCK</h5>
-
-                    <div class="d-flex align-items-center gap-4">
-                        <!-- Stock Filter Checkbox -->
-                        <div class="form-check d-flex align-items-center">
-                            <input class="form-check-input me-2"
-                                   type="checkbox"
-                                   id="inStockFilter"
-                                   @bind="showOnlyInStock" />
-                            <label class="form-check-label" for="inStockFilter">
-                                In Stock Only
-                            </label>
-                        </div>
-                        <!-- Category Filter -->
-                        <select class="form-select bg-white border" style="width: 180px;" @bind="SelectedCategory">
-                            <option value="">All Categories</option>
-                            @foreach (var category in brandResponse?.Data?.Categories ?? new List<Category>())
-                            {
-                                <option value="@category.Id">@category.NameEn</option>
-                            }
-                        </select>
-
-                        <!-- Search Box -->
-                        <div class="position-relative" style="width: 280px;">
-                            <i class="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
-                            <input type="text"
-                                   class="form-control ps-5 border"
-                                   placeholder="Search SKU, Name..."
-                                   @bind="searchString"
-                                   @bind:event="oninput" />
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="d-flex align-items-center gap-2">
-                            <button class="btn btn-primary d-flex align-items-center gap-2 px-3" @onclick="GeneratePDF">
-                                <i class="bi bi-file-pdf"></i>
-                                <span>Generate PDF</span>
-                            </button>
-
-                            <button class="btn btn-secondary d-flex align-items-center gap-2 px-3"
-                                    @onclick="ResetCache"
-                                    disabled="@isResettingCache">
-                                @if (isResettingCache)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                    <span>Resetting...</span>
-                                }
-                                else
-                                {
-                                    <i class="bi bi-arrow-clockwise"></i>
-                                    <span>Reset Cache</span>
-                                }
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Product Filters Component -->
+            <ProductFilters SearchString="@searchString"
+                            SelectedCategory="@SelectedCategory"
+                            ShowOnlyInStock="@showOnlyInStock"
+                            IsResettingCache="@isResettingCache"
+                            Categories="@brandResponse?.Data?.Categories"
+                            SearchStringChanged="value => { searchString = value; ApplyFilters(); }"
+                            SelectedCategoryChanged="value => { SelectedCategory = value; ApplyFilters(); }"
+                            ShowOnlyInStockChanged="value => { showOnlyInStock = value; ApplyFilters(); }"
+                            OnFilterChangeCallback="ApplyFilters"
+                            OnGeneratePdfCallback="GeneratePDF"
+                            OnResetCacheCallback="ResetCache" />
 
             @if (selectedProductIds.Any())
             {
@@ -729,7 +80,6 @@
                 </div>
             }
 
-
             @if (isLoading)
             {
                 <div class="d-flex justify-content-center my-5">
@@ -738,219 +88,26 @@
             }
             else if (FilteredProducts?.Any() == true)
             {
-                <div class="table-responsive">
-                    <table class="product-table">
-                        <thead class="table-header">
-                            <tr>
-                                <th style="width: 40px;">
-                                    <div class="form-check d-flex justify-content-center">
-                                        <input class="form-check-input" 
-                                               type="checkbox" 
-                                               id="selectAllProducts" 
-                                               checked="@AllProductsSelected"
-                                               @onchange="(e) => { AllProductsSelected = (bool)e.Value; }" />
-                                    </div>
-                                </th>
-                                <th style="width: 80px;">Image</th>
-                                <th style="width: 150px;">Sku</th>
-                                <th style="width: 200px;">Name</th>
-                                <th style="width: 150px;">Category</th>
-                                <th style="width: 150px;">Price</th>
-                                <th style="width: 120px;">Stock</th>        
-                                <th style="width: 100px;">Stick Notes</th>  
-                                <th style="width: 80px;">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var product in PaginatedProducts)
-                            {
-                                <tr class="product-row @(IsProductSelected(product.Id) ? "selected-row" : "")"
-                                    @onclick="() => SelectProduct(product.Id)">
-                                    <td>
-                                        <div class="form-check d-flex justify-content-center">
-                                            <input class="form-check-input"
-                                                   type="checkbox"
-                                                   id="select-@product.Id"
-                                                   checked="@IsProductSelected(product.Id)"
-                                                   @onchange="(e) => ToggleProductSelection(product.Id, e)"
-                                                   @onclick:stopPropagation="true" /> <!-- Stop propagation to prevent the row click handler from firing -->
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <img src="@product.Image" class="product-image" alt="@product.Name" />
-                                    </td>
-                                    <td>
-                                        <div class="fw-medium text-dark">@product.Sku</div>
-                                        <div class="text-muted small">@product.PatternNumber</div>
-                                    </td>
-                                    <td>@product.Name</td>
-                                    <td>
-                                        <span class="category-badge">@GetCategoryName(product.CategoryId)</span>
-                                    </td>
-                                    <td class="text-end">
-                                        <div class="fw-semibold text-dark">$@product.Price</div>
-                                        <div class="text-success small">@product.DinarPrice IQD</div>
-                                    </td>
-                                    <td>
-                                        <span class="stock-badge @(product.Quantity > 0 ? "in-stock" : "out-of-stock")">
-                                            @if (product.Quantity > 0)
-                                            {
-                                                <i class="bi bi-check-circle-fill"></i>
-                                            }
-                                            else
-                                            {
-                                                <i class="bi bi-x-circle-fill"></i>
-                                            }
-                                            @product.Quantity in stock
-                                        </span>
-                                    </td>
-                                    <td>
-                                        @if (product.StickyNotes?.Any() == true)
-                                        {
-                                            <div class="sticky-notes-container" @onclick="() => ShowAllNotes(product.Id, product.StickyNotes)">
-                                                @foreach (var note in product.StickyNotes)
-                                                {
-                                                    <div class="sticky-note-wrapper">
-                                                        <div class="employee-avatar" style="background-color: @(note == product.StickyNotes.First() ? "#FEE2E2" : "#D1FAE5")">
-                                                            <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
-                                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
-
-                                                            <div class="sticky-note-tooltip">
-                                                                <div class="note-header">
-                                                                    <img class="note-author-image"
-                                                                         src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
-                                                                         alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
-                                                                    <div class="note-author-info">
-                                                                        <div class="note-author-name">@(note.Employee?.FirstName) @(note.Employee?.LastName)</div>
-                                                                        <div class="note-author-title">@(note.Employee?.JobTitle ?? "Employee")</div>
-                                                                    </div>
-                                                                </div>
-                                                                <div class="note-content">@note.Note</div>
-                                                                <div class="note-date">@note.CreatedDate.ToString("MMM dd, yyyy")</div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                }
-                                            </div>
-                                        }
-                                        else
-                                        {
-                                            <div class="employee-avatar add-note" @onclick="() => ShowAddNoteDialog(product.Id)">
-                                                <i class="bi bi-plus-lg"></i>
-                                            </div>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-link p-0" @onclick="() => ShowMonitorDialog(product.Id)">
-                                                <i class="bi bi-eye"></i>
-                                            </button>
-                                            <button class="btn btn-link p-0" @onclick="() => ToggleProductExpand(product.Id)">
-                                                <i class="bi @(IsProductExpanded(product.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                                @if (IsProductExpanded(product.Id))
-                                {
-                                    <tr class="expanded-row">
-                                        <td colspan="9">
-                                            <div class="quick-edit-form">
-                                                <div class="form-row">
-                                                    <div class="form-group">
-                                                        <label>Height</label>
-                                                        <input type="number" step="0.01" @bind="@product.Height" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Diameter</label>
-                                                        <input type="number" step="0.01" @bind="@product.Diameter" />
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-row">
-                                                    <div class="form-group">
-                                                        <label>Top</label>
-                                                        <input type="number" step="0.01" @bind="@product.Top" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Base</label>
-                                                        <input type="number" step="0.01" @bind="@product.Base" />
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-row three-columns">
-                                                    <div class="form-group">
-                                                        <label>Volume</label>
-                                                        <input type="number" step="0.01" @bind="@product.Volume" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Weight</label>
-                                                        <input type="number" step="0.01" @bind="@product.Weight" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>Area</label>
-                                                        <input type="number" step="0.01" @bind="@product.Area" />
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-row">
-                                                    <div class="form-group">
-                                                        <label>EAN</label>
-                                                        <input type="text" @bind="@product.Ean" />
-                                                    </div>
-                                                    <div class="form-group">
-                                                        <label>UPC</label>
-                                                        <input type="text" @bind="@product.Upc" />
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-actions">
-                                                    <button class="btn btn-secondary" @onclick="() => ShowAdvancedEdit(product)">
-                                                        <i class="bi bi-sliders"></i> Advanced Edit
-                                                    </button>
-                                                    <button class="btn btn-primary position-relative"
-                                                            @onclick="() => SaveChanges(product)"
-                                                            disabled="@isUpdating">
-                                                        @if (isUpdating)
-                                                        {
-                                                            <span class="spinner-border spinner-border-sm me-2"
-                                                                  role="status"
-                                                                  aria-hidden="true">
-                                                            </span>
-                                                            <span>Saving...</span>
-                                                        }
-                                                        else
-                                                        {
-                                                            <span>Save Changes</span>
-                                                        }
-                                                    </button>
-                                                    <button class="btn btn-link"
-                                                            @onclick="() => ToggleProductExpand(product.Id)"
-                                                            disabled="@isUpdating">
-                                                        Cancel
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                }
-                            }
-                        
-                        </tbody>
-                    </table>
-
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <div class="text-muted small">
-                            Showing @(((CurrentPage - 1) * PageSize) + 1) to @Math.Min(CurrentPage * PageSize, FilteredProducts.Count())
-                            of @FilteredProducts.Count() items
-                        </div>
-                        <sacmy.Client.Components.PaginationComponent 
-                            CurrentPage="@CurrentPage"
-                            TotalItems="@FilteredProducts.Count()"
-                            PageSize="@PageSize"
-                            OnPageChanged="@NavigateToPage" />
-                    </div>
-                </div>
+                <!-- Product List Component -->
+                <ProductListView Products="@PaginatedProducts"
+                                 AllProductsSelected="@AllProductsSelected"
+                                 SelectedProductIds="@selectedProductIds"
+                                 ExpandedProductIds="@expandedProductIds"
+                                 CurrentPage="@CurrentPage"
+                                 PageSize="@PageSize"
+                                 TotalItems="@(FilteredProducts?.Count() ?? 0)"
+                                 IsUpdating="@isUpdating"
+                                 Categories="@brandResponse?.Data?.Categories"
+                                 AllProductsSelectedChanged="value => { AllProductsSelected = value; }"
+                                 OnProductSelectCallback="SelectProduct"
+                                 OnProductSelectionToggleCallback="ToggleProductSelection"
+                                 OnToggleExpandCallback="ToggleProductExpand"
+                                 OnShowNotesCallback="ShowAllNotes"
+                                 OnAddNoteCallback="ShowAddNoteDialog"
+                                 OnMonitorProductCallback="ShowMonitorDialog"
+                                 OnAdvancedEditCallback="ShowAdvancedEdit"
+                                 OnSaveChangesCallback="SaveChanges"
+                                 OnPageChangedCallback="NavigateToPage" />
             }
             else
             {
@@ -959,18 +116,15 @@
                 </div>
             }
 
-
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
                 <div class="alert alert-success">@successMessage</div>
             }
 
-
             @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
                 <div class="alert alert-danger">@errorMessage</div>
             }
-        
         </div>
 
         <div class="col-xl-3">
@@ -1086,49 +240,41 @@
         </div>
     </div>
 
-
-
     <!-- Modals/Dialogs -->
-    <StickyNoteDetailsDialog 
-        IsVisible="@showNoteDialog" 
-        Note="@selectedNote" 
-        OnClose="@CloseNoteDialog" />
+    <StickyNoteDetailsDialog IsVisible="@showNoteDialog"
+                             Note="@selectedNote"
+                             OnClose="@CloseNoteDialog" />
 
-    <AddStickyNoteDialog 
-        IsVisible="@showAddDialog" 
-        ProductId="@selectedProductId" 
-        OnClose="@CloseAddDialog" 
-        OnNoteSaved="@AddNote" />
+    <AddStickyNoteDialog IsVisible="@showAddDialog"
+                         ProductId="@selectedProductId"
+                         OnClose="@CloseAddDialog"
+                         OnNoteSaved="@AddNote" />
 
-    <AllNotesDialog 
-        IsVisible="@showAllNotesDialog" 
-        ProductId="@selectedProductForNotes"
-        Notes="@currentProductNotes"
-        OnClose="@CloseAllNotesDialog"
-        OnNoteSaved="@AddNoteFromTimeline" />
+    <AllNotesDialog IsVisible="@showAllNotesDialog"
+                    ProductId="@selectedProductForNotes"
+                    Notes="@currentProductNotes"
+                    OnClose="@CloseAllNotesDialog"
+                    OnNoteSaved="@AddNoteFromTimeline" />
 
-    <StockMonitorDialog 
-        IsVisible="@showMonitorDialog" 
-        Model="@monitorModel" 
-        OnClose="@CloseMonitorDialog" 
-        OnSave="@SaveMonitoring" />
+    <StockMonitorDialog IsVisible="@showMonitorDialog"
+                        Model="@monitorModel"
+                        OnClose="@CloseMonitorDialog"
+                        OnSave="@SaveMonitoring" />
 
-    <AddBrandDialog 
-        IsVisible="@showAddBrandDialog" 
-        Brand="@newBrand" 
-        Error="@brandError"
-        IsCreating="@isCreatingBrand"
-        OnClose="@CloseAddBrandDialog" 
-        OnSave="@CreateBrand" />
+    <AddBrandDialog IsVisible="@showAddBrandDialog"
+                    Brand="@newBrand"
+                    Error="@brandError"
+                    IsCreating="@isCreatingBrand"
+                    OnClose="@CloseAddBrandDialog"
+                    OnSave="@CreateBrand" />
 
-    <AdvancedEditDialog 
-        Product="@selectedProduct"
-        IsVisible="@showAdvancedEdit"
-        IsVisibleChanged="(value) => showAdvancedEdit = value"
-        OnSaved="@HandleAdvancedEditSaved"
-        Categories="@brandResponse?.Data?.Categories"
-        Collections="@brandResponse?.Data?.Collections"
-        Brands="@brands" />
+    <AdvancedEditDialog Product="@selectedProduct"
+                        IsVisible="@showAdvancedEdit"
+                        IsVisibleChanged="(value) => showAdvancedEdit = value"
+                        OnSaved="@HandleAdvancedEditSaved"
+                        Categories="@brandResponse?.Data?.Categories"
+                        Collections="@brandResponse?.Data?.Collections"
+                        Brands="@brands" />
 
     <CustomizePriceDialog IsVisible="@showCustomizePriceDialog"
                           SelectedCount="@selectedProductIds.Count"
@@ -1136,6 +282,28 @@
                           OnClose="CloseCustomizePriceDialog"
                           OnApplyCustomPrice="ApplyCustomPrice" />
 </div>
+
+<style>
+    /* Selection Toolbar */
+    .selection-toolbar {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    }
+</style>
 
 @code {
     private List<BrandViewModel> brands;
@@ -1174,44 +342,7 @@
     private BrandViewModel newBrand = new();
     private bool isResettingCache = false;
     private bool showCustomizePriceDialog = false;
-    private void ShowCustomizePriceDialog()
-    {
-        showCustomizePriceDialog = true;
-    }
 
-    private void CloseCustomizePriceDialog()
-    {
-        showCustomizePriceDialog = false;
-        StateHasChanged();
-    }
-
-    private void SelectProduct(string productId)
-    {
-        selectedProductId = productId;
-        selectedProductIdforPriceChange = productId;
-        selectedProduct = FilteredProducts.FirstOrDefault(p => p.Id == productId);
-        StateHasChanged();
-    }
-
-    private async Task ApplyCustomPrice(CustomPriceViewModel model)
-    {
-        try
-        {
-            ToastService.ShowToast($"Custom pricing applied for {selectedProductIds.Count} products for customer {model.CustomerName}", "success");
-
-            // Optionally, refresh product data here
-            // await LoadBrands();
-            // await SetDefaultBrandAndLoadProducts();
-
-            showCustomizePriceDialog = false;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowToast($"Error applying custom prices: {ex.Message}", "error");
-        }
-    }
-    
     // Selection properties
     private HashSet<string> selectedProductIds = new HashSet<string>();
     private bool AllProductsSelected
@@ -1229,33 +360,6 @@
             }
             StateHasChanged();
         }
-    }
-
-    // Selection methods
-    private bool IsProductSelected(string productId) => selectedProductIds.Contains(productId);
-
-    private void ToggleProductSelection(string productId, ChangeEventArgs e)
-    {
-        if (e.Value is bool isChecked)
-        {
-            if (isChecked)
-            {
-                selectedProductIds.Add(productId);
-            }
-            else
-            {
-                selectedProductIds.Remove(productId);
-            }
-        }
-        StateHasChanged();
-    }
-
-    // Method to get selected products (for future use)
-    private List<Product> GetSelectedProducts()
-    {
-        return FilteredProducts
-            .Where(p => selectedProductIds.Contains(p.Id))
-            .ToList();
     }
 
     protected override async Task OnInitializedAsync()
@@ -1345,22 +449,12 @@
         }
     }
 
-    private string GetCategoryName(string categoryId) =>
-        brandResponse?.Data?.Categories
-            .FirstOrDefault(c => c.Id == categoryId)?.NameEn ?? "Unknown";
-
-    private void ToggleProductExpand(string productId)
+    private void ApplyFilters()
     {
-        if (expandedProductIds.Contains(productId))
-            expandedProductIds.Remove(productId);
-        else
-            expandedProductIds.Add(productId);
-
+        // Reset to first page when filters change
+        CurrentPage = 1;
         StateHasChanged();
     }
-
-    private bool IsProductExpanded(string productId) =>
-        expandedProductIds.Contains(productId);
 
     private async Task GeneratePDF()
     {
@@ -1392,7 +486,7 @@
             StateHasChanged();
         }
     }
-    
+
     private async Task ShowAdvancedEdit(Product product)
     {
         try
@@ -1414,6 +508,37 @@
         StateHasChanged();
     }
 
+    private void SelectProduct(string productId)
+    {
+        selectedProductId = productId;
+        selectedProductIdforPriceChange = productId;
+        selectedProduct = FilteredProducts.FirstOrDefault(p => p.Id == productId);
+        StateHasChanged();
+    }
+
+    private void ToggleProductSelection((string productId, bool isChecked) selection)
+    {
+        if (selection.isChecked)
+        {
+            selectedProductIds.Add(selection.productId);
+        }
+        else
+        {
+            selectedProductIds.Remove(selection.productId);
+        }
+        StateHasChanged();
+    }
+
+    private void ToggleProductExpand(string productId)
+    {
+        if (expandedProductIds.Contains(productId))
+            expandedProductIds.Remove(productId);
+        else
+            expandedProductIds.Add(productId);
+
+        StateHasChanged();
+    }
+
     private async Task SaveChanges(Product product)
     {
         if (isUpdating) return;
@@ -1422,21 +547,21 @@
         try
         {
             var updateModel = new UpdateProductViewModel
-            {
-                ProductId = Guid.Parse(product.Id),
-                Name = product.Name,
-                PatternNumber = product.PatternNumber,
-                Price = double.Parse(product.Price.ToString()),
-                CategoryId = product.CategoryId,
-                CollectionId = product.SeriesOrCollectionId,
-                Quantity = product.Quantity,
-                OuterTypeCount = product.BoxCount ?? 0,
-                InnerTypeCount = product.PieceCount ?? 0,
-                Upc = product.Upc,
-                Ean = product.Ean,
-                Points = product.Points,
-                Volume = double.Parse(product.Volume.ToString())
-            };
+                {
+                    ProductId = Guid.Parse(product.Id),
+                    Name = product.Name,
+                    PatternNumber = product.PatternNumber,
+                    Price = double.Parse(product.Price.ToString()),
+                    CategoryId = product.CategoryId,
+                    CollectionId = product.SeriesOrCollectionId,
+                    Quantity = product.Quantity,
+                    OuterTypeCount = product.BoxCount ?? 0,
+                    InnerTypeCount = product.PieceCount ?? 0,
+                    Upc = product.Upc,
+                    Ean = product.Ean,
+                    Points = product.Points,
+                    Volume = double.Parse(product.Volume.ToString())
+                };
 
             var response = await ProductsService.UpdateProductAsync(updateModel);
 
@@ -1463,22 +588,21 @@
         }
     }
 
-    #region Dialog Management
-
-    // Sticky Note Details Dialog
-    private void ShowNoteDetails(GetStickyNoteViewModel note)
+    private void ShowAllNotes((string productId, List<GetStickyNoteViewModel> notes) data)
     {
-        selectedNote = note;
-        showNoteDialog = true;
+        selectedProductForNotes = data.productId;
+        currentProductNotes = data.notes;
+        showAllNotesDialog = true;
     }
 
-    private void CloseNoteDialog()
+    private void CloseAllNotesDialog()
     {
-        showNoteDialog = false;
-        selectedNote = null;
+        showAllNotesDialog = false;
+        selectedProductForNotes = null;
+        currentProductNotes = null;
+        newNoteText = "";
     }
 
-    // Add Note Dialog
     private void ShowAddNoteDialog(string productId)
     {
         selectedProductId = productId;
@@ -1524,22 +648,6 @@
         {
             ToastService.ShowToast($"Error adding note: {ex.Message}", "error");
         }
-    }
-
-    // All Notes Dialog
-    private void ShowAllNotes(string productId, List<GetStickyNoteViewModel> notes)
-    {
-        selectedProductForNotes = productId;
-        currentProductNotes = notes;
-        showAllNotesDialog = true;
-    }
-
-    private void CloseAllNotesDialog()
-    {
-        showAllNotesDialog = false;
-        selectedProductForNotes = null;
-        currentProductNotes = null;
-        newNoteText = "";
     }
 
     private async Task AddNoteFromTimeline()
@@ -1601,7 +709,18 @@
         }
     }
 
-    // Stock Monitor Dialog
+    private void ShowNoteDetails(GetStickyNoteViewModel note)
+    {
+        selectedNote = note;
+        showNoteDialog = true;
+    }
+
+    private void CloseNoteDialog()
+    {
+        showNoteDialog = false;
+        selectedNote = null;
+    }
+
     private void ShowMonitorDialog(string productId)
     {
         selectedProductIdForMonitoring = productId;
@@ -1649,7 +768,31 @@
         }
     }
 
-    // Add Brand Dialog
+    private async Task ResetCache()
+    {
+        try
+        {
+            isResettingCache = true;
+            StateHasChanged();
+
+            await ProductsService.ResetCacheAsync();
+
+            // Refresh data after cache clear
+            await SetDefaultBrandAndLoadProducts();
+
+            ToastService.ShowToast("Cache reset and data refreshed successfully", "success");
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error resetting cache: {ex.Message}", "error");
+        }
+        finally
+        {
+            isResettingCache = false;
+            StateHasChanged();
+        }
+    }
+
     private void ShowAddBrandDialog()
     {
         showAddBrandDialog = true;
@@ -1703,30 +846,34 @@
             StateHasChanged();
         }
     }
-    #endregion
 
-    private async Task ResetCache()
+    private void ShowCustomizePriceDialog()
+    {
+        showCustomizePriceDialog = true;
+    }
+
+    private void CloseCustomizePriceDialog()
+    {
+        showCustomizePriceDialog = false;
+        StateHasChanged();
+    }
+
+    private async Task ApplyCustomPrice(CustomPriceViewModel model)
     {
         try
         {
-            isResettingCache = true;
+            ToastService.ShowToast($"Custom pricing applied for {selectedProductIds.Count} products for customer {model.CustomerName}", "success");
+
+            // Optionally, refresh product data here
+            // await LoadBrands();
+            // await SetDefaultBrandAndLoadProducts();
+
+            showCustomizePriceDialog = false;
             StateHasChanged();
-
-            await ProductsService.ResetCacheAsync();
-
-            // Refresh data after cache clear
-            await SetDefaultBrandAndLoadProducts();
-
-            ToastService.ShowToast("Cache reset and data refreshed successfully", "success");
         }
         catch (Exception ex)
         {
-            ToastService.ShowToast($"Error resetting cache: {ex.Message}", "error");
-        }
-        finally
-        {
-            isResettingCache = false;
-            StateHasChanged();
+            ToastService.ShowToast($"Error applying custom prices: {ex.Message}", "error");
         }
     }
 }

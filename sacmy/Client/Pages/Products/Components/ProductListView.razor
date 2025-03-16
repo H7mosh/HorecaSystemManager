@@ -1,0 +1,512 @@
+﻿@using sacmy.Shared.ViewModels.Products
+@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.StickNoteViewModel
+
+<div class="table-responsive">
+    <table class="product-table">
+        <thead class="table-header">
+            <tr>
+                <th style="width: 40px;">
+                    <div class="form-check d-flex justify-content-center">
+                        <input class="form-check-input"
+                               type="checkbox"
+                               id="selectAllProducts"
+                               checked="@AllProductsSelected"
+                               @onchange="(e) => { AllProductsSelected = (bool)e.Value; }" />
+                    </div>
+                </th>
+                <th style="width: 80px;">Image</th>
+                <th style="width: 150px;">Sku</th>
+                <th style="width: 200px;">Name</th>
+                <th style="width: 150px;">Category</th>
+                <th style="width: 150px;">Price</th>
+                <th style="width: 120px;">Stock</th>
+                <th style="width: 100px;">Stick Notes</th>
+                <th style="width: 80px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var product in Products)
+            {
+                <tr class="product-row @(IsProductSelected(product.Id) ? "selected-row" : "")"
+                    @onclick="() => OnProductSelect(product.Id)">
+                    <td>
+                        <div class="form-check d-flex justify-content-center">
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   id="select-@product.Id"
+                                   checked="@IsProductSelected(product.Id)"
+                                   @onchange="(e) => OnProductSelectionToggle(product.Id, e)"
+                                   @onclick:stopPropagation="true" />
+                        </div>
+                    </td>
+                    <td>
+                        <img src="@product.Image"
+                             class="product-image"
+                             alt="@product.Name"
+                             @onload="() => OnImageLoaded(product.Id)"
+                             @onerror="() => OnImageError(product.Id)" />
+                    </td>
+                    <td>
+                        <div class="fw-medium text-dark">@product.Sku</div>
+                        <div class="text-muted small">@product.PatternNumber</div>
+                    </td>
+                    <td>@product.Name</td>
+                    <td>
+                        <span class="category-badge">@GetCategoryName(product.CategoryId)</span>
+                    </td>
+                    <td class="text-end">
+                        <div class="fw-semibold text-dark">$@product.Price</div>
+                        <div class="text-success small">@product.DinarPrice IQD</div>
+                    </td>
+                    <td>
+                        <span class="stock-badge @(product.Quantity > 0 ? "in-stock" : "out-of-stock")">
+                            @if (product.Quantity > 0)
+                            {
+                                <i class="bi bi-check-circle-fill"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-x-circle-fill"></i>
+                            }
+                            @product.Quantity in stock
+                        </span>
+                    </td>
+                    <td>
+                        @if (product.StickyNotes?.Any() == true)
+                        {
+                            <div class="sticky-notes-container" @onclick="() => OnShowNotes(product.Id, product.StickyNotes)">
+                                @foreach (var note in product.StickyNotes)
+                                {
+                                    <div class="sticky-note-wrapper">
+                                        <div class="employee-avatar" style="background-color: @(note == product.StickyNotes.First() ? "#FEE2E2" : "#D1FAE5")">
+                                            <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
+                                            <div class="sticky-note-tooltip">
+                                                <div class="note-header">
+                                                    <img class="note-author-image"
+                                                         src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                         alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
+                                                    <div class="note-author-info">
+                                                        <div class="note-author-name">@note.Employee?.FirstName @note.Employee?.LastName</div>
+                                                        <div class="note-author-title">@(note.Employee?.JobTitle ?? "Employee")</div>
+                                                    </div>
+                                                </div>
+                                                <div class="note-content">@note.Note</div>
+                                                <div class="note-date">@note.CreatedDate.ToString("MMM dd, yyyy")</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="employee-avatar add-note" @onclick="() => OnAddNote(product.Id)">
+                                <i class="bi bi-plus-lg"></i>
+                            </div>
+                        }
+                    </td>
+                    <td>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-link p-0" @onclick="() => OnMonitorProduct(product.Id)">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-link p-0" @onclick="() => OnToggleExpand(product.Id)">
+                                <i class="bi @(IsProductExpanded(product.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                @if (IsProductExpanded(product.Id))
+                {
+                    <tr class="expanded-row">
+                        <td colspan="9">
+                            <QuickEditForm Product="@product"
+                                           OnSaveChanges="OnSaveChanges"
+                                           OnAdvancedEdit="() => OnAdvancedEdit(product)"
+                                           OnCancel="() => OnToggleExpand(product.Id)"
+                                           IsUpdating="IsUpdating" />
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted small">
+            Showing @(((CurrentPage - 1) * PageSize) + 1) to @Math.Min(CurrentPage * PageSize, TotalItems)
+            of @TotalItems items
+        </div>
+        <sacmy.Client.Components.PaginationComponent CurrentPage="@CurrentPage"
+                                                     TotalItems="@TotalItems"
+                                                     PageSize="@PageSize"
+                                                     OnPageChanged="@OnPageChanged" />
+    </div>
+</div>
+
+<style>
+    /* Product Table Styles */
+    .product-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: white;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .table-header {
+        background: #f9fafb;
+    }
+
+        .table-header th {
+            padding: 0.75rem 1rem;
+            font-weight: 600;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+    .selected-row {
+        background-color: rgba(59, 130, 246, 0.05) !important;
+    }
+
+        .selected-row:hover {
+            background-color: rgba(59, 130, 246, 0.08) !important;
+        }
+
+    .product-row {
+        transition: background-color 0.15s;
+    }
+
+        .product-row:hover {
+            background-color: #f9fafb;
+        }
+
+        .product-row td {
+            padding: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+    .product-image {
+        width: 48px;
+        height: 48px;
+        object-fit: cover;
+        border-radius: 0.375rem;
+        background: #f9fafb;
+        padding: 0.25rem;
+    }
+
+    /* Product Data Display */
+    .category-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+    }
+
+    .stock-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+        .stock-badge.in-stock {
+            background: #def7ec;
+            color: #065f46;
+        }
+
+        .stock-badge.out-of-stock {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+    /* Sticky Notes Display */
+    .sticky-notes-container {
+        display: flex;
+        margin-left: -8px;
+    }
+
+    .sticky-note-wrapper {
+        position: relative;
+        margin-left: -8px;
+    }
+
+        .sticky-note-wrapper:first-child {
+            margin-left: 0;
+        }
+
+    .employee-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+        transition: transform 0.2s ease;
+        border: 2px solid white;
+    }
+
+        .employee-avatar.add-note {
+            background-color: #3B82F6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .employee-avatar:first-child {
+            background-color: #FEE2E2;
+        }
+
+        .employee-avatar:last-child {
+            background-color: #3B82F6;
+        }
+
+        .employee-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .employee-avatar:hover {
+            transform: scale(1.1);
+            z-index: 2;
+        }
+
+    .sticky-note-tooltip {
+        position: absolute;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        padding: 12px;
+        width: 280px;
+        z-index: 1000;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 8px;
+        display: none;
+    }
+
+    .employee-avatar:hover .sticky-note-tooltip {
+        display: block;
+    }
+
+    .note-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #E5E7EB;
+    }
+
+    .note-author-image {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+    }
+
+    .note-author-info {
+        flex: 1;
+    }
+
+    .note-author-name {
+        font-weight: 600;
+        color: #111827;
+        font-size: 14px;
+        line-height: 1.25;
+    }
+
+    .note-author-title {
+        color: #6B7280;
+        font-size: 12px;
+    }
+
+    .note-content {
+        color: #374151;
+        font-size: 14px;
+        line-height: 1.5;
+        margin-bottom: 8px;
+    }
+
+    .note-date {
+        font-size: 12px;
+        color: #6B7280;
+    }
+
+    /* Expanded Row */
+    .expanded-row {
+        background-color: #EFF6FF;
+    }
+
+    /* Responsive Adjustments */
+    @@media (max-width: 768px) {
+        .product-table
+
+    {
+        font-size: 0.875rem;
+    }
+
+    .product-image {
+        width: 40px;
+        height: 40px;
+    }
+
+    .category-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    .stock-badge {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+    }
+
+    }
+</style>
+
+@code {
+    [Parameter]
+    public IEnumerable<Product> Products { get; set; } = Array.Empty<Product>();
+
+    [Parameter]
+    public bool AllProductsSelected { get; set; }
+
+    [Parameter]
+    public HashSet<string> SelectedProductIds { get; set; } = new();
+
+    [Parameter]
+    public HashSet<string> ExpandedProductIds { get; set; } = new();
+
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int PageSize { get; set; } = 10;
+
+    [Parameter]
+    public int TotalItems { get; set; }
+
+    [Parameter]
+    public bool IsUpdating { get; set; }
+
+    [Parameter]
+    public IEnumerable<Category> Categories { get; set; } = Array.Empty<Category>();
+
+    [Parameter]
+    public EventCallback<bool> AllProductsSelectedChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnProductSelectCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<(string, bool)> OnProductSelectionToggleCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnToggleExpandCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<(string, List<GetStickyNoteViewModel>)> OnShowNotesCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnAddNoteCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnMonitorProductCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<Product> OnAdvancedEditCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<Product> OnSaveChangesCallback { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPageChangedCallback { get; set; }
+
+    // Track image loading state
+    private Dictionary<string, bool> imageLoadStatus = new Dictionary<string, bool>();
+
+    private string GetCategoryName(string categoryId) =>
+        Categories.FirstOrDefault(c => c.Id == categoryId)?.NameEn ?? "Unknown";
+
+    private bool IsProductSelected(string productId) =>
+        SelectedProductIds.Contains(productId);
+
+    private bool IsProductExpanded(string productId) =>
+        ExpandedProductIds.Contains(productId);
+
+    private void OnProductSelect(string productId)
+    {
+        OnProductSelectCallback.InvokeAsync(productId);
+    }
+
+    private void OnProductSelectionToggle(string productId, ChangeEventArgs e)
+    {
+        if (e.Value is bool isChecked)
+        {
+            OnProductSelectionToggleCallback.InvokeAsync((productId, isChecked));
+        }
+    }
+
+    private void OnToggleExpand(string productId)
+    {
+        OnToggleExpandCallback.InvokeAsync(productId);
+    }
+
+    private void OnShowNotes(string productId, List<GetStickyNoteViewModel> notes)
+    {
+        OnShowNotesCallback.InvokeAsync((productId, notes));
+    }
+
+    private void OnAddNote(string productId)
+    {
+        OnAddNoteCallback.InvokeAsync(productId);
+    }
+
+    private void OnMonitorProduct(string productId)
+    {
+        OnMonitorProductCallback.InvokeAsync(productId);
+    }
+
+    private void OnAdvancedEdit(Product product)
+    {
+        OnAdvancedEditCallback.InvokeAsync(product);
+    }
+
+    private void OnSaveChanges(Product product)
+    {
+        OnSaveChangesCallback.InvokeAsync(product);
+    }
+
+    private void OnPageChanged(int page)
+    {
+        OnPageChangedCallback.InvokeAsync(page);
+    }
+
+    private void OnImageLoaded(string productId)
+    {
+        imageLoadStatus[productId] = true;
+        StateHasChanged();
+    }
+
+    private void OnImageError(string productId)
+    {
+        imageLoadStatus[productId] = false;
+        StateHasChanged();
+    }
+}

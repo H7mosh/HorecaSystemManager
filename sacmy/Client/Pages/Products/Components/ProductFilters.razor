@@ -1,0 +1,201 @@
+﻿@using sacmy.Shared.ViewModels.Products
+
+
+<div class="bg-white p-3 rounded-3 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h5 class="text-dark mb-0 fw-semibold">PRODUCTS</h5>
+
+        <div class="d-flex align-items-center gap-4 flex-wrap">
+            <!-- Stock Filter Checkbox -->
+            <div class="form-check d-flex align-items-center">
+                <input class="form-check-input me-2"
+                       type="checkbox"
+                       id="inStockFilter"
+                       @bind="ShowOnlyInStock" />
+                <label class="form-check-label" for="inStockFilter">
+                    In Stock Only
+                </label>
+            </div>
+
+            <!-- Category Filter -->
+            <select class="form-select bg-white border"
+                    style="min-width: 150px; max-width: 200px;"
+                    value="@SelectedCategory"
+                    @onchange="(e) => CategorySelectionChanged(e)">
+                <option value="">All Categories</option>
+                @foreach (var category in Categories ?? new List<Category>())
+                {
+                    <option value="@category.Id">@category.NameEn</option>
+                }
+            </select>
+
+            <!-- Search Box -->
+            <div class="search-box">
+                <i class="bi bi-search"></i>
+                <input type="text"
+                       class="form-control"
+                       placeholder="Search SKU, Name..."
+                       @bind="SearchString"
+                       @bind:event="oninput"
+                       @onkeyup="OnSearchKeyUp" />
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-primary d-flex align-items-center gap-2 px-3" @onclick="OnGeneratePdf">
+                    <i class="bi bi-file-pdf"></i>
+                    <span>Generate PDF</span>
+                </button>
+
+                <button class="btn btn-secondary d-flex align-items-center gap-2 px-3"
+                        @onclick="OnResetCache"
+                        disabled="@IsResettingCache">
+                    @if (IsResettingCache)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span>Resetting...</span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-arrow-clockwise"></i>
+                        <span>Reset Cache</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Search and Filter Controls */
+    .search-box {
+        position: relative;
+        min-width: 200px;
+        max-width: 280px;
+    }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.5rem 1rem 0.5rem 2.5rem;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.375rem;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #6b7280;
+        }
+
+    @@media (max-width: 992px) {
+        .d-flex.align-items-center.gap-4
+
+    {
+        flex-wrap: wrap;
+    }
+
+    .search-box {
+        width: 100%;
+        margin-top: 0.5rem;
+    }
+
+    }
+</style>
+
+@code {
+    private string _searchString = "";
+    private string _selectedCategory = "";
+    private bool _showOnlyInStock = false;
+    private Timer _debounceTimer;
+
+    [Parameter]
+    public string SearchString
+    {
+        get => _searchString;
+        set
+        {
+            if (_searchString != value)
+            {
+                _searchString = value;
+                SearchStringChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    [Parameter]
+    public string SelectedCategory
+    {
+        get => _selectedCategory;
+        set
+        {
+            if (_selectedCategory != value)
+            {
+                _selectedCategory = value;
+                SelectedCategoryChanged.InvokeAsync(value);
+            }
+        }
+    }
+
+    [Parameter]
+    public bool ShowOnlyInStock
+    {
+        get => _showOnlyInStock;
+        set
+        {
+            if (_showOnlyInStock != value)
+            {
+                _showOnlyInStock = value;
+                ShowOnlyInStockChanged.InvokeAsync(value);
+                OnFiltersChanged();
+            }
+        }
+    }
+
+    [Parameter] public bool IsResettingCache { get; set; }
+    [Parameter] public IEnumerable<Category> Categories { get; set; } = Array.Empty<Category>();
+
+    [Parameter] public EventCallback<string> SearchStringChanged { get; set; }
+    [Parameter] public EventCallback<string> SelectedCategoryChanged { get; set; }
+    [Parameter] public EventCallback<bool> ShowOnlyInStockChanged { get; set; }
+    [Parameter] public EventCallback OnFilterChangeCallback { get; set; }
+    [Parameter] public EventCallback OnGeneratePdfCallback { get; set; }
+    [Parameter] public EventCallback OnResetCacheCallback { get; set; }
+
+    private void CategorySelectionChanged(ChangeEventArgs e)
+    {
+        SelectedCategory = e.Value?.ToString() ?? "";
+        OnFiltersChanged();
+    }
+
+    private void OnFiltersChanged()
+    {
+        OnFilterChangeCallback.InvokeAsync();
+    }
+
+    private void OnSearchKeyUp(KeyboardEventArgs args)
+    {
+        // Debounce the search to prevent too many updates
+        _debounceTimer?.Dispose();
+        _debounceTimer = new Timer(_ =>
+        {
+            InvokeAsync(() => OnFiltersChanged());
+        }, null, 300, Timeout.Infinite);
+    }
+
+    private void OnGeneratePdf()
+    {
+        OnGeneratePdfCallback.InvokeAsync();
+    }
+
+    private void OnResetCache()
+    {
+        OnResetCacheCallback.InvokeAsync();
+    }
+
+    public void Dispose()
+    {
+        _debounceTimer?.Dispose();
+    }
+}
