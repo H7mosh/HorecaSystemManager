@@ -1,7 +1,6 @@
 ﻿@using Microsoft.AspNetCore.Components.Forms
-@using sacmy.Client.Components.DialogHeader
 @using sacmy.Client.Services
-@using sacmy.Client.Shared.Components.DialogHeader
+@using sacmy.Client.Components.DialogHeader
 @using sacmy.Shared.ViewModels.BrandViewModel
 @using sacmy.Shared.ViewModels.Products
 @inject ProductsService ProductsService
@@ -9,487 +8,128 @@
 @inject IJSRuntime JS
 
 
-@if (IsVisible)
-{
-    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" id="header">
-        <div class="modal-dialog modal-xl modal-dialog-centered">
-            <div class="modal-content border-0 shadow">
-                <!-- Improved header with better spacing and icon alignment -->
-                <DialogHeader 
-                    Title="Advanced Edit"
-                    Icon="bi bi-pencil-square"
-                    BackgroundColor="#007bff"
-                    TitleColor="#ffffff"
-                    IconColor="#0d6efd"
-                    ShowCloseButton="true"
-                    OnClose="HandleClose" />
-
-                @if (isLoading)
-                {
-                    <div class="modal-body d-flex align-items-center justify-content-center py-5">
-                        <div class="text-center">
-                            <div class="spinner-border text-primary mb-3" role="status"></div>
-                            <p class="text-muted mb-0">Loading product details...</p>
-                        </div>
-                    </div>
-                }
-                else if (productDetail == null)
-                {
-                    <div class="modal-body d-flex align-items-center justify-content-center py-5">
-                        <div class="alert alert-danger d-inline-flex align-items-center gap-2 mb-0">
-                            <i class="bi bi-exclamation-triangle"></i>
-                            <span>Failed to load product details</span>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="modal-body p-4">
-                        <div class="row g-4">
-                            <!-- Images Section -->
-                            <div class="col-12">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex justify-content-between align-items-center mb-3">
-                                            <h6 class="card-title d-flex align-items-center gap-2 text-primary mb-0">
-                                                <i class="bi bi-images"></i>
-                                                <span>Product Images</span>
-                                            </h6>
-                                        </div>
-
-                                        <!-- Image Gallery -->
-                                        <div class="product-images mb-4">
-                                            @if (productDetail.Images?.Any() == true)
-                                            {
-                                                <div class="row g-3">
-                                                    @foreach (var image in productDetail.Images)
-                                                    {
-                                                        <div class="col-auto">
-                                                            <div class="position-relative">
-                                                                <img src="@image.ImageLink"
-                                                                     alt="Product Image"
-                                                                     class="rounded shadow-sm"
-                                                                     style="width: 120px; height: 120px; object-fit: contain;" />
-
-                                                                <button class="position-absolute top-0 end-0 p-1 bg-danger border-0 rounded-circle d-flex align-items-center justify-content-center"
-                                                                        style="width: 24px; height: 24px; margin: 4px; cursor: pointer;"
-                                                                        @onclick="() => HandleImageDelete(image.Id)"
-                                                                        disabled="@(isDeletingImage == image.Id)">
-                                                                    @if (isDeletingImage == image.Id)
-                                                                    {
-                                                                        <div class="spinner-border spinner-border-sm text-white" style="width: 12px; height: 12px;" role="status">
-                                                                            <span class="visually-hidden">Loading...</span>
-                                                                        </div>
-                                                                    }
-                                                                    else
-                                                                    {
-                                                                        <i class="bi bi-trash text-white" style="font-size: 12px;"></i>
-                                                                    }
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    }
-                                                </div>
-                                            }
-                                            else
-                                            {
-                                                <div class="text-muted text-center py-4 bg-light rounded">
-                                                    <i class="bi bi-image" style="font-size: 2rem;"></i>
-                                                    <p class="mb-0 mt-2">No images available</p>
-                                                </div>
-                                            }
-                                        </div>
-
-                                        <!-- Improved Upload Zone -->
-                                        <div class="upload-container">
-                                            <InputFile OnChange="@HandleFileSelected"
-                                                       multiple
-                                                       accept="image/*"
-                                                       class="d-none"
-                                                       id="@fileInputId" />
-
-                                            <div class="upload-zone @(isDragging ? "dragging" : "") @(isUploading ? "uploading" : "")"
-                                            @ondragenter:preventDefault
-                                                 @ondragenter="HandleDragEnter"
-                                            @ondragleave:preventDefault
-                                                 @ondragleave="HandleDragLeave"
-                                            @ondragover:preventDefault
-                                            @ondrop:preventDefault
-                                                 @ondrop="HandleDrop"
-                                                 @onclick="ClickFileInput">
-                                                <div class="text-center p-4">
-                                                    @if (isUploading)
-                                                    {
-                                                        <div class="spinner-border text-primary mb-2" role="status">
-                                                            <span class="visually-hidden">Loading...</span>
-                                                        </div>
-                                                        <p class="mb-0">Uploading images...</p>
-                                                    }
-                                                    else
-                                                    {
-                                                        <i class="bi bi-cloud-upload text-primary" style="font-size: 2rem;"></i>
-                                                        <p class="mt-2 mb-1">Drag and drop images here</p>
-                                                        <p class="text-muted small mb-2">or</p>
-                                                        <button type="button" class="btn btn-outline-primary btn-sm px-3">
-                                                            Browse Files
-                                                        </button>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Basic Information -->
-                            <div class="col-12">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title d-flex align-items-center gap-2 text-primary mb-3">
-                                            <i class="bi bi-info-circle"></i>
-                                            <span>Basic Information</span>
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-3">
-                                                <div class="form-floating">
-                                                    <input type="text"
-                                                           class="form-control bg-light"
-                                                           value="@productDetail.Sku"
-                                                           readonly
-                                                           id="skuInput" />
-                                                    <label for="skuInput" class="text-muted">SKU</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="form-floating">
-                                                    <input type="text"
-                                                           class="form-control bg-light"
-                                                           value="@productDetail.PatternNumber"
-                                                           readonly
-                                                           id="patternInput" />
-                                                    <label for="patternInput" class="text-muted">Pattern Number</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input type="text"
-                                                           class="form-control"
-                                                           @bind="productDetail.Name"
-                                                           id="nameInput" />
-                                                    <label for="nameInput" class="text-muted">Name</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-12">
-                                                <div class="form-floating">
-                                                    <textarea class="form-control"
-                                                              style="height: 100px"
-                                                              @bind="productDetail.Description"
-                                                              id="descriptionInput">
-                                                            </textarea>
-                                                    <label for="descriptionInput" class="text-muted">Description</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Price"
-                                                           id="priceInput" />
-                                                    <label for="priceInput" class="text-muted">Price ($)</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           class="form-control"
-                                                           @bind="productDetail.Points"
-                                                           id="pointsInput" />
-                                                    <label for="pointsInput" class="text-muted">Points</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           class="form-control"
-                                                           @bind="productDetail.Quantity"
-                                                           id="quantityInput" />
-                                                    <label for="quantityInput" class="text-muted">Quantity</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Categories & Relations -->
-                            <div class="col-12">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title d-flex align-items-center gap-2 text-primary mb-3">
-                                            <i class="bi bi-diagram-3"></i>
-                                            <span>Categories & Relations</span>
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <select class="form-select"
-                                                            @bind="productDetail.BrandId"
-                                                            id="brandSelect">
-                                                        @foreach (var brand in Brands ?? new List<BrandViewModel>())
-                                                        {
-                                                            <option value="@brand.Id">@brand.NameEn</option>
-                                                        }
-                                                    </select>
-                                                    <label for="brandSelect" class="text-muted">Brand</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <select class="form-select"
-                                                            @bind="productDetail.CategoryId"
-                                                            id="categorySelect">
-                                                        @foreach (var category in Categories ?? new List<Category>())
-                                                        {
-                                                            <option value="@category.Id">@category.NameEn</option>
-                                                        }
-                                                    </select>
-                                                    <label for="categorySelect" class="text-muted">Category</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <select class="form-select"
-                                                            @bind="productDetail.CollectionId"
-                                                            id="collectionSelect">
-                                                        @foreach (var collection in Collections ?? new List<Collection>())
-                                                        {
-                                                            <option value="@collection.Id">@collection.NameEn</option>
-                                                        }
-                                                    </select>
-                                                    <label for="collectionSelect" class="text-muted">Collection</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Two Column Layout for Measurements and Packaging -->
-                            <div class="col-md-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title d-flex align-items-center gap-2 text-primary mb-3">
-                                            <i class="bi bi-rulers"></i>
-                                            <span>Measurements</span>
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-6">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Height"
-                                                           id="heightInput" />
-                                                    <label for="heightInput" class="text-muted">Height</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Diameter"
-                                                           id="diameterInput" />
-                                                    <label for="diameterInput" class="text-muted">Diameter</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Top"
-                                                           id="topInput" />
-                                                    <label for="topInput" class="text-muted">Top</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Base"
-                                                           id="baseInput" />
-                                                    <label for="baseInput" class="text-muted">Base</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Volume"
-                                                           id="volumeInput" />
-                                                    <label for="volumeInput" class="text-muted">Volume</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Weight"
-                                                           id="weightInput" />
-                                                    <label for="weightInput" class="text-muted">Weight</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-4">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           step="0.01"
-                                                           class="form-control"
-                                                           @bind="productDetail.Area"
-                                                           id="areaInput" />
-                                                    <label for="areaInput" class="text-muted">Area</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="card border-0 shadow-sm h-100">
-                                    <div class="card-body">
-                                        <h6 class="card-title d-flex align-items-center gap-2 text-primary mb-3">
-                                            <i class="bi bi-box-seam"></i>
-                                            <span>Packaging Information</span>
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input type="text"
-                                                           class="form-control"
-                                                           @bind="productDetail.InnerType"
-                                                           id="innerTypeInput" />
-                                                    <label for="innerTypeInput" class="text-muted">Inner Type</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           class="form-control"
-                                                           @bind="productDetail.InnerTypeCount"
-                                                           id="innerTypeCountInput" />
-                                                    <label for="innerTypeCountInput" class="text-muted">Inner Type Count</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input type="text"
-                                                           class="form-control"
-                                                           @bind="productDetail.OuterType"
-                                                           id="outerTypeInput" />
-                                                    <label for="outerTypeInput" class="text-muted">Outer Type</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input type="number"
-                                                           class="form-control"
-                                                           @bind="productDetail.OuterTypeCount"
-                                                           id="outerTypeCountInput" />
-                                                    <label for="outerTypeCountInput" class="text-muted">Outer Type Count</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Product Identifiers -->
-                            <div class="col-12">
-                                <div class="card border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <h6 class="card-title d-flex align-items-center gap-2 text-primary mb-3">
-                                            <i class="bi bi-upc-scan"></i>
-                                            <span>Product Identifiers</span>
-                                        </h6>
-                                        <div class="row g-3">
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input type="text"
-                                                           class="form-control"
-                                                           @bind="productDetail.Ean"
-                                                           id="eanInput" />
-                                                    <label for="eanInput" class="text-muted">EAN</label>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-6">
-                                                <div class="form-floating">
-                                                    <input type="text"
-                                                           class="form-control"
-                                                           @bind="productDetail.Upc"
-                                                           id="upcInput" />
-                                                    <label for="upcInput" class="text-muted">UPC</label>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="modal-footer border-top bg-light">
-                        <button type="button"
-                                class="btn btn-link text-decoration-none"
-                                @onclick="HandleClose"
-                                disabled="@isSaving">
-                            Cancel
-                        </button>
-                        <button type="button"
-                                class="btn btn-primary px-4 d-flex align-items-center gap-2"
-                                @onclick="SaveBasicInformation"
-                                disabled="@isSaving">
-                            @if (isSaving)
-                            {
-                                <span class="spinner-border spinner-border-sm"></span>
-                                <span>Saving Changes...</span>
-                            }
-                            else
-                            {
-                                <i class="bi bi-check2"></i>
-                                <span>Save Changes</span>
-                            }
-                        </button>
-                    </div>
-                }
-            </div>
-        </div>
-    </div>
-}
-
-
 <style>
+    @@import url('../../../wwwroot/css/variables.css');
+    .modal-dialog {
+        max-width: 95%;
+        margin: 1.5rem auto;
+        height: calc(100vh - 3rem);
+        display: flex;
+        align-items: center;
+    }
+
+    .modal-content {
+        max-height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        border-radius: var(--border-radius-lg);
+    }
+
+    /* Scrollable Body Container */
+    .modal-body-container {
+        flex: 1;
+        overflow-y: auto;
+        max-height: calc(100vh - 8.5rem);
+    }
+
+    /* Card Styles */
+    .content-card {
+        background-color: var(--text-white);
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+        margin-bottom: 0;
+    }
+
+    .card-header {
+        background-color: var(--bg-light);
+        padding: var(--spacing-sm) var(--spacing-md);
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .card-body {
+        padding: var(--spacing-md);
+    }
+
+    .section-title {
+        margin: 0;
+        font-size: var(--font-size-sm);
+        font-weight: 600;
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
+    /* Product Images Styles */
+    .product-images {
+        min-height: 120px;
+    }
+
+    .image-container {
+        position: relative;
+        width: 110px;
+        height: 110px;
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        border: 1px solid var(--border-color);
+        background-color: var(--text-white);
+    }
+
+    .product-thumbnail {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .delete-button {
+        position: absolute;
+        top: 4px;
+        right: 4px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: var(--danger-color);
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: var(--font-size-xs);
+        padding: 0;
+    }
+
+    .no-images {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--bg-light);
+        height: 140px;
+        border-radius: var(--border-radius);
+        color: var(--secondary-color);
+    }
+
+        .no-images i {
+            font-size: 2rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        .no-images p {
+            margin: 0;
+        }
+
+    /* Upload Zone Styles */
     .upload-zone {
-        border: 2px dashed #dee2e6;
-        border-radius: 0.5rem;
-        background: #f8f9fa;
-        transition: all 0.2s ease;
+        border: 1px dashed var(--border-color);
+        border-radius: var(--border-radius);
+        background-color: var(--bg-light);
         cursor: pointer;
     }
 
-        .upload-zone:hover {
-            border-color: #6c757d;
-            background: #f1f3f5;
-        }
-
         .upload-zone.dragging {
-            border-color: #0d6efd;
-            background: #e9ecef;
+            border-color: var(--primary-color);
+            background-color: var(--primary-light, #e9effd);
         }
 
         .upload-zone.uploading {
@@ -497,51 +137,540 @@
             opacity: 0.7;
         }
 
-    .modal-dialog {
-        max-width: 95%;
-        margin: 1.75rem auto;
+    .upload-icon {
+        font-size: 1.5rem;
     }
 
+    /* Form Styles */
+    .form-floating > .form-control,
+    .form-floating > .form-select {
+        height: calc(3rem + 2px);
+        padding: var(--spacing-md) var(--spacing-sm);
+    }
+
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label,
+        .form-floating > .form-select ~ label {
+            opacity: 0.65;
+            transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+        }
+
+    .form-floating > label {
+        padding: var(--spacing-md) var(--spacing-sm);
+    }
+
+    /* Footer Styles */
+    .modal-footer {
+        padding: var(--spacing-sm) var(--spacing-md);
+        background-color: var(--bg-light);
+        border-top: 1px solid var(--border-color);
+    }
+
+    .btn-outline-secondary {
+        color: var(--secondary-color);
+        border-color: var(--secondary-color);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+        color: var(--text-white);
+    }
+
+    /* Custom scrollbar styles */
+    .modal-body-container::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .modal-body-container::-webkit-scrollbar-track {
+        background: var(--bg-light);
+    }
+
+    .modal-body-container::-webkit-scrollbar-thumb {
+        background: var(--border-color);
+        border-radius: 3px;
+    }
+
+    
     @@media (min-width: 1200px) {
         .modal-dialog
 
     {
-        max-width: 1140px;
+        max-width: 1100px;
     }
 
-    }
-
-    .card {
-        transition: all 0.2s ease;
-    }
-
-        .card:hover {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-        }
-
-    .form-floating > .form-control:focus ~ label,
-    .form-floating > .form-control:not(:placeholder-shown) ~ label {
-        opacity: 0.65;
-        transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
-    }
-
-    .btn-primary:not(:disabled):hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
-    }
-
-    .btn-primary:not(:disabled):active {
-        transform: translateY(1px);
-    }
-
-    #header .modal-content {
-        padding: 0 !important;
-    }
-
-    #header .modal-header {
-        padding: 0.75rem 1rem;
     }
 </style>
+
+@if (IsVisible)
+{
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" id="header">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <!-- Fixed header -->
+                <DialogHeader Title="Advanced Edit"
+                              Icon="bi bi-list-check"
+                              OnClose="@(HandleClose)" />
+
+                <!-- Scrollable body -->
+                <div class="modal-body-container">
+                    @if (isLoading)
+                    {
+                        <div class="modal-body d-flex align-items-center justify-content-center py-4">
+                            <div class="text-center">
+                                <div class="spinner-border text-primary mb-2" role="status"></div>
+                                <p class="text-muted small mb-0">Loading product details...</p>
+                            </div>
+                        </div>
+                    }
+                    else if (productDetail == null)
+                    {
+                        <div class="modal-body d-flex align-items-center justify-content-center py-4">
+                            <div class="alert alert-danger d-inline-flex align-items-center gap-2 mb-0 py-2 px-3">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                <span>Failed to load product details</span>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="modal-body p-3">
+                            <div class="row g-3">
+                                <!-- Images Section -->
+                                <div class="col-12">
+                                    <div class="content-card">
+                                        <div class="card-header">
+                                            <h6 class="section-title">
+                                                <i class="bi bi-images"></i>
+                                                <span>Product Images</span>
+                                            </h6>
+                                        </div>
+
+                                        <!-- Image Gallery -->
+                                        <div class="card-body">
+                                            <div class="product-images mb-3">
+                                                @if (productDetail.Images?.Any() == true)
+                                                {
+                                                    <div class="row g-2">
+                                                        @foreach (var image in productDetail.Images)
+                                                        {
+                                                            <div class="col-auto">
+                                                                <div class="image-container">
+                                                                    <img src="@image.ImageLink"
+                                                                         alt="Product Image"
+                                                                         class="product-thumbnail" />
+
+                                                                    <button class="delete-button"
+                                                                            @onclick="() => HandleImageDelete(image.Id)"
+                                                                            disabled="@(isDeletingImage == image.Id)">
+                                                                        @if (isDeletingImage == image.Id)
+                                                                        {
+                                                                            <div class="spinner-border spinner-border-sm text-white" role="status">
+                                                                                <span class="visually-hidden">Loading...</span>
+                                                                            </div>
+                                                                        }
+                                                                        else
+                                                                        {
+                                                                            <i class="bi bi-trash text-white"></i>
+                                                                        }
+                                                                    </button>
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="no-images">
+                                                        <i class="bi bi-image"></i>
+                                                        <p>No images available</p>
+                                                    </div>
+                                                }
+                                            </div>
+
+                                            <!-- Upload Zone -->
+                                            <div class="upload-container">
+                                                <InputFile OnChange="@HandleFileSelected"
+                                                           multiple
+                                                           accept="image/*"
+                                                           class="d-none"
+                                                           id="@fileInputId" />
+
+                                                <div class="upload-zone @(isDragging ? "dragging" : "") @(isUploading ? "uploading" : "")"
+                                                @ondragenter:preventDefault
+                                                     @ondragenter="HandleDragEnter"
+                                                @ondragleave:preventDefault
+                                                     @ondragleave="HandleDragLeave"
+                                                @ondragover:preventDefault
+                                                @ondrop:preventDefault
+                                                     @ondrop="HandleDrop"
+                                                     @onclick="ClickFileInput">
+                                                    <div class="text-center py-3 px-2">
+                                                        @if (isUploading)
+                                                        {
+                                                            <div class="spinner-border text-primary mb-2" role="status">
+                                                                <span class="visually-hidden">Loading...</span>
+                                                            </div>
+                                                            <p class="mb-0 small">Uploading images...</p>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="bi bi-cloud-upload text-primary upload-icon"></i>
+                                                            <p class="mt-2 mb-1 small">Drag and drop images here</p>
+                                                            <p class="text-muted small mb-2">or</p>
+                                                            <button type="button" class="btn btn-outline-primary btn-sm px-3">
+                                                                Browse Files
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Basic Information -->
+                                <div class="col-12">
+                                    <div class="content-card">
+                                        <div class="card-header">
+                                            <h6 class="section-title">
+                                                <i class="bi bi-info-circle"></i>
+                                                <span>Basic Information</span>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-3">
+                                                    <div class="form-floating">
+                                                        <input type="text"
+                                                               class="form-control bg-light"
+                                                               value="@productDetail.Sku"
+                                                               readonly
+                                                               id="skuInput" />
+                                                        <label for="skuInput" class="text-muted">SKU</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-floating">
+                                                        <input type="text"
+                                                               class="form-control bg-light"
+                                                               value="@productDetail.PatternNumber"
+                                                               readonly
+                                                               id="patternInput" />
+                                                        <label for="patternInput" class="text-muted">Pattern Number</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               @bind="productDetail.Name"
+                                                               id="nameInput" />
+                                                        <label for="nameInput" class="text-muted">Name</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="form-floating">
+                                                        <textarea class="form-control"
+                                                                  style="height: 90px"
+                                                                  @bind="productDetail.Description"
+                                                                  id="descriptionInput">
+                                                                                </textarea>
+                                                        <label for="descriptionInput" class="text-muted">Description</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Price"
+                                                               id="priceInput" />
+                                                        <label for="priceInput" class="text-muted">Price ($)</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               class="form-control"
+                                                               @bind="productDetail.Points"
+                                                               id="pointsInput" />
+                                                        <label for="pointsInput" class="text-muted">Points</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               class="form-control"
+                                                               @bind="productDetail.Quantity"
+                                                               id="quantityInput" />
+                                                        <label for="quantityInput" class="text-muted">Quantity</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Categories & Relations -->
+                                <div class="col-12">
+                                    <div class="content-card">
+                                        <div class="card-header">
+                                            <h6 class="section-title">
+                                                <i class="bi bi-diagram-3"></i>
+                                                <span>Categories & Relations</span>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <select class="form-select"
+                                                                @bind="productDetail.BrandId"
+                                                                id="brandSelect">
+                                                            @foreach (var brand in Brands ?? new List<BrandViewModel>())
+                                                            {
+                                                                <option value="@brand.Id">@brand.NameEn</option>
+                                                            }
+                                                        </select>
+                                                        <label for="brandSelect" class="text-muted">Brand</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <select class="form-select"
+                                                                @bind="productDetail.CategoryId"
+                                                                id="categorySelect">
+                                                            @foreach (var category in Categories ?? new List<Category>())
+                                                            {
+                                                                <option value="@category.Id">@category.NameEn</option>
+                                                            }
+                                                        </select>
+                                                        <label for="categorySelect" class="text-muted">Category</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <select class="form-select"
+                                                                @bind="productDetail.CollectionId"
+                                                                id="collectionSelect">
+                                                            @foreach (var collection in Collections ?? new List<Collection>())
+                                                            {
+                                                                <option value="@collection.Id">@collection.NameEn</option>
+                                                            }
+                                                        </select>
+                                                        <label for="collectionSelect" class="text-muted">Collection</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Two Column Layout for Measurements and Packaging -->
+                                <div class="col-md-6">
+                                    <div class="content-card h-100">
+                                        <div class="card-header">
+                                            <h6 class="section-title">
+                                                <i class="bi bi-rulers"></i>
+                                                <span>Measurements</span>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-6">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Height"
+                                                               id="heightInput" />
+                                                        <label for="heightInput" class="text-muted">Height</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Diameter"
+                                                               id="diameterInput" />
+                                                        <label for="diameterInput" class="text-muted">Diameter</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Top"
+                                                               id="topInput" />
+                                                        <label for="topInput" class="text-muted">Top</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Base"
+                                                               id="baseInput" />
+                                                        <label for="baseInput" class="text-muted">Base</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Volume"
+                                                               id="volumeInput" />
+                                                        <label for="volumeInput" class="text-muted">Volume</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Weight"
+                                                               id="weightInput" />
+                                                        <label for="weightInput" class="text-muted">Weight</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               step="0.01"
+                                                               class="form-control"
+                                                               @bind="productDetail.Area"
+                                                               id="areaInput" />
+                                                        <label for="areaInput" class="text-muted">Area</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="content-card h-100">
+                                        <div class="card-header">
+                                            <h6 class="section-title">
+                                                <i class="bi bi-box-seam"></i>
+                                                <span>Packaging Information</span>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               @bind="productDetail.InnerType"
+                                                               id="innerTypeInput" />
+                                                        <label for="innerTypeInput" class="text-muted">Inner Type</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               class="form-control"
+                                                               @bind="productDetail.InnerTypeCount"
+                                                               id="innerTypeCountInput" />
+                                                        <label for="innerTypeCountInput" class="text-muted">Inner Type Count</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               @bind="productDetail.OuterType"
+                                                               id="outerTypeInput" />
+                                                        <label for="outerTypeInput" class="text-muted">Outer Type</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="number"
+                                                               class="form-control"
+                                                               @bind="productDetail.OuterTypeCount"
+                                                               id="outerTypeCountInput" />
+                                                        <label for="outerTypeCountInput" class="text-muted">Outer Type Count</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Product Identifiers -->
+                                <div class="col-12">
+                                    <div class="content-card">
+                                        <div class="card-header">
+                                            <h6 class="section-title">
+                                                <i class="bi bi-upc-scan"></i>
+                                                <span>Product Identifiers</span>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body">
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               @bind="productDetail.Ean"
+                                                               id="eanInput" />
+                                                        <label for="eanInput" class="text-muted">EAN</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-floating">
+                                                        <input type="text"
+                                                               class="form-control"
+                                                               @bind="productDetail.Upc"
+                                                               id="upcInput" />
+                                                        <label for="upcInput" class="text-muted">UPC</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Fixed footer -->
+                <div class="modal-footer">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            @onclick="HandleClose"
+                            disabled="@isSaving">
+                        Cancel
+                    </button>
+                    <button type="button"
+                            class="btn btn-primary"
+                            @onclick="SaveBasicInformation"
+                            disabled="@isSaving">
+                        @if (isSaving)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Saving Changes...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-check2 me-1"></i>
+                            <span>Save Changes</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 
 @code {
     [Parameter] public Product Product { get; set; }
@@ -613,7 +742,7 @@
                         productDetail.Id,
                         memoryStream,
                         "dropped_image.jpg",
-                        productDetail.BrandId == "C268AA86-EC5D-4648-85DE-4B8FC83EFF0D" ?"bonna":"pasabahce"
+                        productDetail.BrandId == "C268AA86-EC5D-4648-85DE-4B8FC83EFF0D" ? "bonna" : "pasabahce"
                     );
 
                     if (result.Success)
@@ -683,7 +812,7 @@
                 productDetail.Id,
                 memoryStream,
                 file.Name,
-                productDetail.BrandId == "C268AA86-EC5D-4648-85DE-4B8FC83EFF0D"?"bonna":"pasabahce"
+                productDetail.BrandId == "C268AA86-EC5D-4648-85DE-4B8FC83EFF0D" ? "bonna" : "pasabahce"
             );
 
             if (result.Success)
@@ -763,65 +892,6 @@
     {
         if (isSaving) return;
         await IsVisibleChanged.InvokeAsync(false);
-    }
-
-    private async Task HandleSave()
-    {
-        if (isSaving) return;
-
-        try
-        {
-            isSaving = true;
-            StateHasChanged();
-
-            var updateModel = new UpdateProductViewModel
-                {
-                    ProductId = Guid.Parse(productDetail.Id),
-                    Name = productDetail.Name,
-                    Description = productDetail.Description,
-                    Price = productDetail.Price,
-                    Points = productDetail.Points,
-                    Quantity = productDetail.Quantity,
-                    BrandId = Guid.Parse(productDetail.BrandId),
-                    CategoryId = productDetail.CategoryId,
-                    CollectionId = productDetail.CollectionId,
-                    InnerType = productDetail.InnerType,
-                    InnerTypeCount = productDetail.InnerTypeCount,
-                    OuterType = productDetail.OuterType,
-                    OuterTypeCount = productDetail.OuterTypeCount,
-                    Height = productDetail.Height,
-                    Diameter = productDetail.Diameter,
-                    Top = productDetail.Top,
-                    Base = productDetail.Base,
-                    Volume = productDetail.Volume,
-                    Weight = productDetail.Weight,
-                    Area = productDetail.Area,
-                    Ean = productDetail.Ean,
-                    Upc = productDetail.Upc
-                };
-
-            var response = await ProductsService.UpdateProductAsync(updateModel);
-
-            if (response.Success)
-            {
-                ToastService.ShowToast("Product updated successfully", "success");
-                await OnSaved.InvokeAsync();
-                await HandleClose();
-            }
-            else
-            {
-                ToastService.ShowToast(response.Message ?? "Failed to update product", "error");
-            }
-        }
-        catch (Exception ex)
-        {
-            ToastService.ShowToast($"Error: {ex.Message}", "error");
-        }
-        finally
-        {
-            isSaving = false;
-            StateHasChanged();
-        }
     }
 
     private async Task SaveBasicInformation()

@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Components.Web;
 using System.Linq.Expressions;
 
-namespace sacmy.Client.Shared.Components.CustomDataGrid
+namespace sacmy.Client.Components.CustomDataGrid
 {
     public class ColumnDefinition<TItem>
     {

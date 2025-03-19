@@ -2,7 +2,6 @@
 @using sacmy.Client.Components
 @using sacmy.Client.Pages.Products.Components
 @using sacmy.Client.Services
-@using sacmy.Client.Shared.Components.DialogHeader
 @using sacmy.Client.Shared.Toast
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.BrandViewModel
@@ -22,138 +21,179 @@
 
 
 
-<div class="container-fluid py-3">
-    <div class="row">
-        <!-- Brand Selection -->
+<!-- MAIN CONTAINER -->
+<div class="container-fluid py-4">
+    <div class="row g-4">
+        <!-- Header with Brand Selection -->
         <div class="col-12">
-            <div class="d-flex align-items-center gap-2">
-                <select class="form-select bg-white border rounded-3"
-                        style="width: 180px;"
-                        @bind="selectedBrandId"
-                        @oninput="OnBrandSelected">
-                    <option value="">All Brands</option>
-                    @if (brands != null)
-                    {
-                        @foreach (var brand in brands)
+            <div class="d-flex align-items-center gap-3">
+                <div class="brand-select-container">
+                    <select class="form-select bg-white border-0 shadow-sm rounded-pill"
+                            @bind="selectedBrandId"
+                            @oninput="OnBrandSelected">
+                        <option value="">All Brands</option>
+                        @if (brands != null)
                         {
-                            <option value="@brand.Id">@brand.NameEn</option>
+                            @foreach (var brand in brands)
+                            {
+                                <option value="@brand.Id">@brand.NameEn</option>
+                            }
                         }
-                    }
-                </select>
-                <button class="btn btn-outline-primary btn-sm"
+                    </select>
+                    <i class="bi bi-building position-absolute text-primary"></i>
+                </div>
+                <button class="btn btn-primary btn-sm rounded-pill shadow-sm"
                         @onclick="ShowAddBrandDialog">
-                    <i class="bi bi-plus-lg"></i>
+                    <i class="bi bi-plus-lg me-1"></i>
+                    <span>Add Brand</span>
                 </button>
             </div>
         </div>
 
+        <!-- Main Content Area -->
         <div class="col-xl-9">
             <!-- Product Filters Component -->
-            <ProductFilters SearchString="@searchString"
-                            SelectedCategory="@SelectedCategory"
-                            ShowOnlyInStock="@showOnlyInStock"
-                            IsResettingCache="@isResettingCache"
-                            Categories="@brandResponse?.Data?.Categories"
-                            SearchStringChanged="value => { searchString = value; ApplyFilters(); }"
-                            SelectedCategoryChanged="value => { SelectedCategory = value; ApplyFilters(); }"
-                            ShowOnlyInStockChanged="value => { showOnlyInStock = value; ApplyFilters(); }"
-                            OnFilterChangeCallback="ApplyFilters"
-                            OnGeneratePdfCallback="GeneratePDF"
-                            OnResetCacheCallback="ResetCache" />
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <ProductFilters SearchString="@searchString"
+                                    SelectedCategory="@SelectedCategory"
+                                    ShowOnlyInStock="@showOnlyInStock"
+                                    IsResettingCache="@isResettingCache"
+                                    Categories="@brandResponse?.Data?.Categories"
+                                    SearchStringChanged="value => { searchString = value; ApplyFilters(); }"
+                                    SelectedCategoryChanged="value => { SelectedCategory = value; ApplyFilters(); }"
+                                    ShowOnlyInStockChanged="value => { showOnlyInStock = value; ApplyFilters(); }"
+                                    OnFilterChangeCallback="ApplyFilters"
+                                    OnGeneratePdfCallback="GeneratePDF"
+                                    OnResetCacheCallback="ResetCache" />
+                </div>
+            </div>
 
+            <!-- Selection Toolbar -->
             @if (selectedProductIds.Any())
             {
-                <div class="bg-light p-2 rounded-3 shadow-sm mb-3 selection-toolbar">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <span class="me-3 fw-medium">@selectedProductIds.Count products selected</span>
-                            <button class="btn btn-link text-decoration-none p-0" @onclick="() => { selectedProductIds.Clear(); StateHasChanged(); }">
-                                Clear selection
-                            </button>
-                        </div>
-                        <div>
-                            <button class="btn btn-primary" @onclick="ShowCustomizePriceDialog">
-                                <i class="bi bi-currency-dollar me-1"></i> Customize Price
-                            </button>
+                <div class="selection-toolbar card border-0 shadow-sm mb-4 overflow-hidden">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex align-items-center">
+                                <div class="selection-badge rounded-pill me-3">
+                                    @selectedProductIds.Count
+                                </div>
+                                <span class="fw-medium text-dark">Products selected</span>
+                                <button class="btn btn-link text-decoration-none p-0 ms-3"
+                                        @onclick="() => { selectedProductIds.Clear(); StateHasChanged(); }">
+                                    Clear selection
+                                </button>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary rounded-pill" @onclick="ShowCustomizePriceDialog">
+                                    <i class="bi bi-currency-dollar me-1"></i> Customize Price
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             }
 
+            <!-- Loading State -->
             @if (isLoading)
             {
-                <div class="d-flex justify-content-center my-5">
-                    <div class="spinner-border text-primary"></div>
+                <div class="loading-container">
+                    <div class="spinner-container">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3 text-muted">Loading products...</p>
+                    </div>
                 </div>
             }
             else if (FilteredProducts?.Any() == true)
             {
                 <!-- Product List Component -->
-                <ProductListView Products="@PaginatedProducts"
-                                 AllProductsSelected="@AllProductsSelected"
-                                 SelectedProductIds="@selectedProductIds"
-                                 ExpandedProductIds="@expandedProductIds"
-                                 CurrentPage="@CurrentPage"
-                                 PageSize="@PageSize"
-                                 TotalItems="@(FilteredProducts?.Count() ?? 0)"
-                                 IsUpdating="@isUpdating"
-                                 Categories="@brandResponse?.Data?.Categories"
-                                 AllProductsSelectedChanged="value => { AllProductsSelected = value; }"
-                                 OnProductSelectCallback="SelectProduct"
-                                 OnProductSelectionToggleCallback="ToggleProductSelection"
-                                 OnToggleExpandCallback="ToggleProductExpand"
-                                 OnShowNotesCallback="ShowAllNotes"
-                                 OnAddNoteCallback="ShowAddNoteDialog"
-                                 OnMonitorProductCallback="ShowMonitorDialog"
-                                 OnAdvancedEditCallback="ShowAdvancedEdit"
-                                 OnSaveChangesCallback="SaveChanges"
-                                 OnPageChangedCallback="NavigateToPage" />
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body p-0">
+                        <ProductListView Products="@PaginatedProducts"
+                                         AllProductsSelected="@AllProductsSelected"
+                                         SelectedProductIds="@selectedProductIds"
+                                         ExpandedProductIds="@expandedProductIds"
+                                         CurrentPage="@CurrentPage"
+                                         PageSize="@PageSize"
+                                         TotalItems="@(FilteredProducts?.Count() ?? 0)"
+                                         IsUpdating="@isUpdating"
+                                         Categories="@brandResponse?.Data?.Categories"
+                                         AllProductsSelectedChanged="value => { AllProductsSelected = value; }"
+                                         OnProductSelectCallback="SelectProduct"
+                                         OnProductSelectionToggleCallback="ToggleProductSelection"
+                                         OnToggleExpandCallback="ToggleProductExpand"
+                                         OnShowNotesCallback="ShowAllNotes"
+                                         OnAddNoteCallback="ShowAddNoteDialog"
+                                         OnMonitorProductCallback="ShowMonitorDialog"
+                                         OnAdvancedEditCallback="ShowAdvancedEdit"
+                                         OnSaveChangesCallback="SaveChanges"
+                                         OnPageChangedCallback="NavigateToPage" />
+                    </div>
+                </div>
             }
             else
             {
-                <div class="alert alert-info">
-                    No products found matching your criteria.
+                <div class="empty-state-container">
+                    <div class="empty-state">
+                        <i class="bi bi-box-seam"></i>
+                        <h5>No products found</h5>
+                        <p class="text-muted">Try adjusting your search or filter criteria</p>
+                    </div>
                 </div>
             }
 
+            <!-- Notifications -->
             @if (!string.IsNullOrWhiteSpace(successMessage))
             {
-                <div class="alert alert-success">@successMessage</div>
+                <div class="alert alert-success mt-3 d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <div>@successMessage</div>
+                </div>
             }
 
             @if (!string.IsNullOrWhiteSpace(errorMessage))
             {
-                <div class="alert alert-danger">@errorMessage</div>
+                <div class="alert alert-danger mt-3 d-flex align-items-center">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <div>@errorMessage</div>
+                </div>
             }
         </div>
 
+        <!-- Sidebar Stats -->
         <div class="col-xl-3">
             <ProductOverviewPanel FilteredProducts="@FilteredProducts" SelectedProductId="@selectedProductIdforPriceChange" />
         </div>
     </div>
 
-    <!-- Progress Modal (Kept in main page since it's using JS interactions) -->
-    <div class="modal" id="pdfProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+    <!-- PDF Generation Modal -->
+    <div class="modal fade" id="pdfProgressModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow">
                 <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title visually-hidden">PDF Generation</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4 pt-0">
                     <!-- Price Adjustment Modal Content -->
                     <div id="price-adjustment-section">
                         <div class="text-center mb-4">
-                            <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
-                            <h5 class="modal-title mt-3">PDF Generation Options</h5>
+                            <div class="icon-container mb-3">
+                                <i class="bi bi-file-pdf"></i>
+                            </div>
+                            <h5 class="fw-bold mb-2">PDF Generation Options</h5>
                             <p class="text-muted small mb-4">Configure range and price adjustment</p>
 
                             <!-- Range Selection -->
-                            <div class="mb-4">
+                            <div class="options-section mb-4">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <h6 class="mb-0">Select Range</h6>
-                                    <span class="text-muted small">
+                                    <h6 class="mb-0 fw-semibold">Select Range</h6>
+                                    <div class="badge bg-light text-dark">
                                         Total items: <span id="totalItemsCount" class="fw-bold">0</span>
-                                    </span>
+                                    </div>
                                 </div>
                                 <p class="text-muted small mb-2 text-start">
                                     Maximum 999 items per range
@@ -161,9 +201,9 @@
                                 <div class="row g-2">
                                     <div class="col">
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light">From</span>
+                                            <span class="input-group-text border-0 bg-light">From</span>
                                             <input type="number"
-                                                   class="form-control"
+                                                   class="form-control border-0 shadow-sm"
                                                    id="rangeFrom"
                                                    min="1"
                                                    value="1">
@@ -171,9 +211,9 @@
                                     </div>
                                     <div class="col">
                                         <div class="input-group">
-                                            <span class="input-group-text bg-light">To</span>
+                                            <span class="input-group-text border-0 bg-light">To</span>
                                             <input type="number"
-                                                   class="form-control"
+                                                   class="form-control border-0 shadow-sm"
                                                    id="rangeTo"
                                                    min="1"
                                                    value="999">
@@ -183,7 +223,7 @@
                             </div>
 
                             <!-- Hide Prices Option -->
-                            <div class="mb-4 text-start">
+                            <div class="options-section mb-4 text-start">
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="hidePrices">
                                     <label class="form-check-label" for="hidePrices">
@@ -193,12 +233,12 @@
                             </div>
 
                             <!-- Price Adjustment -->
-                            <div class="mb-4">
-                                <h6 class="text-start mb-2">Price Adjustment</h6>
+                            <div class="options-section mb-4">
+                                <h6 class="text-start mb-2 fw-semibold">Price Adjustment</h6>
                                 <div class="input-group" style="max-width: 200px;">
-                                    <span class="input-group-text bg-light">$</span>
+                                    <span class="input-group-text border-0 bg-light">$</span>
                                     <input type="number"
-                                           class="form-control"
+                                           class="form-control border-0 shadow-sm"
                                            id="priceIncrease"
                                            step="0.01"
                                            min="0"
@@ -207,7 +247,7 @@
                                 </div>
                             </div>
 
-                            <button class="btn btn-primary px-4" onclick="startPdfGeneration()">
+                            <button class="btn btn-primary px-4 rounded-pill" onclick="startPdfGeneration()">
                                 Generate PDF
                             </button>
                         </div>
@@ -216,10 +256,12 @@
                     <!-- Progress Section -->
                     <div id="progress-section" style="display: none;">
                         <div class="text-center">
-                            <i class="bi bi-file-pdf text-primary" style="font-size: 2.5rem;"></i>
-                            <h5 class="mt-3 mb-2">Generating PDF</h5>
+                            <div class="icon-container mb-3">
+                                <i class="bi bi-file-pdf"></i>
+                            </div>
+                            <h5 class="fw-bold mb-3">Generating PDF</h5>
 
-                            <div class="progress my-4" style="height: 10px;">
+                            <div class="progress mb-3" style="height: 8px;">
                                 <div class="progress-bar bg-primary"
                                      role="progressbar"
                                      style="width: 0%"
@@ -240,7 +282,7 @@
         </div>
     </div>
 
-    <!-- Modals/Dialogs -->
+    <!-- Other Modals/Dialogs -->
     <StickyNoteDetailsDialog IsVisible="@showNoteDialog"
                              Note="@selectedNote"
                              OnClose="@CloseNoteDialog" />
@@ -284,15 +326,127 @@
 </div>
 
 <style>
-    /* Selection Toolbar */
+
+    :root {
+        --primary-color: #0D6EFD;
+        --primary-light: #E6F0FF;
+        --success-color: #10B981;
+        --success-light: #ECFDF5;
+        --danger-color: #EF4444;
+        --danger-light: #FEE2E2;
+        --warning-color: #F59E0B;
+        --warning-light: #FEF3C7;
+        --gray-100: #F3F4F6;
+        --gray-200: #E5E7EB;
+        --gray-300: #D1D5DB;
+        --gray-400: #9CA3AF;
+        --gray-500: #6B7280;
+        --gray-700: #374151;
+        --gray-800: #1F2937;
+        --gray-900: #111827;
+        --border-radius: 0.5rem;
+        --border-radius-lg: 0.75rem;
+        --border-radius-sm: 0.25rem;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+        --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
+        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025);
+        --transition: all 0.2s ease;
+    }
+
+    .brand-select-container {
+        position: relative;
+        width: 220px;
+    }
+
+    .brand-select-container select {
+        padding-left: 2.5rem;
+        height: 42px;
+        font-weight: 500;
+    }
+
+    .brand-select-container i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.1rem;
+    }
+
     .selection-toolbar {
         animation: fadeIn 0.3s ease-in-out;
+        background-color: var(--primary-light);
+        border-left: 4px solid var(--primary-color) !important;
+    }
+
+    .selection-badge {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+    }
+
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 300px;
+    }
+
+    .spinner-container {
+        text-align: center;
+    }
+
+    .empty-state-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 300px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background-color: var(--gray-100);
+        border-radius: var(--border-radius);
+        max-width: 400px;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: var(--gray-400);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h5 {
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .icon-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 64px;
+        height: 64px;
+        margin: 0 auto;
+        border-radius: 50%;
+        background-color: var(--primary-light);
+    }
+
+    .icon-container i {
+        font-size: 1.75rem;
+        color: var(--primary-color);
+    }
+
+    .options-section {
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 1rem;
     }
 
     @@keyframes fadeIn {
-        from
-
-    {
+        from {
         opacity: 0;
         transform: translateY(-10px);
     }

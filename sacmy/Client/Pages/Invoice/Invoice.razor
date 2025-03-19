@@ -1,9 +1,10 @@
 ﻿@page "/Invoice"
 @using System.Text
 @using Newtonsoft.Json
+@using sacmy.Client.Components.CustomDataGrid
+@using sacmy.Client.Components.Shared
 @using sacmy.Client.Configuraion
 @using sacmy.Client.Pages.Components.Dialogs
-@using sacmy.Client.Shared.Components.CustomDataGrid
 @using sacmy.Shared.ViewModels.InvoiceViewModel
 @using static MudBlazor.CategoryTypes
 @inject NavigationManager NavigationManager
@@ -12,350 +13,285 @@
 @inject IDialogService DialogService
 @inject AppConfig appConfig
 
-<style>
-    /* Modern DataGrid Styling with Enhanced Visual Design */
-    .custom-data-grid {
-        --primary-light: #60a5fa; /* Lighter blue */
-        --primary-main: #3b82f6; /* Main blue */
-        --primary-dark: #2563eb; /* Darker blue for hover */
-        --header-bg: #f0f9ff; /* Very light blue background */
-        --header-text: #1e40af; /* Dark blue text */
-        --hover-color: #f0f9ff; /* Light blue hover */
-        --alternate-row: #fafbff; /* Subtle alternate row color */
-        --border-color: #e5e7eb; /* Light gray border */
-        --text-primary: #334155; /* Dark gray text */
-        --text-secondary: #64748b; /* Medium gray text */
-        --shadow-sm: rgba(0, 0, 0, 0.03);
-        --shadow-md: rgba(0, 0, 0, 0.05);
-    }
 
-        /* Container Styling */
-        .custom-data-grid .mud-table-container {
-            border-radius: 16px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px -1px var(--shadow-sm), 0 2px 4px -1px var(--shadow-sm);
-            border: 1px solid var(--border-color);
-            margin: 1.5rem 0;
-            background: white;
-        }
-
-        /* Table Base Styling */
-        .custom-data-grid table {
-            width: 100%;
-            border-collapse: separate;
-            border-spacing: 0;
-            font-family: system-ui, -apple-system, sans-serif;
-        }
-
-        /* Enhanced Header Styling */
-        .custom-data-grid th {
-            background: var(--header-bg);
-            color: var(--header-text);
-            font-weight: 600;
-            text-align: left;
-            padding: 16px 20px;
-            font-size: 0.875rem;
-            letter-spacing: 0.03em;
-            border-bottom: 2px solid var(--primary-light);
-            position: relative;
-            transition: all 0.2s ease;
-        }
-
-            .custom-data-grid th:after {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                height: 2px;
-                background: var(--primary-main);
-                transform: scaleX(0);
-                transition: transform 0.2s ease;
-            }
-
-            .custom-data-grid th:hover:after {
-                transform: scaleX(1);
-            }
-
-        /* Row Styling */
-        .custom-data-grid tr {
-            height: 64px;
-            transition: all 0.25s ease;
-        }
-
-        .custom-data-grid td {
-            padding: 16px 20px;
-            color: var(--text-primary);
-            font-size: 0.875rem;
-            border-bottom: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-        }
-
-        .custom-data-grid tbody tr:hover {
-            background-color: var(--hover-color);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px var(--shadow-md);
-        }
-
-        .custom-data-grid tbody tr:nth-child(even) {
-            background-color: var(--alternate-row);
-        }
-
-        /* Enhanced Cell Content */
-        .custom-data-grid td .mud-chip {
-            border-radius: 6px;
-            font-weight: 500;
-        }
-
-        /* Status Indicators */
-        .custom-data-grid .status-cell {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .custom-data-grid .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-
-        /* Action Buttons */
-        .custom-data-grid .mud-button {
-            text-transform: none;
-            font-weight: 500;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-            padding: 8px 16px;
-            background-color: var(--primary-main);
-            color: white;
-        }
-
-            .custom-data-grid .mud-button:hover {
-                background-color: var(--primary-dark);
-                transform: translateY(-1px);
-                box-shadow: 0 4px 12px var(--shadow-md);
-            }
-
-            .custom-data-grid .mud-button .mud-button-icon {
-                margin-right: 8px;
-            }
-
-        /* Switch Styling */
-        .custom-data-grid .mud-switch {
-            --switch-width: 3.5rem;
-            --switch-height: 2rem;
-        }
-
-        .custom-data-grid .mud-switch-track {
-            background-color: #e2e8f0;
-            border-radius: 999px;
-            width: var(--switch-width);
-            height: var(--switch-height);
-            transition: all 0.3s ease;
-        }
-
-        .custom-data-grid .mud-switch-thumb {
-            background-color: white;
-            width: calc(var(--switch-height) - 4px);
-            height: calc(var(--switch-height) - 4px);
-            box-shadow: 0 2px 4px var(--shadow-md);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .custom-data-grid .mud-switch.mud-checked .mud-switch-track {
-            background-color: var(--primary-main);
-        }
-
-    /* Search Field Enhancement */
-    .search-field {
-        max-width: 300px;
-        margin-bottom: 1.5rem;
-    }
-
-        .search-field .mud-input {
-            border-radius: 10px;
-            background-color: white;
-            border: 1px solid var(--border-color);
-            transition: all 0.2s ease;
-            padding: 8px 12px;
-        }
-
-            .search-field .mud-input:focus-within {
-                border-color: var(--primary-main);
-                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-            }
-
-        .search-field .mud-input-outlined-border {
-            border-color: transparent;
-        }
-
-    /* Loading State */
-    .custom-data-grid .mud-progress-circular {
-        color: var(--primary-main);
-    }
-
-    /* Pagination Enhancement */
-    .custom-data-grid .mud-table-pagination {
-        padding: 16px 20px;
-        border-top: 1px solid var(--border-color);
-        background-color: var(--header-bg);
-    }
-
-    .custom-data-grid .mud-table-pagination-caption {
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-    }
-
-    .custom-data-grid .mud-table-pagination-actions {
-        display: flex;
-        gap: 8px;
-    }
-
-        .custom-data-grid .mud-table-pagination-actions button {
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-
-            .custom-data-grid .mud-table-pagination-actions button:hover {
-                background-color: var(--primary-light);
-                color: white;
-            }
-
-    /* Selection Checkbox */
-    .custom-data-grid .mud-checkbox {
-        color: var(--primary-main);
-    }
-
-    /* Column Resize Handle */
-    .custom-data-grid .mud-table-cell-resize-handle {
-        width: 3px;
-        background-color: var(--primary-light);
-        opacity: 0;
-        transition: opacity 0.2s ease;
-    }
-
-    .custom-data-grid th:hover .mud-table-cell-resize-handle {
-        opacity: 1;
-    }
-
-    /* Empty State */
-    .custom-data-grid .mud-table-empty {
-        padding: 48px;
-        text-align: center;
-        color: var(--text-secondary);
-        font-style: italic;
-    }
-
-    /* Responsive Design */
-    @@media (max-width: 768px) {
-        .custom-data-grid td,
-        .custom-data-grid th {
-            padding: 12px 16px;
-        }
-
-        .search-field {
-            max-width: 100%;
-        }
-
-        .custom-data-grid .mud-table-pagination {
-            flex-direction: column;
-            gap: 16px;
-            align-items: center;
-        }
-    }
-
-    /* Print Styles */
-    @@media print {
-        .custom-data-grid {
-            box-shadow: none;
-        }
-
-            .custom-data-grid tr:hover {
-                transform: none;
-                box-shadow: none;
-            }
-
-            .custom-data-grid .mud-button,
-            .custom-data-grid .mud-switch,
-            .search-field {
-                display: none;
-            }
-    }
-
-    }
-</style>
 
 <script>
-        window.openFileDialog = function () {
-        document.getElementById('fileInput').click();
+    window.openFileDialog = function () {
+    document.getElementById('fileInput').click();
     };
 
     window.openModal = function (modalId) {
-            console.log("Opening modal with ID:", modalId);
-        $('#' + modalId).modal('show');
+    console.log("Opening modal with ID:", modalId);
+    $('#' + modalId).modal('show');
     };
 
     window.closeModal = function (modalId) {
-            console.log("Closing modal with ID:", modalId);
-        $('#' + modalId).modal('hide');
+    console.log("Closing modal with ID:", modalId);
+    $('#' + modalId).modal('hide');
     };
 </script>
 
+<style>
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-radius: 50%;
+        border-top: 4px solid var(--primary-color);
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .toolbar {
+        background-color: #ffffff;
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+    }
+
+    .search-field {
+        max-width: 300px;
+    }
+
+    .search-field .form-control {
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+    }
+
+    .search-field .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+
+    .switch-container {
+        display: flex;
+        align-items: center;
+    }
+
+    .form-check-input:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
+</style>
+
+@if (isLoading)
+{
+    <div class="loading-overlay">
+        <div class="spinner"></div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(errorMessage))
+{
+    <div class="alert alert-danger">
+        Error: @errorMessage
+    </div>
+}
+
+<!-- Search and Filter Toolbar -->
+<div class="toolbar d-flex justify-content-between align-items-center mb-3">
+    <div class="switch-container">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="gridSwitch"
+                   checked="@showCompletedInvoices"
+                   @onchange="OnSwitchChanged">
+            <label class="form-check-label" for="gridSwitch">Show Completed Invoices</label>
+        </div>
+    </div>
+    <div class="search-field">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" class="form-control"
+                   placeholder="Search"
+                   @bind-value="_searchInvoiceString"
+                   @bind-value:event="oninput">
+            <button class="btn btn-outline-primary" @onclick="HandleSearch">
+                Search
+            </button>
+            @if (!string.IsNullOrWhiteSpace(_searchInvoiceString))
+            {
+                <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                    <i class="bi bi-x"></i>
+                </button>
+            }
+        </div>
+    </div>
+</div>
+
 <sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
-                                                             Items="@InvoiceList"
-                                                             SearchString="@_searchInvoiceString"
-                                                             OnRowClick="InvoiceRowClicked"
-                                                             OnSelectedItemsChanged="SelectedInvoiceItemsChanged"
-                                                             Columns="@invoiceColumns"
-                                                             ShowRowButton="true"
-                                                             RowButtonText="Items"
-                                                             RowButtonIcon="@Icons.Material.Outlined.List"
-                                                             RowButtonTitle="Actions"
-                                                             OnRowButtonClick="@ShowInvoiceItems"
-                                                             ShowSwitch="true"
-                                                             SwitchLabel="Show UnCompleted Invoice"
-                                                             @bind-SwitchValue="showUncompletedInvoice" />
+                                            Items="@InvoiceList"
+                                            SearchString=""
+                                            OnRowClick="InvoiceRowClicked"
+                                            OnSelectedItemsChanged="SelectedInvoiceItemsChanged"
+                                            Columns="@invoiceColumns"
+                                            ShowRowButton="true"
+                                            RowButtonText="Items"
+                                            RowButtonIcon="@Icons.Material.Outlined.List"
+                                            RowButtonTitle="Actions"
+                                            OnRowButtonClick="@ShowInvoiceItems" />
+
+<SharedPagination 
+    CurrentPage="currentPage"
+    TotalPages="totalPages"
+    TotalCount="totalCount"
+    PageSize="pageSize"
+    CurrentPageChanged="GoToPage"
+    PageSizeChanged="ChangePageSize" />
+
 <Invoiceitems Invoice="@selectedInvoice"
               IsVisible="@isModalVisible"
               IsVisibleChanged="@HandleModalVisibilityChanged" />
 
-
-@code
-{
-    int selectedId = -1;
+@code {
     private bool isLoading = false;
     private bool isDeleteLoading = false;
-    private List<InvoiceViewModel> InvoiceList = new List<InvoiceViewModel>();
-    private List<InvoiceViewModel> InvoiceData = new List<InvoiceViewModel>();
-    private string _searchInvoiceString;
-    private bool _showUncompletedInvoice = true;
-    private bool showUncompletedInvoice
-    {
-        get => _showUncompletedInvoice;
-        set
-        {
-            if (_showUncompletedInvoice != value)
-            {
-                _showUncompletedInvoice = value;
-                OnSwitchChanged();
-            }
-        }
-    }
+    private List<InvoiceViewModel> InvoiceList = new();
+    private List<InvoiceViewModel> InvoiceData = new();
+    private string _searchInvoiceString = "";
+    private string _lastSearchTerm = "";
+    private bool showCompletedInvoices = true;
+
+    int selectedId = -1;
+    private int currentPage = 1;
+    private int pageSize = 15;
+    private int totalPages = 1;
+    private int totalCount = 0;
+
     private InvoiceViewModel selectedInvoice;
     private bool isModalVisible;
+    private string errorMessage = "";
+
+    // Add debounce timer for search
+    private System.Timers.Timer searchTimer;
+    private const int SEARCH_DELAY_MS = 500;
 
     protected override async Task OnInitializedAsync()
     {
-        isLoading = true;
-        InvoiceData = await httpClient.GetFromJsonAsync<List<InvoiceViewModel>>("api/Invoice");
-        InvoiceList = InvoiceData.Where(e => e.IsCompleted == true).ToList();
-        isLoading = false;
+        searchTimer = new System.Timers.Timer(SEARCH_DELAY_MS);
+        searchTimer.Elapsed += async (sender, e) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await LoadInvoices();
+                searchTimer.Stop();
+            });
+        };
+
+        await LoadInvoices();
     }
 
+    private async Task LoadInvoices()
+    {
+        isLoading = true;
 
-    private async void InvoiceRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<InvoiceViewModel> args)
+        try
+        {
+            // Build the API URL with both isCompleted and searchTerm filters
+            var apiUrl = $"api/Invoice?pageNumber={currentPage}&pageSize={pageSize}&isCompleted={showCompletedInvoices}";
+
+            // Add search term if it's not empty
+            if (!string.IsNullOrWhiteSpace(_searchInvoiceString))
+            {
+                apiUrl += $"&searchTerm={Uri.EscapeDataString(_searchInvoiceString)}";
+                _lastSearchTerm = _searchInvoiceString;
+            }
+
+            var response = await httpClient.GetAsync(apiUrl);
+
+            if (response.Headers.TryGetValues("X-Pagination", out var paginationHeaderValues))
+            {
+                var paginationHeader = System.Text.Json.JsonSerializer.Deserialize<InvoicePaginationMetadataViewModel>(
+                    paginationHeaderValues.FirstOrDefault());
+
+                totalCount = paginationHeader.TotalCount;
+                totalPages = paginationHeader.TotalPages;
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                // Populate both lists with the data from API
+                InvoiceData = await response.Content.ReadFromJsonAsync<List<InvoiceViewModel>>();
+                InvoiceList = InvoiceData;
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"API error status: {response.StatusCode}, Content: {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error loading invoices: {ex.Message}";
+            Console.WriteLine(errorMessage);
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+        }
+
+        isLoading = false;
+        StateHasChanged();
+    }
+
+    private async Task OnSwitchChanged(ChangeEventArgs e)
+    {
+        if (e.Value is bool value)
+        {
+            showCompletedInvoices = value;
+
+            // Reset to the first page when filter changes
+            currentPage = 1;
+
+            // Reload data from API with the new filter
+            await LoadInvoices();
+        }
+    }
+
+    private async Task HandleSearch()
+    {
+        // If search term has changed, reset to first page
+        if (_lastSearchTerm != _searchInvoiceString)
+        {
+            currentPage = 1;
+        }
+
+        await LoadInvoices();
+    }
+
+    private async Task ClearSearch()
+    {
+        _searchInvoiceString = "";
+        if (!string.IsNullOrWhiteSpace(_lastSearchTerm))
+        {
+            _lastSearchTerm = "";
+            currentPage = 1;
+            await LoadInvoices();
+        }
+    }
+
+    private async void InvoiceRowClicked(sacmy.Client.Components.CustomDataGrid.DataGridRowClickEventArgs<InvoiceViewModel> args)
     {
         // Row click handling code here
     }
@@ -365,22 +301,21 @@
         // Handle selected invoice items here
     }
 
-    private async Task OnSwitchChanged()
+    private async Task GoToPage(int page)
     {
-        isLoading = true;
-        if (showUncompletedInvoice)
+        if (page != currentPage && page > 0 && page <= totalPages)
         {
-            InvoiceList = InvoiceData.Where(e => e.IsCompleted == true).ToList();
+            currentPage = page;
+            await LoadInvoices();
         }
-        else
-        {
-            InvoiceList = InvoiceData;
-        }
-
-        StateHasChanged();
-        isLoading = false;
     }
 
+    private async Task ChangePageSize(int newSize)
+    {
+        pageSize = newSize;
+        currentPage = 1;
+        await LoadInvoices();
+    }
 
     private List<ColumnDefinition<InvoiceViewModel>> invoiceColumns = new List<ColumnDefinition<InvoiceViewModel>>
     {
@@ -429,7 +364,7 @@
         {
             Property = x => x.LastComment,
             Title = "Last Comment"
-        },
+        }
     };
 
     private async Task ShowInvoiceItems(InvoiceViewModel invoice)
@@ -448,6 +383,4 @@
         }
         StateHasChanged();
     }
-
-
 }

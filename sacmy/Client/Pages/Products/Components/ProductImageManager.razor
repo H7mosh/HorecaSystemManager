@@ -131,6 +131,8 @@
 
 
 <style>
+    @@import url('../../../wwwroot/css/variables.css');
+
     .product-thumbnail {
         width: 120px;
         height: 120px;
@@ -139,9 +141,9 @@
         transition: transform 0.2s;
     }
 
-        .product-thumbnail:hover {
-            transform: scale(1.05);
-        }
+    .product-thumbnail:hover {
+        transform: scale(1.05);
+    }
 
     .image-container {
         position: relative;
@@ -165,21 +167,21 @@
     }
 
     .upload-zone {
-        border: 2px dashed #dee2e6;
-        border-radius: 0.5rem;
-        background: #f8f9fa;
+        border: 2px dashed var(--border-color);
+        border-radius: var(--border-radius);
+        background: var(--bg-light);
         transition: all 0.2s ease;
         cursor: pointer;
     }
 
         .upload-zone:hover {
-            border-color: #6c757d;
+            border-color: var(--secondary-color);
             background: #f1f3f5;
         }
 
         .upload-zone.dragging {
-            border-color: #0d6efd;
-            background: #e9ecef;
+            border-color: var(--primary-color);
+            background: var(--bg-light);
         }
 
         .upload-zone.uploading {
@@ -189,13 +191,13 @@
 
     .progress {
         height: 10px;
-        background-color: #e9ecef;
-        border-radius: 0.5rem;
+        background-color: var(--bg-light);
+        border-radius: var(--border-radius);
     }
 
     .progress-bar {
-        background-color: #0d6efd;
-        border-radius: 0.5rem;
+        background-color: var(--primary-color);
+        border-radius: var(--border-radius);
     }
 </style>
 

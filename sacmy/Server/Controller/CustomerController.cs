@@ -369,6 +369,68 @@ namespace sacmy.Server.Controller
             }
         }
 
+        [HttpPost("Update/{id}")]
+        public async Task<ActionResult<ApiResponse<CustomerViewModel>>> UpdateCustomer(int id, [FromBody] CustomerViewModel customerViewModel)
+        {
+            if (id != customerViewModel.Id)
+            {
+                return BadRequest(new ApiResponse<CustomerViewModel>
+                {
+                    Success = false,
+                    Message = "ID mismatch between route parameter and customer data",
+                    Data = null
+                });
+            }
 
+            try
+            {
+                // Check if customer exists
+                var customer = await _context.Customers.FindAsync(id);
+                if (customer == null)
+                {
+                    return NotFound(new ApiResponse<CustomerViewModel>
+                    {
+                        Success = false,
+                        Message = $"Customer with ID {id} not found",
+                        Data = null
+                    });
+                }
+
+                // Update customer properties
+                customer.Customer1 = customerViewModel.Name;
+                customer.Mob = customerViewModel.PhoneNumber;
+                customer.Address = customerViewModel.Address;
+                customer.Subb = customerViewModel.Branch;
+                customer.CostType = customerViewModel.CostType;
+                customer.UserAcc = customerViewModel.UserName;
+                customer.Password = customerViewModel.Password;
+                customer.PlusOne = customerViewModel.ConstProfit;
+                customer.Nsba = customerViewModel.ProfitPercentage;
+                customer.OtherNsba = customerViewModel.ExtraProfitPercentage;
+                customer.DeviceId = customerViewModel.DeviceId;
+                customer.Active = customerViewModel.Active;
+                customer.FirebaseToken = customerViewModel.FirebaseToken;
+
+                // Save changes
+                await _context.SaveChangesAsync();
+
+                // Return success response
+                return Ok(new ApiResponse<CustomerViewModel>
+                {
+                    Success = true,
+                    Message = "Customer updated successfully",
+                    Data = customerViewModel
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<CustomerViewModel>
+                {
+                    Success = false,
+                    Message = $"An error occurred while updating the customer: {ex.Message}",
+                    Data = null
+                });
+            }
+        }
     }
 }

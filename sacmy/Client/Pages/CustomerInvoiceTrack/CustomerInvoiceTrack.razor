@@ -2,14 +2,14 @@
 @using System.Linq.Expressions
 @using System.Net.Http
 @using System.Net.Http.Json
+@using sacmy.Client.Components.CustomDataGrid
 @using sacmy.Client.Components.DialogHeader
 @using sacmy.Client.Components.Dialogs
+@using sacmy.Client.Components.Shared
 @using sacmy.Client.Pages.Components.Dialogs
 @using sacmy.Client.Pages.Invoice
 @using sacmy.Client.Pages.Tasks
 @using sacmy.Client.Services
-@using sacmy.Client.Shared.Components.CustomDataGrid
-@using sacmy.Client.Shared.Components.DialogHeader
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.CustomerTracker
 @using sacmy.Shared.ViewModels.InvoiceViewModel
@@ -27,8 +27,8 @@
 
 
 <div style="padding: 10px;">
-    <h3 style="margin-bottom: 40px;">@Localizer["CustomerInvoiceTasks"]</h3>
-
+@*     <h3 style="margin-bottom: 40px;">@Localizer["CustomerInvoiceTasks"]</h3>
+ *@
     <ul class="nav nav-underline">
         <li class="nav-item">
             <a class="nav-link @(activeTab == 1 ? "active custom-active-link" : "custom-inactive-link")"
@@ -48,6 +48,46 @@
         </li>
     </ul>
 
+    <!-- Search and Filter Toolbar -->
+    <div class="toolbar d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex align-items-center">
+            <div class="date-filter-dropdown me-3">
+                <select class="form-select form-select-sm"
+                        value="@_selectedDateFilter"
+                        @onchange="HandleDateFilterChanged">
+                    <option value="default">@Localizer["Default (25 days)"]</option>
+                    <option value="1month">@Localizer["1 Month"]</option>
+                    <option value="3months">@Localizer["3 Months"]</option>
+                    <option value="6months">@Localizer["6 Months"]</option>
+                    <option value="1year">@Localizer["1 Year"]</option>
+                </select>
+            </div>
+            <div class="date-filter-label">
+                <span class="text-muted fs-sm">@Localizer["LastPurchaseOlderThan"]</span>
+            </div>
+        </div>
+        <div class="search-field">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control"
+                       placeholder="@Localizer["Search"]"
+                       @bind-value="@_searchString"
+                       @bind-value:event="oninput">
+                <button class="btn btn-outline-primary" @onclick="HandleSearch">
+                    @Localizer["Search"]
+                </button>
+                @if (!string.IsNullOrWhiteSpace(_searchString))
+                {
+                    <button class="btn btn-outline-secondary" @onclick="ClearSearch">
+                        <i class="bi bi-x"></i>
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
     @if (isLoading)
     {
         <div class="d-flex justify-content-center my-5">
@@ -59,19 +99,29 @@
     }
     else if (activeTab == 1 && customerData != null)
     {
-        <sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="CustomerHiddenViewModel"
-                                                               Items="@customerData"
-                                                               SearchString="@_searchString"
-                                                               OnRowClick="@CustomerRowClicked"
-                                                               OnSelectedItemsChanged="@SelectedItemsChanged"
-                                                               OnAddNote="@ShowAddNoteDialog"
-                                                               OnViewNotes="@ShowAllNotes"
-                                                               Columns="@customerColumns"
-                                                               ShowRowButton="false"
-                                                               RowButtonText="View Details"
-                                                               RowButtonTitle="Actions"
-                                                               RowButtonIcon="bi bi-eye" />
+        <sacmy.Client.Components.CustomDataGrid.CustomDataGrid     TItem="CustomerHiddenViewModel"
+                                                                   Items="@customerData"
+                                                                   SearchString="@_searchString"
+                                                                   OnRowClick="@CustomerRowClicked"
+                                                                   OnSelectedItemsChanged="@SelectedItemsChanged"
+                                                                   OnAddNote="@ShowAddNoteDialog"
+                                                                   OnViewNotes="@ShowAllNotes"
+                                                                   Columns="@customerColumns"
+                                                                   ShowRowButton="false"
+                                                                   RowButtonText="View Details"
+                                                                   RowButtonTitle="Actions"
+                                                                   RowButtonIcon="bi bi-eye" />
+                
+        
+        <SharedPagination 
+            CurrentPage="currentPage"
+            TotalPages="totalPages"
+            TotalCount="totalCount"
+            PageSize="pageSize"
+            CurrentPageChanged="GoToPage"
+            PageSizeChanged="ChangePageSize" />
     }
+
     else if (activeTab == 2 && debtorData != null)
     {
         <sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="DeptCustomerViewModel"
@@ -86,7 +136,16 @@
                                                                RowButtonText="View Details"
                                                                RowButtonTitle="Actions"
                                                                RowButtonIcon="bi bi-eye" />
+        
+        <SharedPagination 
+            CurrentPage="debtorCurrentPage"
+            TotalPages="debtorTotalPages"
+            TotalCount="debtorTotalCount"
+            PageSize="debtorPageSize"
+            CurrentPageChanged="GoToDebtorPage"
+            PageSizeChanged="ChangeDebtorPageSize" />
     }
+
     else if (activeTab == 3 && invoiceData != null)
     {
         <sacmy.Client.Components.CustomDataGrid.CustomDataGrid TItem="InvoiceViewModel"
@@ -102,7 +161,16 @@
                                                                RowButtonIcon="bi bi-list-ul"
                                                                RowButtonTitle="Actions"
                                                                OnRowButtonClick="@ShowInvoiceItems" />
+        
+        <SharedPagination 
+            CurrentPage="invoiceCurrentPage"
+            TotalPages="invoiceTotalPages"
+            TotalCount="invoiceTotalCount"
+            PageSize="invoicePageSize"
+            CurrentPageChanged="GoToInvoicePage"
+            PageSizeChanged="ChangeInvoicePageSize" />
     }
+
     else
     {
         <div class="alert alert-info my-4">@Localizer["NoDataAvailable"]</div>
@@ -196,6 +264,29 @@
 </div>
 
 <style>
+    .toolbar {
+        background-color: #ffffff;
+        border-radius: var(--border-radius);
+        padding: var(--spacing-md);
+        margin-bottom: var(--spacing-md);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+    }
+
+    .search-field {
+        max-width: 300px;
+    }
+
+    .search-field .form-control {
+        border-radius: var(--border-radius);
+        border: 1px solid var(--border-color);
+    }
+
+    .search-field .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+    }
+
     .employee-avatar {
         width: 35px;
         height: 35px;
@@ -303,15 +394,36 @@
     private IEnumerable<CustomerHiddenViewModel> customerData = new List<CustomerHiddenViewModel>();
     private IEnumerable<DeptCustomerViewModel> debtorData = new List<DeptCustomerViewModel>();
     private IEnumerable<InvoiceViewModel> invoiceData = new List<InvoiceViewModel>();
-    private string _searchString;
-    private string _searchDebtorString;
-    private string _searchInvoiceString;
+    private string _searchString = "";
+    private string _searchDebtorString = "";
+    private string _searchInvoiceString = "";
+    private string _lastSearchTerm = "";
+    private string _lastDebtorSearchTerm = "";
+    private string _lastInvoiceSearchTerm = "";
     private bool isTaskLoading = false;
     private int? selectedCustomerId = null;
     private int? selectedInvoiceId = null;
     private bool showAddTaskModal = false;
     private bool showTaskModal = false;
     private string taskType = "other";
+
+    // Pagination variables for Customers
+    private int currentPage = 1;
+    private int pageSize = 20;
+    private int totalPages = 1;
+    private int totalCount = 0;
+
+    // Pagination variables for Debtors
+    private int debtorCurrentPage = 1;
+    private int debtorPageSize = 20;
+    private int debtorTotalPages = 1;
+    private int debtorTotalCount = 0;
+
+    // Pagination variables for Invoices
+    private int invoiceCurrentPage = 1;
+    private int invoicePageSize = 15;
+    private int invoiceTotalPages = 1;
+    private int invoiceTotalCount = 0;
 
     // Sticky note related variables
     private GetStickyNoteViewModel selectedNote;
@@ -324,78 +436,33 @@
     private bool isAddingNote = false;
     private string newNoteText = "";
     private DotNetObjectReference<CustomerInvoiceTrack> objRef;
-    private async Task HandleNoteSaved(string text)
-    {
-        newNoteText = text;
-        await AddNote();
-    }
+    private string _selectedDateFilter = "default";
 
-    private async Task ShowInvoiceItems(InvoiceViewModel invoice)
-    {
-        var parameters = new DialogParameters
-        {
-            { "Invoice", invoice }
-        };
 
-        var options = new DialogOptions
-            {
-                CloseButton = true,
-                MaxWidth = MaxWidth.Medium,
-                FullWidth = true,
-            //DisableBackdropClick = true
-            };
-
-        var dialog = await DialogService.ShowAsync<InvoiceItemDialogg>("Invoice Items", parameters, options);
-        await dialog.Result;
-    }
-
-    private List<ColumnDefinition<CustomerHiddenViewModel>> customerColumns = new List<ColumnDefinition<CustomerHiddenViewModel>>
-{
-    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Id, Title = "Id" },
-    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Name, Title = "Full Name" },
-    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Type, Title = "Type" },
-    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastDate, Title = "Last Invoice Date" },
-    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
-    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
-    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
-};
-
-    private List<ColumnDefinition<DeptCustomerViewModel>> debtorColumns = new List<ColumnDefinition<DeptCustomerViewModel>>
-{
-    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.Id, Title = "Id" },
-    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
-    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TotalTransTotalN, Title = "Amount", Formatter = x => x.TotalTransTotalN.ToString("C", new System.Globalization.CultureInfo("en-US")) },
-    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.HasRecentReceipt, Title = "Has Recent Receipt" },
-    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
-    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
-    new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
-};
-
-    private List<ColumnDefinition<InvoiceViewModel>> invoiceColumns = new List<ColumnDefinition<InvoiceViewModel>>
-{
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.Id, Title = "Id" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerType, Title = "Customer Type" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.Address, Title = "Address" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.InvoiceBranch, Title = "Branch" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.Total, Title = "Total", Formatter = x => x.Total.ToString("C", new System.Globalization.CultureInfo("en-US")) },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.DateTime, Title = "Date" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
-    new ColumnDefinition<InvoiceViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
-};
+    // Timer for search debounce
+    private System.Timers.Timer searchTimer;
+    private const int SEARCH_DELAY_MS = 500;
 
     protected override async Task OnInitializedAsync()
     {
-         await SetActiveTab(activeTab);
-    }
+        searchTimer = new System.Timers.Timer(SEARCH_DELAY_MS);
+        searchTimer.Elapsed += async (sender, e) =>
+        {
+            await InvokeAsync(async () =>
+            {
+                await SetActiveTab(activeTab);
+                searchTimer.Stop();
+            });
+        };
 
+        await SetActiveTab(activeTab);
+    }
 
     public void Dispose()
     {
         objRef?.Dispose();
+        searchTimer?.Dispose();
     }
-
 
     private static CustomerInvoiceTrack _instance;
 
@@ -433,7 +500,18 @@
 
         try
         {
-            customerData = await CustomerInvoiceTrackService.GetHiddenCustomersAsync();
+            var result = await CustomerInvoiceTrackService.GetHiddenCustomersAsync(
+                currentPage,
+                pageSize,
+                string.IsNullOrWhiteSpace(_searchString) ? null : _searchString,
+                _selectedDateFilter
+            );
+
+            customerData = result.customers;
+            totalCount = result.metadata.TotalCount;
+            totalPages = result.metadata.TotalPages;
+            currentPage = result.metadata.CurrentPage;
+            _lastSearchTerm = _searchString;
         }
         catch (Exception ex)
         {
@@ -452,7 +530,17 @@
 
         try
         {
-            invoiceData = await CustomerInvoiceTrackService.GetUncompletedInvoicesAsync();
+            var result = await CustomerInvoiceTrackService.GetUncompletedInvoicesAsync(
+                invoiceCurrentPage, 
+                invoicePageSize, 
+                string.IsNullOrWhiteSpace(_searchInvoiceString) ? null : _searchInvoiceString
+            );
+            
+            invoiceData = result.invoices;
+            invoiceTotalCount = result.metadata.TotalCount;
+            invoiceTotalPages = result.metadata.TotalPages;
+            invoiceCurrentPage = result.metadata.CurrentPage;
+            _lastInvoiceSearchTerm = _searchInvoiceString;
         }
         catch (Exception ex)
         {
@@ -471,7 +559,17 @@
 
         try
         {
-            debtorData = await CustomerInvoiceTrackService.GetCustomerRemainTotalAsync();
+            var result = await CustomerInvoiceTrackService.GetCustomerRemainTotalAsync(
+                debtorCurrentPage, 
+                debtorPageSize, 
+                string.IsNullOrWhiteSpace(_searchDebtorString) ? null : _searchDebtorString
+            );
+            
+            debtorData = result.customers;
+            debtorTotalCount = result.metadata.TotalCount;
+            debtorTotalPages = result.metadata.TotalPages;
+            debtorCurrentPage = result.metadata.CurrentPage;
+            _lastDebtorSearchTerm = _searchDebtorString;
         }
         catch (Exception ex)
         {
@@ -483,13 +581,116 @@
         }
     }
 
+    private async Task GoToPage(int page)
+    {
+        if (page != currentPage && page > 0 && page <= totalPages)
+        {
+            currentPage = page;
+            await FetchCustomerData();
+        }
+    }
+
+    private async Task ChangePageSize(int newSize)
+    {
+        pageSize = newSize;
+        currentPage = 1;
+        await FetchCustomerData();
+    }
+
+    // Pagination methods for Debtors
+    private async Task GoToDebtorPage(int page)
+    {
+        if (page != debtorCurrentPage && page > 0 && page <= debtorTotalPages)
+        {
+            debtorCurrentPage = page;
+            await FetchCustomerRemainTotal();
+        }
+    }
+
+    private async Task ChangeDebtorPageSize(int newSize)
+    {
+        debtorPageSize = newSize;
+        debtorCurrentPage = 1;
+        await FetchCustomerRemainTotal();
+    }
+
+    // Pagination methods for Invoices
+    private async Task GoToInvoicePage(int page)
+    {
+        if (page != invoiceCurrentPage && page > 0 && page <= invoiceTotalPages)
+        {
+            invoiceCurrentPage = page;
+            await FetchUncompletedInvoices();
+        }
+    }
+
+    private async Task ChangeInvoicePageSize(int newSize)
+    {
+        invoicePageSize = newSize;
+        invoiceCurrentPage = 1;
+        await FetchUncompletedInvoices();
+    }
+
+    // Search methods
+    private async Task HandleSearch()
+    {
+        // For the active tab, reset to page 1 if search term has changed
+        if (activeTab == 1 && _lastSearchTerm != _searchString)
+        {
+            currentPage = 1;
+        }
+        else if (activeTab == 2 && _lastDebtorSearchTerm != _searchDebtorString)
+        {
+            debtorCurrentPage = 1;
+        }
+        else if (activeTab == 3 && _lastInvoiceSearchTerm != _searchInvoiceString)
+        {
+            invoiceCurrentPage = 1;
+        }
+
+        await SetActiveTab(activeTab);
+    }
+
+    private async Task ClearSearch()
+    {
+        if (activeTab == 1)
+        {
+            _searchString = "";
+            if (!string.IsNullOrWhiteSpace(_lastSearchTerm))
+            {
+                _lastSearchTerm = "";
+                currentPage = 1;
+            }
+        }
+        else if (activeTab == 2)
+        {
+            _searchDebtorString = "";
+            if (!string.IsNullOrWhiteSpace(_lastDebtorSearchTerm))
+            {
+                _lastDebtorSearchTerm = "";
+                debtorCurrentPage = 1;
+            }
+        }
+        else if (activeTab == 3)
+        {
+            _searchInvoiceString = "";
+            if (!string.IsNullOrWhiteSpace(_lastInvoiceSearchTerm))
+            {
+                _lastInvoiceSearchTerm = "";
+                invoiceCurrentPage = 1;
+            }
+        }
+
+        await SetActiveTab(activeTab);
+    }
+
     private void ShowAddTaskModal()
     {
         showTaskModal = false;
         showAddTaskModal = true;
     }
 
-    private async void CustomerRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<CustomerHiddenViewModel> args)
+    private async void CustomerRowClicked(sacmy.Client.Components.CustomDataGrid.DataGridRowClickEventArgs<CustomerHiddenViewModel> args)
     {
         selectedCustomerId = args.Item.Id;
         selectedInvoiceId = null;
@@ -507,7 +708,7 @@
         StateHasChanged();
     }
 
-    private async void DebtorRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<DeptCustomerViewModel> args)
+    private async void DebtorRowClicked(sacmy.Client.Components.CustomDataGrid.DataGridRowClickEventArgs<DeptCustomerViewModel> args)
     {
         selectedCustomerId = args.Item.Id;
         selectedInvoiceId = null;
@@ -521,7 +722,7 @@
         StateHasChanged();
     }
 
-    private async void InvoiceRowClicked(sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<InvoiceViewModel> args)
+    private async void InvoiceRowClicked(sacmy.Client.Components.CustomDataGrid.DataGridRowClickEventArgs<InvoiceViewModel> args)
     {
         selectedInvoiceId = args.Item.Id;
         selectedCustomerId = null;
@@ -533,6 +734,42 @@
         await FetchTasksByCustomerOrInvoice();
         isTaskLoading = false;
         StateHasChanged();
+    }
+
+    private async Task ShowInvoiceItems(InvoiceViewModel invoice)
+    {
+        var parameters = new DialogParameters
+        {
+            { "Invoice", invoice }
+        };
+
+        var options = new DialogOptions
+            {
+                CloseButton = true,
+                MaxWidth = MaxWidth.Medium,
+                FullWidth = true,
+            //DisableBackdropClick = true
+            };
+
+        var dialog = await DialogService.ShowAsync<InvoiceItemDialogg>("Invoice Items", parameters, options);
+        await dialog.Result;
+    }
+
+    private async Task HandleDateFilterChanged(ChangeEventArgs e)
+    {
+        if (e.Value is string value)
+        {
+            _selectedDateFilter = value;
+
+            // Reset to first page when filter changes
+            currentPage = 1;
+
+            // If we're on the hidden customers tab, refresh the data
+            if (activeTab == 1)
+            {
+                await FetchCustomerData();
+            }
+        }
     }
 
     private async Task FetchTasksByCustomerOrInvoice()
@@ -564,6 +801,12 @@
         showAddNoteDialog = false;
         selectedRecordId = null;
         newNoteText = "";
+    }
+
+    private async Task HandleNoteSaved(string text)
+    {
+        newNoteText = text;
+        await AddNote();
     }
 
     private async Task AddNote()
@@ -710,4 +953,40 @@
         StateHasChanged();
     }
 
+    private List<ColumnDefinition<CustomerHiddenViewModel>> customerColumns = new List<ColumnDefinition<CustomerHiddenViewModel>>
+{
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Id, Title = "Id" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Name, Title = "Full Name" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.Type, Title = "Type" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastDate, Title = "Last Invoice Date" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.DaysSinceLastInvoice, Title = "Days Since Last Purchase" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
+    new ColumnDefinition<CustomerHiddenViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
+};
+
+    private List<ColumnDefinition<DeptCustomerViewModel>> debtorColumns = new List<ColumnDefinition<DeptCustomerViewModel>>
+    {
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.Id, Title = "Id" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TotalTransTotalN, Title = "Amount", Formatter = x => x.TotalTransTotalN.ToString("C", new System.Globalization.CultureInfo("en-US")) },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.HasRecentReceipt, Title = "Has Recent Receipt" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
+        new ColumnDefinition<DeptCustomerViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
+    };
+
+    private List<ColumnDefinition<InvoiceViewModel>> invoiceColumns = new List<ColumnDefinition<InvoiceViewModel>>
+    {
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Id, Title = "Id" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerName, Title = "Customer Name" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.CustomerType, Title = "Customer Type" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Address, Title = "Address" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.InvoiceBranch, Title = "Branch" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.Total, Title = "Total", Formatter = x => x.Total.ToString("C", new System.Globalization.CultureInfo("en-US")) },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.DateTime, Title = "Date" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.TaskStatus, Title = "Associated Task Status" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.LastComment, Title = "Last Comment" },
+        new ColumnDefinition<InvoiceViewModel> { Property = x => x.StickyNotes, Title = "Notes", IsStickyNoteColumn = true }
+    };
 }

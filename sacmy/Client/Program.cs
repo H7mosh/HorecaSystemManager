@@ -67,7 +67,15 @@ var host = builder.Build();
 // Set default culture
 var localStorage = host.Services.GetRequiredService<ILocalStorageService>();
 var culture = await localStorage.GetItemAsync<string>("culture") ?? "en-US";
-CultureInfo.DefaultThreadCurrentCulture = new CultureInfo(culture);
-CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo(culture);
+
+// Create a new modifiable CultureInfo instance
+var cultureInfo = new CultureInfo(culture);
+// Set specific numeric format for consistency across browsers
+cultureInfo.NumberFormat.NumberDecimalSeparator = ".";
+cultureInfo.NumberFormat.CurrencyDecimalSeparator = ".";
+
+// Set as default cultures
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
 
 await host.RunAsync();

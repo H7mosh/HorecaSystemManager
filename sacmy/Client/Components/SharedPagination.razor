@@ -1,0 +1,135 @@
+﻿@namespace sacmy.Client.Components.Shared
+
+<style>
+    .pagination-container {
+        margin-top: var(--spacing-md);
+    }
+
+    .pagination-select {
+        width: 80px;
+        min-width: 80px;
+    }
+
+    /* For custom styling if needed */
+    .pagination-card {
+        background-color: var(--bg-light, #f8f9fa);
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: var(--border-radius, 0.25rem);
+    }
+
+    /* Responsive adjustments */
+    @@media (max-width: 576px) {
+        .pagination-info
+
+    {
+        display: none; /* Hide the text on very small screens */
+    }
+
+    .pagination-controls button:not(.active) span {
+        display: none; /* Hide button text on small screens */
+    }
+
+    }
+</style>
+
+
+<div class="card mb-3">
+    <div class="card-body p-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="text-secondary">
+                Showing page @CurrentPage of @TotalPages (Total items: @TotalCount)
+            </div>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="GoToFirstPage" disabled="@(CurrentPage <= 1)">
+                    <i class="bi bi-chevron-double-left"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="PreviousPage" disabled="@(CurrentPage <= 1)">
+                    <i class="bi bi-chevron-left"></i>
+                </button>
+
+                @for (int i = Math.Max(1, CurrentPage - 2); i <= Math.Min(TotalPages, CurrentPage + 2); i++)
+                {
+                    int pageNumber = i;
+                    <button class="btn btn-sm @(pageNumber == CurrentPage ? "btn-primary" : "btn-outline-secondary") me-1"
+                            @onclick="() => GoToPage(pageNumber)">
+                        @pageNumber
+                    </button>
+                }
+
+                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="NextPage" disabled="@(CurrentPage >= TotalPages)">
+                    <i class="bi bi-chevron-right"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary me-1" @onclick="GoToLastPage" disabled="@(CurrentPage >= TotalPages)">
+                    <i class="bi bi-chevron-double-right"></i>
+                </button>
+
+                <select class="form-select form-select-sm ms-2" style="width: 80px;" 
+                       value="@PageSize" 
+                       @onchange="HandlePageSizeChanged">
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="30">30</option>
+                    <option value="50">50</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int TotalPages { get; set; } = 1;
+
+    [Parameter]
+    public int TotalCount { get; set; } = 0;
+
+    [Parameter]
+    public int PageSize { get; set; } = 15;
+
+    [Parameter]
+    public EventCallback<int> CurrentPageChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> PageSizeChanged { get; set; }
+
+    private async Task GoToFirstPage()
+    {
+        if (CurrentPage <= 1) return;
+        await CurrentPageChanged.InvokeAsync(1);
+    }
+
+    private async Task PreviousPage()
+    {
+        if (CurrentPage <= 1) return;
+        await CurrentPageChanged.InvokeAsync(CurrentPage - 1);
+    }
+
+    private async Task NextPage()
+    {
+        if (CurrentPage >= TotalPages) return;
+        await CurrentPageChanged.InvokeAsync(CurrentPage + 1);
+    }
+
+    private async Task GoToLastPage()
+    {
+        if (CurrentPage >= TotalPages) return;
+        await CurrentPageChanged.InvokeAsync(TotalPages);
+    }
+
+    private async Task GoToPage(int page)
+    {
+        if (page == CurrentPage || page < 1 || page > TotalPages) return;
+        await CurrentPageChanged.InvokeAsync(page);
+    }
+    
+    private async Task HandlePageSizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int newSize))
+        {
+            await PageSizeChanged.InvokeAsync(newSize);
+        }
+    }
+} 

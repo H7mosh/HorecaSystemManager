@@ -16,9 +16,12 @@ namespace sacmy.Server.Controller
     public class CustomerTrackerController : ControllerBase
     {
         private readonly SafeenCompanyDbContext _context;
-        public CustomerTrackerController(SafeenCompanyDbContext context)
+        private readonly ILogger<InvoiceController> _logger;
+
+        public CustomerTrackerController(SafeenCompanyDbContext context, ILogger<InvoiceController> logger)
         {
             _context = context;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -90,167 +93,274 @@ namespace sacmy.Server.Controller
         }
 
         [HttpGet("GetCostumerRemainTotal")]
-        public async Task<IActionResult> GetCostumerTotalRemain()
+        public async Task<IActionResult> GetCostumerTotalRemain([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 15, [FromQuery] string searchTerm = null)
         {
-            var customers = await _context.Customers
-                .Include(c => c.Tasks)
-                .ThenInclude(t => t.Type)
-                .Include(c => c.Tasks)
-                .ThenInclude(t => t.TaskNotes)
-                .Include(c => c.Tasks)
-                .ThenInclude(t => t.Status)
-                .Where(c => !string.IsNullOrEmpty(c.Customer1)) // Filter out customers with null or empty Customer1
-                .GroupBy(x => x.Customer1)
-                .Select(g => g.FirstOrDefault())
-                .ToListAsync();
-
-            var costumerCountTRunnings = await _context.QqqCountCostumerNewTRunings.ToListAsync();
-
-            // تحديد التاريخ الذي يسبق 45 يومًا من الآن
-            var dateThreshold = DateTime.Now.AddDays(-45);
-
-            // إيجاد العملاء الذين لديهم وصل قبض أو وصل قبض IQD خلال آخر 45 يومًا
-            var customersWithRecentReceipt = costumerCountTRunnings
-                .Where(q => (q.EventId.ToLower().Contains("pfc".ToLower()) || q.EventId.ToLower().Contains("pf".ToLower())) && q.Datee >= dateThreshold)
-                .Select(q => q.Costumer)
-                .Distinct()
-                .ToHashSet();
-
-            var deptCustomerViewModel = new List<DeptCustomerViewModel>();
-
-            foreach (var group in costumerCountTRunnings.GroupBy(q => q.Costumer))
+            try
             {
-                var customer = customers.FirstOrDefault(e => e.Customer1.ToLower() == group.Key.ToLower());
+                // Get all the basic data needed with minimal LINQ complexity
+                // 1. Get all customers without filters to avoid EF translation errors
+                var allCustomers = await _context.Customers.ToListAsync();
 
-                if (customer != null)
+                // 2. Get all tasks without filters to avoid EF translation errors
+                var allTasks = await _context.Tasks
+                    .Include(t => t.Type)
+                    .Include(t => t.Status)
+                    .Include(t => t.TaskNotes)
+                    .ToListAsync();
+
+                // 3. Get all running totals without filters to avoid EF translation errors
+                var allRunningTotals = await _context.QqqCountCostumerNewTRunings.ToListAsync();
+
+                // Do all filtering and processing in memory
+                // 1. Filter customers with non-empty names
+                var validCustomers = allCustomers
+                    .Where(c => !string.IsNullOrEmpty(c.Customer1))
+                    .ToList();
+
+                // 2. Group tasks by customer ID for easier lookup
+                var tasksByCustomer = allTasks
+                    .Where(t => t.CustomerId.HasValue)
+                    .GroupBy(t => t.CustomerId.Value)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(t => t.CreatedDate).ToList());
+
+                // 3. Calculate date threshold for recent receipts (45 days ago)
+                var dateThreshold = DateTime.Now.AddDays(-45);
+
+                // 4. Find customers with recent receipts
+                var customersWithRecentReceipt = allRunningTotals
+                    .Where(q =>
+                        (q.EventId != null && (
+                            q.EventId.Contains("pfc", StringComparison.OrdinalIgnoreCase) ||
+                            q.EventId.Contains("pf", StringComparison.OrdinalIgnoreCase))
+                        ) &&
+                        q.Datee.HasValue && q.Datee.Value >= dateThreshold
+                    )
+                    .Select(q => q.Costumer)
+                    .Distinct()
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                // 5. Group running totals by customer name
+                var customerGroups = allRunningTotals
+                    .Where(q => q.Costumer != null)
+                    .GroupBy(q => q.Costumer)
+                    .ToList();
+
+                // Process all data in memory
+                var deptCustomerViewModels = new List<DeptCustomerViewModel>();
+
+                foreach (var group in customerGroups)
                 {
-                    var lastTask = customer.Tasks?.LastOrDefault();
+                    var customerName = group.Key;
+                    // Find matching customer by name (case-insensitive)
+                    var customer = validCustomers.FirstOrDefault(c =>
+                        string.Equals(c.Customer1, customerName, StringComparison.OrdinalIgnoreCase));
+
+                    if (customer == null)
+                        continue;
+
+                    // Calculate total for this customer
+                    decimal totalTransTotalN = 0;
+                    foreach (var item in group)
+                    {
+                        totalTransTotalN += item.TransTotalN ?? 0;
+                    }
+
+                    // Skip customers with total <= 200
+                    if (totalTransTotalN <= 200)
+                        continue;
+
+                    // Determine if customer has recent receipt
+                    string hasRecentReceipt = customersWithRecentReceipt.Contains(customerName) ? "نعم" : "لا";
+
+                    // Find last task for this customer if any
+                    List<sacmy.Server.Models.Task> customerTasks = null;
+                    tasksByCustomer.TryGetValue(customer.Id, out customerTasks);
+
+                    var lastTask = customerTasks?.FirstOrDefault();
+
                     if (lastTask != null)
                     {
-                        var taskType = lastTask.Type?.TypeAr;
                         var taskStatus = lastTask.Status?.StateEn;
-                        var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
+                        var lastTaskNote = lastTask.TaskNotes?
+                            .OrderByDescending(n => n.CreatedDate)
+                            .FirstOrDefault();
 
-                        deptCustomerViewModel.Add(new DeptCustomerViewModel
+                        var lastComment = lastTaskNote?.Note;
+
+                        deptCustomerViewModels.Add(new DeptCustomerViewModel
                         {
                             Id = customer.Id,
-                            CustomerName = group.Key,
-                            TotalTransTotalN = group.Sum(q => q.TransTotalN ?? 0),
-                            HasRecentReceipt = customersWithRecentReceipt.Contains(group.Key) ? "نعم" : "لا",
+                            CustomerName = customerName,
+                            TotalTransTotalN = totalTransTotalN,
+                            HasRecentReceipt = hasRecentReceipt,
                             TaskId = lastTask.Id,
                             TaskStatus = taskStatus,
-                            LastComment = lastTaskComment,
+                            LastComment = lastComment
                         });
                     }
                     else
                     {
-                        deptCustomerViewModel.Add(new DeptCustomerViewModel
+                        deptCustomerViewModels.Add(new DeptCustomerViewModel
                         {
                             Id = customer.Id,
-                            CustomerName = group.Key,
-                            TotalTransTotalN = group.Sum(q => q.TransTotalN ?? 0),
-                            HasRecentReceipt = customersWithRecentReceipt.Contains(group.Key) ? "نعم" : "لا",
+                            CustomerName = customerName,
+                            TotalTransTotalN = totalTransTotalN,
+                            HasRecentReceipt = hasRecentReceipt,
                             TaskId = null,
                             TaskStatus = null,
-                            LastComment = null,
+                            LastComment = null
                         });
                     }
                 }
+
+                // Apply search term filter if provided
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.ToLower();
+                    deptCustomerViewModels = deptCustomerViewModels.Where(c =>
+                        (c.CustomerName != null && c.CustomerName.ToLower().Contains(searchTerm)) ||
+                        (c.TaskStatus != null && c.TaskStatus.ToLower().Contains(searchTerm)) ||
+                        (c.LastComment != null && c.LastComment.ToLower().Contains(searchTerm)) ||
+                        (c.HasRecentReceipt != null && c.HasRecentReceipt.ToLower().Contains(searchTerm))
+                    ).ToList();
+                }
+
+                // Get total count for pagination
+                var totalCount = deptCustomerViewModels.Count;
+
+                // Apply pagination
+                var paginatedResult = deptCustomerViewModels
+                    .OrderByDescending(c => c.TotalTransTotalN)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // Create pagination metadata
+                var paginationMetadata = new
+                {
+                    TotalCount = totalCount,
+                    PageSize = pageSize,
+                    CurrentPage = pageNumber,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                };
+
+                // Add pagination metadata to response headers
+                Response.Headers.Add("X-Pagination", System.Text.Json.JsonSerializer.Serialize(paginationMetadata));
+
+                return Ok(paginatedResult);
             }
-
-            // Filter results where TotalTransTotalN > 200
-            var result = deptCustomerViewModel.Where(e => e.TotalTransTotalN > 200).ToList();
-
-            return Ok(result);
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
         }
 
         [HttpGet("GetHiddenCustomer")]
-        public async Task<ActionResult<List<CustomerHiddenViewModel>>> GetHidderCustomer()
+        public async Task<ActionResult<List<CustomerHiddenViewModel>>> GetHidderCustomer([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 15,[FromQuery] string searchTerm = null,[FromQuery] string dateFilter = "default") 
         {
-            var thresholdDate = DateTime.Now.AddDays(-25);
             try
             {
-                // Get customers first
-                var customers = await _context.Customers
-                                    .Include(c => c.Tasks)
-                                    .ThenInclude(t => t.Type)
-                                    .Include(c => c.Tasks)
-                                    .ThenInclude(t => t.TaskNotes)
-                                    .Include(c => c.Tasks)
-                                    .ThenInclude(t => t.Status)
-                                    .GroupBy(x => x.Customer1)
-                                    .Select(g => g.First())
-                                    .ToListAsync();
+                // Determine threshold date based on date filter parameter
+                DateTime thresholdDate;
 
+                switch (dateFilter?.ToLower())
+                {
+                    case "1month":
+                        thresholdDate = DateTime.Now.AddMonths(-1);
+                        break;
+                    case "3months":
+                        thresholdDate = DateTime.Now.AddMonths(-3);
+                        break;
+                    case "6months":
+                        thresholdDate = DateTime.Now.AddMonths(-6);
+                        break;
+                    case "1year":
+                        thresholdDate = DateTime.Now.AddYears(-1);
+                        break;
+                    default:
+                        // Default is 25 days (as per original implementation)
+                        thresholdDate = DateTime.Now.AddDays(-25);
+                        break;
+                }
+
+                // Get all customers first, then filter in memory
+                var allCustomers = await _context.Customers
+                    .Include(c => c.Tasks)
+                        .ThenInclude(t => t.Type)
+                    .Include(c => c.Tasks)
+                        .ThenInclude(t => t.TaskNotes)
+                    .Include(c => c.Tasks)
+                        .ThenInclude(t => t.Status)
+                    .ToListAsync();
+
+                // Get distinct customers by name
+                var distinctCustomers = allCustomers
+                    .GroupBy(c => c.Customer1)
+                    .Select(g => g.First())
+                    .ToList();
+
+                // Get all invoices
                 var invoices = await _context.BuyFatoras.ToListAsync();
 
-                // Initialize an empty dictionary for sticky notes
-                Dictionary<string, List<StickyNote>> stickyNotesGrouped = new Dictionary<string, List<StickyNote>>();
+                // Get all sticky notes for customers
+                var customerIds = distinctCustomers.Select(c => c.Id.ToString()).ToList();
+                var allStickyNotes = await _context.StickyNotes
+                    .Include(sn => sn.Employee)
+                    .Where(sn => sn.TableName == "Customers")
+                    .ToListAsync();
 
-                // Only try to get sticky notes if we have customers
-                if (customers.Any())
-                {
-                    try
-                    {
-                        // Collect all customer IDs
-                        var customerIds = customers.Select(c => c.Id.ToString()).ToList();
+                // Filter sticky notes in memory
+                var relevantStickyNotes = allStickyNotes
+                    .Where(sn => customerIds.Contains(sn.RecordId))
+                    .ToList();
 
-                        // Get sticky notes for all these customers at once
-                        // Use a safer approach to query
-                        var stickyNotes = await _context.StickyNotes
-                            .Include(sn => sn.Employee)
-                            .Where(sn => sn.TableName == "Customers")
-                            .ToListAsync();
-
-                        // Then filter in memory to avoid SQL syntax issues
-                        stickyNotes = stickyNotes.Where(sn => customerIds.Contains(sn.RecordId)).ToList();
-
-                        // Group sticky notes by customer ID
-                        stickyNotesGrouped = stickyNotes
-                            .GroupBy(sn => sn.RecordId)
-                            .ToDictionary(g => g.Key, g => g.OrderByDescending(n => n.CreatedDate).ToList());
-                    }
-                    catch (Exception ex)
-                    {
-                        // Log the error but continue - we don't want to fail the whole request
-                        // just because we couldn't get sticky notes
-                        Console.WriteLine($"Error retrieving sticky notes: {ex.Message}");
-                        // Continue with empty sticky notes
-                    }
-                }
+                // Group sticky notes by customer ID
+                var stickyNotesGrouped = relevantStickyNotes
+                    .GroupBy(sn => sn.RecordId)
+                    .ToDictionary(g => g.Key, g => g.OrderByDescending(n => n.CreatedDate).ToList());
 
                 var customerViewModels = new List<CustomerHiddenViewModel>();
 
-                foreach (var customer in customers)
+                foreach (var customer in distinctCustomers)
                 {
                     var lastInvoice = invoices
                         .Where(i => i.Customer == customer.Customer1)
                         .OrderByDescending(i => i.Datee)
                         .FirstOrDefault();
 
+                    // Apply date filter: Only include customers whose last invoice date is before the threshold date
                     if (lastInvoice != null && lastInvoice.Datee < thresholdDate)
                     {
-                        var lastTask = customer.Tasks?.LastOrDefault();
+                        var lastTask = customer.Tasks?.OrderByDescending(t => t.CreatedDate).FirstOrDefault();
 
                         // Look for sticky notes for this customer
                         stickyNotesGrouped.TryGetValue(customer.Id.ToString(), out var customerNotes);
 
+                        // Calculate days since last invoice
+                        int daysSinceLastInvoice = 0;
+                        if (lastInvoice.Datee.HasValue)
+                        {
+                            daysSinceLastInvoice = (DateTime.Now - lastInvoice.Datee.Value).Days;
+                        }
+
+                        CustomerHiddenViewModel viewModel;
                         if (lastTask != null)
                         {
                             var taskType = lastTask.Type?.TypeAr;
                             var taskStatus = lastTask.Status?.StateEn;
-                            var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
+                            var lastTaskComment = lastTask.TaskNotes?.OrderByDescending(n => n.CreatedDate).FirstOrDefault()?.Note;
 
-                            customerViewModels.Add(new CustomerHiddenViewModel
+                            viewModel = new CustomerHiddenViewModel
                             {
                                 Id = customer.Id,
                                 Name = customer.Customer1,
                                 Location = customer.Address,
                                 Type = customer.CostType,
-                                LastDate = lastInvoice.Datee,
+                                LastDate = (DateTime)lastInvoice.Datee,
                                 TaskId = lastTask.Id,
                                 TaskStatus = taskStatus,
                                 LastComment = lastTaskComment,
+                                DaysSinceLastInvoice = daysSinceLastInvoice,
                                 StickyNotes = customerNotes?.Select(n => new GetStickyNoteViewModel
                                 {
                                     Id = n.Id,
@@ -268,17 +378,18 @@ namespace sacmy.Server.Controller
                                         JobTitle = n.Employee.JobTitle
                                     }
                                 }).ToList() ?? new List<GetStickyNoteViewModel>()
-                            });
+                            };
                         }
                         else
                         {
-                            customerViewModels.Add(new CustomerHiddenViewModel
+                            viewModel = new CustomerHiddenViewModel
                             {
                                 Id = customer.Id,
                                 Name = customer.Customer1,
                                 Location = customer.Address,
                                 Type = customer.CostType,
-                                LastDate = lastInvoice.Datee,
+                                LastDate = (DateTime)lastInvoice.Datee,
+                                DaysSinceLastInvoice = daysSinceLastInvoice,
                                 TaskId = null,
                                 TaskStatus = null,
                                 LastComment = null,
@@ -299,19 +410,56 @@ namespace sacmy.Server.Controller
                                         JobTitle = n.Employee.JobTitle
                                     }
                                 }).ToList() ?? new List<GetStickyNoteViewModel>()
-                            });
+                            };
                         }
+
+                        customerViewModels.Add(viewModel);
                     }
                 }
 
-                return Ok(customerViewModels);
+                // Apply search filtering in memory if needed
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.ToLower();
+                    customerViewModels = customerViewModels.Where(c =>
+                        (c.Name != null && c.Name.ToLower().Contains(searchTerm)) ||
+                        (c.Location != null && c.Location.ToLower().Contains(searchTerm)) ||
+                        (c.Type != null && c.Type.ToLower().Contains(searchTerm)) ||
+                        (c.TaskStatus != null && c.TaskStatus.ToLower().Contains(searchTerm)) ||
+                        (c.LastComment != null && c.LastComment.ToLower().Contains(searchTerm))
+                    ).ToList();
+                }
+
+                // Get total count after filtering
+                var totalCount = customerViewModels.Count;
+
+                // Apply pagination
+                var paginatedResult = customerViewModels
+                    .OrderByDescending(c => c.LastDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                // Create pagination metadata
+                var paginationMetadata = new
+                {
+                    TotalCount = totalCount,
+                    PageSize = pageSize,
+                    CurrentPage = pageNumber,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                };
+
+                // Add pagination metadata to response headers
+                Response.Headers.Add("X-Pagination", System.Text.Json.JsonSerializer.Serialize(paginationMetadata));
+
+                return Ok(paginatedResult);
             }
             catch (Exception ex)
             {
                 return BadRequest(ex.Message);
             }
         }
-
+       
         [HttpGet("GetTrackType")]
         public async Task<IActionResult> GetTrackType()
         {

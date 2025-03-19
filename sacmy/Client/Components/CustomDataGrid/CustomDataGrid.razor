@@ -1,7 +1,7 @@
 ﻿@using System.Linq.Expressions
 @typeparam TItem
 @using sacmy.Client.Services
-@using sacmy.Client.Shared.Components.CustomDataGrid
+@using sacmy.Client.Components.CustomDataGrid
 @using sacmy.Shared.Core
 @using sacmy.Shared.ViewModels.CustomerTracker
 @using sacmy.Shared.ViewModels.InvoiceViewModel
@@ -11,284 +11,208 @@
 @inject TaskService TaskService
 
 <style>
-    /* DataGrid Container */
-    .data-grid-container {
-        background-color: #fff;
-        border-radius: 0.75rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-        margin-bottom: 2rem;
+    @@import url('../../../wwwroot/css/variables.css');
+
+    .custom-data-grid {
+        --primary-light: var(--primary-light, #60a5fa);
+        --primary-main: var(--primary-color);
+        --primary-dark: #2563eb;
+        --header-bg: #f0f9ff;
+        --header-text: #1e40af;
+        --hover-color: #f0f9ff;
+        --alternate-row: #fafbff;
+        --border-color: var(--border-color);
+        --text-primary: var(--text-color);
+        --text-secondary: var(--text-light);
+        --shadow-sm: var(--box-shadow);
+        --shadow-md: var(--box-shadow-lg);
     }
 
-    /* Toolbar Styling */
-    .toolbar {
-        min-height: 60px;
-        background-color: #fff;
-        border-bottom: 1px solid #e5e7eb;
-    }
-
-    /* Search Field Styling */
-    .search-field {
-        min-width: 250px;
-        background-color: #f9fafb;
-        border-color: #e5e7eb;
-        transition: all 0.2s ease;
-    }
-
-        .search-field:hover, .search-field:focus {
-            background-color: #fff;
-            border-color: #3b82f6;
+        .custom-data-grid .mud-table-container {
+            border-radius: var(--border-radius-lg);
+            overflow: hidden;
+            box-shadow: var(--box-shadow);
+            border: 1px solid var(--border-color);
+            margin: var(--spacing-lg) 0;
+            background: var(--text-white);
         }
 
-    /* Table Styling */
-    .table {
-        margin-bottom: 0;
-    }
-
-        .table thead {
-            background-color: #5D9EFD;
-        }
-
-            .table thead th {
-                color: #121212;
-                font-weight: 600;
-                font-size: 0.875rem;
-                padding: 12px;
-                border-bottom: 1px solid #64b5f6;
-            }
-
-        .table tbody td {
-            padding: 12px;
-            color: #1f2937;
-            font-size: 0.875rem;
-            border-bottom: 1px solid #e5e7eb;
-            vertical-align: middle;
-        }
-
-        .table tbody tr {
-            transition: background-color 0.2s ease;
-            height: 60px;
-        }
-
-            .table tbody tr:hover {
-                background-color: #C9DEFE;
-            }
-
-            /* Even row styling */
-            .table tbody tr:nth-child(even) {
-                background-color: #F4F9FF;
-            }
-
-    /* Pagination Styling */
-    .pagination .page-link {
-        color: #3b82f6;
-    }
-
-    .pagination .page-item.active .page-link {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-        color: white;
-    }
-
-    .pagination .page-link:focus {
-        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
-    }
-
-    /* Form Controls */
-    .form-check-input:checked {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-    }
-
-    .form-check-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
-    }
-
-    .form-select:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
-    }
-
-    /* Selection Highlighting */
-    .table-primary {
-        --bs-table-bg: rgba(59, 130, 246, 0.1);
-    }
-
-    /* Row Buttons */
-    .btn-primary {
-        background-color: #3b82f6;
-        border-color: #3b82f6;
-    }
-
-        .btn-primary:hover {
-            background-color: #2563eb;
-            border-color: #2563eb;
-        }
-
-    /* Animation for Row Selection */
-    .table tr.table-primary {
-        animation: selectPulse 0.4s ease-out;
-    }
-
-    @@keyframes selectPulse {
-        0%
-
-    {
-        background-color: rgba(96, 165, 250, 0.3);
-    }
-
-    100% {
-        background-color: rgba(59, 130, 246, 0.1);
-    }
-
-    }
-
-    /* Tab styling */
-    .custom-active-link.active {
-        background-color: transparent !important;
-        color: blue !important;
-        border-bottom: 2px solid blue !important;
-    }
-
-    .custom-inactive-link {
-        color: darkgrey;
-    }
-
-        .custom-inactive-link:hover {
-            color: blue;
-            border-bottom: 2px solid blue;
-        }
-
-    /* Employee image in task modal */
-    .employee-image {
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        margin-right: 5px;
-        vertical-align: middle;
-    }
-
-    /* Sticky Notes styling */
-    .note-button {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background-color: #3B82F6;
-        color: white;
-        border: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        margin: 0 auto;
-        transition: transform 0.2s ease, background-color 0.2s ease;
-    }
-
-        .note-button:hover {
-            transform: scale(1.1);
-            background-color: #2563EB;
-        }
-
-    .note-avatars-row {
-        display: flex;
-        justify-content: center;
-        cursor: pointer;
-    }
-
-    .note-avatar-item {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        overflow: hidden;
-        border: 2px solid white;
-        margin-left: -8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-        .note-avatar-item:first-child {
-            margin-left: 0;
-        }
-
-        .note-avatar-item img {
+        .custom-data-grid table {
             width: 100%;
-            height: 100%;
-            object-fit: cover;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-family: var(--font-family-main);
         }
 
-    /* Responsive Adjustments */
+        .custom-data-grid th {
+            background: var(--header-bg);
+            color: var(--header-text);
+            font-weight: 600;
+            text-align: left;
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: var(--font-size-sm);
+            letter-spacing: 0.03em;
+            border-bottom: 2px solid var(--primary-light);
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+            .custom-data-grid th:after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 2px;
+                background: var(--primary-color);
+                transform: scaleX(0);
+                transition: transform 0.2s ease;
+            }
+
+            .custom-data-grid th:hover:after {
+                transform: scaleX(1);
+            }
+
+        /* Row Styling */
+        .custom-data-grid tr {
+            height: 64px;
+            transition: all 0.25s ease;
+        }
+
+        .custom-data-grid td {
+            padding: var(--spacing-md) var(--spacing-lg);
+            color: var(--text-color);
+            font-size: var(--font-size-sm);
+            border-bottom: 1px solid var(--border-color);
+            transition: all 0.2s ease;
+        }
+
+        .custom-data-grid tbody tr:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-1px);
+            box-shadow: var(--box-shadow);
+        }
+
+        .custom-data-grid tbody tr:nth-child(even) {
+            background-color: var(--alternate-row);
+        }
+
+        /* Enhanced Cell Content */
+        .custom-data-grid td .mud-chip {
+            border-radius: var(--border-radius);
+            font-weight: 500;
+        }
+
+        /* Status Indicators */
+        .custom-data-grid .status-cell {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .custom-data-grid .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: var(--spacing-sm);
+        }
+
+        /* Action Buttons */
+        .custom-data-grid .mud-button {
+            text-transform: none;
+            font-weight: 500;
+            border-radius: var(--border-radius);
+            transition: all 0.2s ease;
+            padding: var(--spacing-sm) var(--spacing-md);
+            background-color: var(--primary-color);
+            color: var(--text-white);
+        }
+
+            .custom-data-grid .mud-button:hover {
+                background-color: var(--primary-dark);
+                transform: translateY(-1px);
+                box-shadow: var(--box-shadow);
+            }
+
+            .custom-data-grid .mud-button .mud-button-icon {
+                margin-right: var(--spacing-sm);
+            }
+
+        /* Switch Styling */
+        .custom-data-grid .mud-switch {
+            --switch-width: 3.5rem;
+            --switch-height: 2rem;
+        }
+
+        .custom-data-grid .mud-switch-track {
+            background-color: #e2e8f0;
+            border-radius: 999px;
+            width: var(--switch-width);
+            height: var(--switch-height);
+            transition: all 0.3s ease;
+        }
+
+        .custom-data-grid .mud-switch-thumb {
+            background-color: var(--text-white);
+            width: calc(var(--switch-height) - 4px);
+            height: calc(var(--switch-height) - 4px);
+            box-shadow: var(--box-shadow);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-data-grid .mud-switch.mud-checked .mud-switch-track {
+            background-color: var(--primary-color);
+        }
+
+        /* Loading State */
+        .custom-data-grid .mud-progress-circular {
+            color: var(--primary-color);
+        }
+
+        /* Column Resize Handle */
+        .custom-data-grid .mud-table-cell-resize-handle {
+            width: 3px;
+            background-color: var(--primary-light, #60a5fa);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .custom-data-grid th:hover .mud-table-cell-resize-handle {
+            opacity: 1;
+        }
+
+        /* Empty State */
+        .custom-data-grid .mud-table-empty {
+            padding: var(--spacing-xxl);
+            text-align: center;
+            color: var(--text-light);
+            font-style: italic;
+        }
+
     @@media (max-width: 768px) {
-        .toolbar
-
-    {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: stretch !important;
-        padding: 1rem;
+        .custom-data-grid td, .custom-data-grid th {
+            padding: var(--spacing-md) var(--spacing-md);
+        }
     }
 
-    .search-field {
-        min-width: 100%;
-    }
-
-    .table thead th, .table tbody td {
-        padding: 0.75rem;
-    }
-
-    .pagination .page-link {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-
-    }
-
-    /* Print Styles */
     @@media print {
-        .data-grid-container
+        .custom-data-grid {
+            box-shadow: none;
+        }
 
-    {
-        box-shadow: none;
-        background-color: white;
+            .custom-data-grid tr:hover {
+                transform: none;
+                box-shadow: none;
+            }
+
+            .custom-data-grid .mud-button,
+            .custom-data-grid .mud-switch {
+                display: none;
+            }
     }
-
-    .toolbar, .pagination {
-        display: none !important;
-    }
-
-    .table {
-        border: none !important;
-    }
-
-    }</style>
+</style>
 
 <div class="data-grid-container">
-    <!-- Toolbar -->
-    <div class="toolbar d-flex justify-content-between align-items-center mb-3 p-3 bg-white border-bottom">
-        <div>
-            @if (ShowSwitch)
-            {
-                <div class="form-check form-switch me-4">
-                    <input class="form-check-input" type="checkbox" id="gridSwitch"
-                           checked="@SwitchValue" disabled="@SwitchDisabled"
-                           @onchange="OnBootstrapSwitchChanged">
-                    <label class="form-check-label" for="gridSwitch">@SwitchLabel</label>
-                </div>
-            }
-        </div>
-        <div>
-            <div class="input-group">
-                <span class="input-group-text">
-                    <i class="bi bi-search"></i>
-                </span>
-                <input type="text" class="form-control search-field"
-                       placeholder="Search"
-                       @bind-value="SearchString"
-                       @bind-value:event="oninput"
-                       @onkeyup="UpdateQuickFilter">
-            </div>
-        </div>
-    </div>
-
     <!-- Table -->
     <div class="table-responsive">
         <table class="table table-hover">
@@ -311,7 +235,7 @@
                             @if (SortField == column.Property.ToString())
                             {
                                 <span>
-                                    @if (SortDirection == sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending)
+                                    @if (SortDirection == sacmy.Client.Components.CustomDataGrid.SortDirection.Ascending)
                                     {
                                         <i class="bi bi-caret-up-fill"></i>
                                     }
@@ -323,6 +247,7 @@
                             }
                         </th>
                     }
+
                     @if (ShowRowButton)
                     {
                         <th>@RowButtonTitle</th>
@@ -332,7 +257,7 @@
             <tbody>
                 @if (FilteredItems.Any())
                 {
-                    @foreach (var item in PagedItems)
+                    @foreach (var item in FilteredItems)
                     {
                         <tr class="@(SelectedItems.Contains(item) ? "table-primary" : "")"
                             @onclick="(e) => OnRowItemClick(item, e)">
@@ -417,72 +342,21 @@
             </tbody>
         </table>
     </div>
-
-    <!-- Pagination -->
-    <div class="d-flex justify-content-between align-items-center p-2 bg-light border-top">
-        <div>
-            Showing @(FilteredItems.Any() ? (CurrentPage - 1) * PageSize + 1 : 0) to @Math.Min(CurrentPage * PageSize, FilteredItems.Count()) of @FilteredItems.Count() entries
-        </div>
-        <nav>
-            <ul class="pagination mb-0">
-                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
-                    <button class="page-link" @onclick="() => ChangePage(1)" disabled="@(CurrentPage == 1)">First</button>
-                </li>
-                <li class="page-item @(CurrentPage == 1 ? "disabled" : "")">
-                    <button class="page-link" @onclick="() => ChangePage(CurrentPage - 1)" disabled="@(CurrentPage == 1)">Previous</button>
-                </li>
-
-                @for (int i = Math.Max(1, CurrentPage - 2); i <= Math.Min(TotalPages, CurrentPage + 2); i++)
-                {
-                    int pageNumber = i;
-                    <li class="page-item @(pageNumber == CurrentPage ? "active" : "")">
-                        <button class="page-link" @onclick="() => ChangePage(pageNumber)">@pageNumber</button>
-                    </li>
-                }
-
-                <li class="page-item @(CurrentPage == TotalPages || TotalPages == 0 ? "disabled" : "")">
-                    <button class="page-link" @onclick="() => ChangePage(CurrentPage + 1)" disabled="@(CurrentPage == TotalPages || TotalPages == 0)">Next</button>
-                </li>
-                <li class="page-item @(CurrentPage == TotalPages || TotalPages == 0 ? "disabled" : "")">
-                    <button class="page-link" @onclick="() => ChangePage(TotalPages)" disabled="@(CurrentPage == TotalPages || TotalPages == 0)">Last</button>
-                </li>
-            </ul>
-        </nav>
-        <div>
-            <select class="form-select form-select-sm" @bind="PageSize">
-                <option value="5">5</option>
-                <option value="10">10</option>
-                <option value="25">25</option>
-                <option value="50">50</option>
-                <option value="100">100</option>
-            </select>
-        </div>
-    </div>
 </div>
 
 @code {
-    // Parameters for data
     [Parameter] public IEnumerable<TItem> Items { get; set; } = new List<TItem>();
     [Parameter] public List<ColumnDefinition<TItem>> Columns { get; set; } = new List<ColumnDefinition<TItem>>();
     [Parameter] public Func<TItem, bool> QuickFilter { get; set; }
     [Parameter] public bool MultiSelection { get; set; } = true;
     [Parameter] public bool Filterable { get; set; } = true;
 
-    // Search functionality
     [Parameter] public string SearchString { get; set; } = string.Empty;
     [Parameter] public EventCallback<string> SearchStringChanged { get; set; }
 
     // Row click handlers
-    [Parameter] public EventCallback<sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<TItem>> OnRowClick { get; set; }
+    [Parameter] public EventCallback<sacmy.Client.Components.CustomDataGrid.DataGridRowClickEventArgs<TItem>> OnRowClick { get; set; }
     [Parameter] public EventCallback<HashSet<TItem>> OnSelectedItemsChanged { get; set; }
-
-    // Switch parameters
-    [Parameter] public bool ShowSwitch { get; set; }
-    [Parameter] public bool SwitchValue { get; set; }
-    [Parameter] public EventCallback<bool> SwitchValueChanged { get; set; }
-    [Parameter] public string SwitchLabel { get; set; } = "Toggle";
-    [Parameter] public string SwitchClassName { get; set; }
-    [Parameter] public bool SwitchDisabled { get; set; }
 
     // Row Button Parameters
     [Parameter] public bool ShowRowButton { get; set; }
@@ -495,18 +369,13 @@
     [Parameter] public EventCallback<TItem> OnAddNote { get; set; }
     [Parameter] public EventCallback<TItem> OnViewNotes { get; set; }
 
-    // Pagination
-    private int PageSize { get; set; } = 10;
-    private int CurrentPage { get; set; } = 1;
-    private int TotalPages => FilteredItems.Any() ? (int)Math.Ceiling(FilteredItems.Count() / (double)PageSize) : 0;
-
     // Selection
     private HashSet<TItem> SelectedItems { get; set; } = new HashSet<TItem>();
     private bool SelectAll { get; set; } = false;
 
     // Sorting
     private string SortField { get; set; } = string.Empty;
-    private sacmy.Client.Shared.Components.CustomDataGrid.SortDirection SortDirection { get; set; } = sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending;
+    private sacmy.Client.Components.CustomDataGrid.SortDirection SortDirection { get; set; } = sacmy.Client.Components.CustomDataGrid.SortDirection.Ascending;
 
     // Computed properties
     private IEnumerable<TItem> FilteredItems
@@ -524,7 +393,7 @@
                 var property = typeof(TItem).GetProperty(SortField);
                 if (property != null)
                 {
-                    items = SortDirection == sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending
+                    items = SortDirection == sacmy.Client.Components.CustomDataGrid.SortDirection.Ascending
                         ? items.OrderBy(x => property.GetValue(x))
                         : items.OrderByDescending(x => property.GetValue(x));
                 }
@@ -533,10 +402,6 @@
             return items;
         }
     }
-
-    private IEnumerable<TItem> PagedItems => FilteredItems
-        .Skip((CurrentPage - 1) * PageSize)
-        .Take(PageSize);
 
     protected override void OnParametersSet()
     {
@@ -574,25 +439,12 @@
         };
     }
 
-    private async Task OnBootstrapSwitchChanged(ChangeEventArgs e)
-    {
-        if (e.Value is bool value)
-        {
-            SwitchValue = value;
-            if (SwitchValueChanged.HasDelegate)
-            {
-                await SwitchValueChanged.InvokeAsync(value);
-            }
-        }
-    }
-
     private async Task UpdateQuickFilter()
     {
         if (SearchStringChanged.HasDelegate)
         {
             await SearchStringChanged.InvokeAsync(SearchString);
         }
-        CurrentPage = 1;
         StateHasChanged();
     }
 
@@ -600,7 +452,7 @@
     {
         if (OnRowClick.HasDelegate)
         {
-            var args = new sacmy.Client.Shared.Components.CustomDataGrid.DataGridRowClickEventArgs<TItem>
+            var args = new sacmy.Client.Components.CustomDataGrid.DataGridRowClickEventArgs<TItem>
                 {
                     Item = item,
                     MouseEventArgs = e
@@ -642,14 +494,14 @@
         if (SortField == propertyName)
         {
             // Toggle direction
-            SortDirection = SortDirection == sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending
-                ? sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Descending
-                : sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending;
+            SortDirection = SortDirection == sacmy.Client.Components.CustomDataGrid.SortDirection.Ascending
+                ? sacmy.Client.Components.CustomDataGrid.SortDirection.Descending
+                : sacmy.Client.Components.CustomDataGrid.SortDirection.Ascending;
         }
         else
         {
             SortField = propertyName;
-            SortDirection = sacmy.Client.Shared.Components.CustomDataGrid.SortDirection.Ascending;
+            SortDirection = sacmy.Client.Components.CustomDataGrid.SortDirection.Ascending;
         }
 
         StateHasChanged();
@@ -667,12 +519,6 @@
         }
 
         return string.Empty;
-    }
-
-    private void ChangePage(int page)
-    {
-        CurrentPage = Math.Max(1, Math.Min(page, Math.Max(1, TotalPages)));
-        StateHasChanged();
     }
 
     private void ToggleSelectAll(ChangeEventArgs e)

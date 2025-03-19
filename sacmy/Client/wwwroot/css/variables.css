@@ -1,0 +1,110 @@
+﻿/* wwwroot/css/variables.css */
+
+:root {
+    /* Colors */
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+    /* Background Colors */
+    --bg-primary: var(--primary-color);
+    --bg-secondary: var(--secondary-color);
+    --bg-success: var(--success-color);
+    --bg-danger: var(--danger-color);
+    --bg-warning: var(--warning-color);
+    --bg-info: var(--info-color);
+    --bg-light: var(--light-color);
+    --bg-dark: var(--dark-color);
+    /* Text Colors */
+    --text-color: #333333;
+    --text-light: #666666;
+    --text-white: #ffffff;
+    /* Border Colors */
+    --border-color: #dddddd;
+    /* Typography */
+    --font-family-main: 'Roboto', Arial, sans-serif;
+    --font-family-heading: 'Roboto', Arial, sans-serif;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.25rem;
+    --font-size-xl: 1.5rem;
+    --font-size-xxl: 2rem;
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-xxl: 3rem;
+    /* Layout */
+    --sidebar-width: 280px;
+    --appbar-height: 56px;
+    --border-radius: 0.25rem;
+    --border-radius-lg: 0.5rem;
+    --box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --box-shadow-lg: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    /* Z-index levels */
+    --z-index-appbar: 1000;
+    --z-index-sidebar: 1000;
+    --z-index-modal: 1050;
+    --z-index-toast: 1050;
+}
+
+/* Dark Theme */
+[data-theme='dark'] {
+    /* Colors */
+    --primary-color: #0d6efd;
+    --secondary-color: #495057;
+    --success-color: #198754;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --light-color: #343a40;
+    --dark-color: #f8f9fa;
+    /* Background Colors */
+    --bg-primary: var(--primary-color);
+    --bg-secondary: var(--secondary-color);
+    --bg-success: var(--success-color);
+    --bg-danger: var(--danger-color);
+    --bg-warning: var(--warning-color);
+    --bg-info: var(--info-color);
+    --bg-light: #343a40;
+    --bg-dark: #f8f9fa;
+    /* Text Colors */
+    --text-color: #e9ecef;
+    --text-light: #ced4da;
+    --text-white: #ffffff;
+    /* Border Colors */
+    --border-color: #495057;
+    /* Other adjustments for dark theme */
+    body
+
+{
+    background-color: #212529;
+    color: var(--text-color);
+}
+
+.sidebar {
+    background-color: #2c3034;
+}
+
+.card, .modal-content {
+    background-color: #2c3034;
+    border-color: #495057;
+}
+
+.table {
+    color: var(--text-color);
+}
+
+.form-control {
+    background-color: #2c3034;
+    border-color: #495057;
+    color: var(--text-color);
+}
+}

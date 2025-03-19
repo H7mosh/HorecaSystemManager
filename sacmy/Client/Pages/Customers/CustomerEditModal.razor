@@ -1,0 +1,245 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels.CustomerViewModel
+@using sacmy.Shared.ViewModels.UserViewModel
+@using sacmy.Client.Services
+@using sacmy.Client.Shared.Toast
+@inject CustomerService CustomerService
+@inject ToastService ToastService
+@inject IJSRuntime JSRuntime
+
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
+
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header custom-header">
+                    <h5 class="modal-title">@(IsNewCustomer ? "Add New Customer" : "Edit Customer")</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (isSaving)
+                    {
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Saving...</span>
+                            </div>
+                            <p class="mt-2">Saving changes...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="@customerModel" OnValidSubmit="HandleValidSubmit">
+                            <DataAnnotationsValidator />
+                            <ValidationSummary />
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="name" class="form-label">Name *</label>
+                                        <InputText id="name" class="form-control" @bind-Value="customerModel.Name" />
+                                        <ValidationMessage For="@(() => customerModel.Name)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="phoneNumber" class="form-label">Phone Number *</label>
+                                        <InputText id="phoneNumber" class="form-control" @bind-Value="customerModel.PhoneNumber" />
+                                        <ValidationMessage For="@(() => customerModel.PhoneNumber)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="address" class="form-label">Address</label>
+                                        <InputText id="address" class="form-control" @bind-Value="customerModel.Address" />
+                                        <ValidationMessage For="@(() => customerModel.Address)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="branch" class="form-label">Branch *</label>
+                                        <InputSelect id="branch" class="form-select" @bind-Value="customerModel.Branch">
+                                            <option value="">-- Select Branch --</option>
+                                            <option value="Erbil">Erbil</option>
+                                            <option value="Baghdad">Baghdad</option>
+                                            <option value="zakho">Zakho</option>
+                                        </InputSelect>
+                                        <ValidationMessage For="@(() => customerModel.Branch)" />
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="costType" class="form-label">Cost Type</label>
+                                        <InputText id="costType" class="form-control" @bind-Value="customerModel.CostType" />
+                                        <ValidationMessage For="@(() => customerModel.CostType)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="userName" class="form-label">Username</label>
+                                        <InputText id="userName" class="form-control" @bind-Value="customerModel.UserName" />
+                                        <ValidationMessage For="@(() => customerModel.UserName)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="password" class="form-label">Password</label>
+                                        <InputText id="password" class="form-control" type="password" @bind-Value="customerModel.Password" />
+                                        <ValidationMessage For="@(() => customerModel.Password)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="profitPercentage" class="form-label">Profit Percentage (%)</label>
+                                        <InputNumber id="profitPercentage" class="form-control" @bind-Value="customerModel.ProfitPercentage" />
+                                        <ValidationMessage For="@(() => customerModel.ProfitPercentage)" />
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label for="extraProfitPercentage" class="form-label">Extra Profit Percentage (%)</label>
+                                        <InputNumber id="extraProfitPercentage" class="form-control" @bind-Value="customerModel.ExtraProfitPercentage" />
+                                        <ValidationMessage For="@(() => customerModel.ExtraProfitPercentage)" />
+                                    </div>
+
+                                    <div class="form-check mb-3">
+                                        <InputCheckbox id="active" class="form-check-input" @bind-Value="activeValue" />
+                                        <label class="form-check-label" for="active">
+                                            Active
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-1"></i> Save Changes
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public CustomerViewModel Customer { get; set; }
+    [Parameter] public bool IsNewCustomer { get; set; }
+    [Parameter] public EventCallback<CustomerViewModel> OnSave { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private CustomerViewModel customerModel = new CustomerViewModel();
+    private bool isSaving = false;
+    private bool activeValue = false; // Helper property for InputCheckbox
+
+    protected override void OnInitialized()
+    {
+        if (IsVisible)
+        {
+            JSRuntime.InvokeVoidAsync("document.body.classList.add", "modal-open");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            JSRuntime.InvokeVoidAsync("document.body.classList.add", "modal-open");
+        }
+        else
+        {
+            JSRuntime.InvokeVoidAsync("document.body.classList.remove", "modal-open");
+        }
+
+        if (Customer != null)
+        {
+            customerModel = new CustomerViewModel
+                {
+                    Id = Customer.Id,
+                    Name = Customer.Name,
+                    PhoneNumber = Customer.PhoneNumber,
+                    Address = Customer.Address,
+                    Branch = Customer.Branch,
+                    CostType = Customer.CostType,
+                    UserName = Customer.UserName,
+                    Password = Customer.Password,
+                    ConstProfit = Customer.ConstProfit,
+                    ProfitPercentage = Customer.ProfitPercentage,
+                    ExtraProfitPercentage = Customer.ExtraProfitPercentage,
+                    DeviceId = Customer.DeviceId,
+                    Active = Customer.Active,
+                    FirebaseToken = Customer.FirebaseToken
+                };
+
+            activeValue = Customer.Active.GetValueOrDefault(false);
+        }
+        else if (IsNewCustomer)
+        {
+            customerModel = new CustomerViewModel
+                {
+                    Id = 0,
+                    Active = true
+                };
+
+            activeValue = true;
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        isSaving = true;
+
+        try
+        {
+            customerModel.Active = activeValue;
+
+            ApiResponse<CustomerViewModel> response;
+
+            if (IsNewCustomer)
+            {
+                response = await CustomerService.CreateCustomerAsync(customerModel);
+            }
+            else
+            {
+                response = await CustomerService.UpdateCustomerAsync(customerModel);
+            }
+
+            if (response.Success)
+            {
+                // Using your ToastService implementation
+                ToastService.ShowToast(response.Message, "success");
+
+                if (OnSave.HasDelegate)
+                {
+                    await OnSave.InvokeAsync(response.Data);
+                }
+
+                await CloseModal();
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message, "danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Failed to save customer: {ex.Message}", "danger");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        // Remove body class when closing
+        await JSRuntime.InvokeVoidAsync("document.body.classList.remove", "modal-open");
+
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+}

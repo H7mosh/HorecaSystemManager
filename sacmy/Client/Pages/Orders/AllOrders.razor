@@ -1,4 +1,5 @@
 @page "/Orders"
+@using sacmy.Client.Components.DialogHeader
 @using sacmy.Client.Pages.Components.Dialogs
 @using sacmy.Client.Services
 @using sacmy.Shared.Core
@@ -31,7 +32,7 @@
 </script>
 
 <style>
-    /* Navigation Tabs Styles */
+    
     .nav-tabs .nav-link {
         color: #6b7280;
         padding: 0.5rem 0;
@@ -39,32 +40,30 @@
         background: none;
     }
 
-        .nav-tabs .nav-link.active {
-            color: #0D6EFD;
-            font-weight: 500;
-        }
+    .nav-tabs .nav-link.active {
+        color: #0D6EFD;
+        font-weight: 500;
+    }
 
-            .nav-tabs .nav-link.active::after {
-                content: '';
-                position: absolute;
-                bottom: -2px;
-                left: 0;
-                right: 0;
-                height: 2px;
-                background-color: #0D6EFD;
-            }
+    .nav-tabs .nav-link.active::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: #0D6EFD;
+    }
 
-    /* Form Controls */
     .form-control {
         height: 42px;
     }
 
-        .form-control:focus {
-            box-shadow: none;
-            border-color: #ddd;
-        }
+    .form-control:focus {
+        box-shadow: none;
+        border-color: #ddd;
+    }
 
-    /* Table Styles */
     .table > :not(caption) > * > * {
         padding: 1rem 0.75rem;
         border-bottom-color: #f0f0f0;
@@ -74,17 +73,15 @@
         background-color: #f9fafb;
     }
 
-    /* Button Styles */
     .btn-light {
         background-color: #f9fafb;
         border-color: #f0f0f0;
     }
 
-        .btn-light:hover {
-            background-color: #f0f0f0;
-        }
+    .btn-light:hover {
+        background-color: #f0f0f0;
+    }
 
-    /* Pagination Styles */
     .pagination .page-link {
         color: #0D6EFD;
         border-color: #f0f0f0;
@@ -96,14 +93,13 @@
         border-color: #0D6EFD;
     }
 
-    /* Invoice Styles */
     .main-invoice {
         background-color: #e6f7ff;
         font-weight: bold;
         color: #333;
     }
 
-    /* PDF Button Styles */
+    
     .pdf-button {
         background-color: #dc3545;
         color: white;
@@ -113,9 +109,9 @@
         transition: background-color 0.2s;
     }
 
-        .pdf-button:hover {
-            background-color: #c82333;
-        }
+    .pdf-button:hover {
+        background-color: #c82333;
+    }
 
     .delivered-button {
         background-color: #00a6fb;
@@ -177,9 +173,9 @@
         margin-left: -8px;
     }
 
-        .sticky-note-wrapper:first-child {
-            margin-left: 0;
-        }
+    .sticky-note-wrapper:first-child {
+        margin-left: 0;
+    }
 
     .employee-avatar {
         width: 35px;
@@ -192,18 +188,18 @@
         border: 2px solid white;
     }
 
-        .employee-avatar.add-note {
-            background-color: #3B82F6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-        }
+    .employee-avatar.add-note {
+        background-color: #3B82F6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
 
-        .employee-avatar:hover {
-            transform: scale(1.1);
-            z-index: 2;
-        }
+    .employee-avatar:hover {
+        transform: scale(1.1);
+        z-index: 2;
+    }
 
     .sticky-note-tooltip {
         position: absolute;
@@ -231,16 +227,16 @@
         position: relative;
     }
 
-        .note-timeline-item::before {
-            content: '';
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            background: #3b82f6;
-            border-radius: 50%;
-            left: -7px;
-            top: 1.5rem;
-        }
+    .note-timeline-item::before {
+        content: '';
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: #3b82f6;
+        border-radius: 50%;
+        left: -7px;
+        top: 1.5rem;
+    }
 </style>
 
 <div class="container-fluid py-4 px-5">
@@ -367,7 +363,7 @@
                             </td>
 
                             <td class="text-muted" @onclick="() => OpenOrderDetails(order.OrderId, order.CustomerId , order.CostumerFirebaseToken)">
-                                $@order.Total.ToString("N2", CultureInfo.InvariantCulture)
+                                $@string.Format(CultureInfo.InvariantCulture, "{0:0.00}", order.Total)
                             </td>
 
                             <td class="text-muted hide-on-mobile" @onclick="() => OpenOrderDetails(order.OrderId, order.CustomerId, order.CostumerFirebaseToken)">
@@ -569,39 +565,43 @@
 
 @if (showAllNotesDialog)
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1">
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" id="notesModal">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Order Notes History</h5>
-                    <button type="button" class="btn-close" @onclick="() => showAllNotesDialog = false"></button>
-                </div>
-                <div class="modal-body">
+            <div class="modal-content border-0 shadow">
+                <!-- Using the same DialogHeader component as in the Advanced Edit modal -->
+                <DialogHeader 
+                    Title="Order Notes History"
+                    Icon="bi bi-sticky" 
+                    OnClose="@(CloseAllNotesDialog)"/>
+
+                <div class="modal-body p-4">
                     <div class="notes-timeline">
                         @if (currentOrderNotes?.Any() == true)
                         {
                             @foreach (var note in currentOrderNotes.OrderByDescending(n => n.CreatedDate))
                             {
                                 <div class="note-timeline-item">
-                                    <div class="note-timeline-header">
+                                    <div class="note-timeline-header d-flex justify-content-between mb-2">
                                         <div class="d-flex align-items-center gap-3">
-                                            <img class="note-author-image"
-                                                 src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
-                                                 alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")" />
+                                            <div class="employee-avatar" style="width: 40px; height: 40px; border: none;">
+                                                <img src="@(note.Employee?.Image ?? "/images/placeholder-avatar.png")"
+                                                    alt="@($"{note.Employee?.FirstName} {note.Employee?.LastName}")"
+                                                    class="w-100 h-100 object-fit-cover" />
+                                            </div>
                                             <div>
-                                                <div class="note-author-name">
+                                                <div class="fw-medium">
                                                     @(note.Employee?.FirstName) @(note.Employee?.LastName)
                                                 </div>
-                                                <div class="note-author-title">
+                                                <div class="text-muted small">
                                                     @(note.Employee?.JobTitle ?? "Employee")
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="note-date">
+                                        <div class="text-muted small">
                                             @note.CreatedDate.ToString("MMM dd, yyyy HH:mm")
                                         </div>
                                     </div>
-                                    <div class="note-timeline-content">
+                                    <div class="note-timeline-content bg-light p-3 rounded">
                                         @note.Note
                                     </div>
                                 </div>
@@ -609,8 +609,9 @@
                         }
                         else
                         {
-                            <div class="text-center text-muted p-4">
-                                No notes found for this order.
+                            <div class="text-center text-muted p-4 bg-light rounded">
+                                <i class="bi bi-sticky" style="font-size: 2rem;"></i>
+                                <p class="mb-0 mt-2">No notes found for this order.</p>
                             </div>
                         }
                     </div>
@@ -621,9 +622,19 @@
                                       rows="2"
                                       placeholder="Add a new note..."
                                       @bind="newNoteText"></textarea>
-                            <button class="btn btn-primary align-self-start"
-                                    @onclick="AddNote">
-                                Add Note
+                            <button class="btn btn-primary align-self-start px-4 d-flex align-items-center gap-2"
+                                    @onclick="AddNote"
+                                    disabled="@isAddingNote">
+                                @if (isAddingNote)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span>Adding...</span>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-plus-lg"></i>
+                                    <span>Add Note</span>
+                                }
                             </button>
                         </div>
                     </div>
@@ -637,32 +648,46 @@
 
 @if (showAddDialog)
 {
-    <div class="modal fade show" style="display: block;" tabindex="-1">
+    <div class="modal show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);" id="addNoteModal">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Add Note to Order</h5>
-                    <button type="button" class="btn-close" @onclick="() => showAddDialog = false"></button>
-                </div>
-                <div class="modal-body">
+            <div class="modal-content border-0 shadow">
+                <!-- Using the same DialogHeader component as in the Advanced Edit modal -->
+                <DialogHeader Title="Add Note to Order"
+                              Icon="bi bi-plus-circle"
+                              OnClose="@(CloseAddDialog)" />
+
+                <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label for="noteText" class="form-label">Note</label>
+                        <label for="noteText" class="form-label text-muted">Note</label>
                         <textarea id="noteText"
                                   class="form-control"
-                                  rows="3"
+                                  rows="4"
+                                  placeholder="Enter your note here..."
                                   @bind="newNoteText"></textarea>
                     </div>
                 </div>
-                <div class="modal-footer">
+
+                <div class="modal-footer border-top bg-light">
                     <button type="button"
-                            class="btn btn-secondary"
-                            @onclick="() => showAddDialog = false">
+                            class="btn btn-link text-decoration-none"
+                            @onclick="CloseAddDialog"
+                            disabled="@isAddingNote">
                         Cancel
                     </button>
                     <button type="button"
-                            class="btn btn-primary"
-                            @onclick="AddNote">
-                        Add Note
+                            class="btn btn-primary px-4 d-flex align-items-center gap-2"
+                            @onclick="AddNote"
+                            disabled="@isAddingNote">
+                        @if (isAddingNote)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                            <span>Adding...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-plus-lg"></i>
+                            <span>Add Note</span>
+                        }
                     </button>
                 </div>
             </div>
@@ -670,6 +695,7 @@
     </div>
     <div class="modal-backdrop fade show"></div>
 }
+
 
 @code {
 

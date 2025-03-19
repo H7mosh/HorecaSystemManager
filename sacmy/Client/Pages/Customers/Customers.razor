@@ -1,0 +1,321 @@
+﻿@page "/Customers"
+@using sacmy.Client.Components.CustomDataGrid
+@using sacmy.Client.Components.Shared
+@using sacmy.Shared.ViewModels.CustomerViewModel
+@using sacmy.Shared.ViewModels.UserViewModel
+@using sacmy.Client.Services
+@using sacmy.Client.Shared.Toast
+@using sacmy.Shared.Core
+@inject CustomerService CustomerService
+@inject ToastService ToastService
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<style>
+    @@import url('../../wwwroot/css/variables.css');
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .search-container {
+        display: flex;
+        gap: var(--spacing-md);
+        margin-bottom: var(--spacing-lg);
+    }
+
+    .search-input {
+        flex: 1;
+        max-width: 400px;
+    }
+
+    /* Other styles remain the same */
+    /* ... */
+
+    @@media (max-width: 768px) {
+        .search-container {
+            flex-direction: column;
+        }
+        
+        .search-input {
+            max-width: 100%;
+        }
+        
+        .customer-info {
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="page-header">
+        <h2><i class="bi bi-people me-2"></i>Customers</h2>
+        <button class="btn btn-primary" @onclick="AddNewCustomer">
+            <i class="bi bi-plus-circle me-1"></i> Add Customer
+        </button>
+    </div>
+
+    <div class="search-container">
+        <div class="input-group search-input">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" class="form-control" placeholder="Search customers..." 
+                   @bind="searchQuery" @bind:event="oninput" @onkeyup="SearchOnKeyUp" />
+            
+            @if (!string.IsNullOrEmpty(searchQuery))
+            {
+                <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                    <i class="bi bi-x"></i>
+                </button>
+            }
+        </div>
+        <button class="btn btn-primary" @onclick="DoSearch">
+            <i class="bi bi-search me-1"></i> Search
+        </button>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="d-flex justify-content-center mt-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    }
+    else if (customers == null || !customers.Any())
+    {
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2"></i> No customers found.
+        </div>
+    }
+    else
+    {
+        <CustomDataGrid TItem="CustomerViewModel"
+                         Items="customers"
+                         Columns="columns"
+                         SearchString="@searchQuery"
+                         SearchStringChanged="@HandleSearchChanged"
+                         OnRowClick="@HandleRowClick"
+                         ShowRowButton="true"
+                         RowButtonText="Edit"
+                         RowButtonIcon="bi bi-pencil"
+                         OnRowButtonClick="@EditCustomer" />
+
+        <SharedPagination CurrentPage="currentPage"
+                          TotalPages="totalPages"
+                          TotalCount="totalCount"
+                          PageSize="pageSize"
+                          CurrentPageChanged="OnPageChanged"
+                          PageSizeChanged="OnPageSizeChanged" />
+    }
+
+    <CustomerDetailModal IsVisible="isDetailModalVisible"
+                         Customer="selectedCustomer"
+                         OnEdit="EditCustomer"
+                         OnNotify="SendNotification"
+                         OnClose="CloseDetailModal" />
+        
+    <CustomerEditModal IsVisible="isEditModalVisible"
+                       Customer="selectedCustomer"
+                       IsNewCustomer="isNewCustomer"
+                       OnSave="HandleCustomerSaved"
+                       OnClose="CloseEditModal" />
+</div>
+
+@code {
+    private List<CustomerViewModel> customers = new();
+    private List<ColumnDefinition<CustomerViewModel>> columns = new();
+    private string searchQuery = "";
+    private bool isLoading = true;
+    private int currentPage = 1;
+    private int pageSize = 15;
+    private int totalCount = 0;
+    private int totalPages => (int)Math.Ceiling((double)totalCount / pageSize);
+
+    // Modal state variables
+    private bool isDetailModalVisible = false;
+    private bool isEditModalVisible = false;
+    private bool isNewCustomer = false;
+    private CustomerViewModel selectedCustomer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        InitializeColumns();
+        await LoadCustomers();
+    }
+
+    private void InitializeColumns()
+    {
+        columns = new List<ColumnDefinition<CustomerViewModel>>
+        {
+            new ColumnDefinition<CustomerViewModel>
+            {
+                Property = c => c.Name,
+                Title = "Customer Name",
+                Sortable = true
+            },
+            new ColumnDefinition<CustomerViewModel>
+            {
+                Property = c => c.PhoneNumber,
+                Title = "Phone Number",
+                Sortable = true
+            },
+            new ColumnDefinition<CustomerViewModel>
+            {
+                Property = c => c.Address,
+                Title = "Address",
+                Sortable = true
+            },
+            new ColumnDefinition<CustomerViewModel>
+            {
+                Property = c => c.Branch,
+                Title = "Branch",
+                Sortable = true
+            },
+            new ColumnDefinition<CustomerViewModel>
+            {
+                Property = c => c.Active,
+                Title = "Status",
+                Formatter = c => c.Active == true ? "Active" : "Inactive", // Fix for nullable bool
+                Sortable = true
+            }
+        };
+    }
+
+    private async Task LoadCustomers()
+    {
+        isLoading = true;
+        try
+        {
+            var response = await CustomerService.SearchCustomersAsync(searchQuery, currentPage, pageSize);
+            if (response != null && response.Success)
+            {
+                customers = response.Data ?? new List<CustomerViewModel>();
+                totalCount = response.TotalCount ?? 0;
+            }
+            else
+            {
+                ToastService.ShowToast(response?.Message ?? "Unknown error", "danger");
+                customers = new List<CustomerViewModel>();
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Failed to load customers: {ex.Message}", "danger");
+            customers = new List<CustomerViewModel>();
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task DoSearch()
+    {
+        currentPage = 1;
+        await LoadCustomers();
+    }
+
+    private async Task SearchOnKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await DoSearch();
+        }
+    }
+
+    private async Task HandleSearchChanged(string newSearchValue)
+    {
+        searchQuery = newSearchValue;
+        await DoSearch();
+    }
+
+    private void ClearSearch()
+    {
+        searchQuery = "";
+        DoSearch();
+    }
+
+    // For SharedPagination component
+    private async Task OnPageChanged(int newPage)
+    {
+        currentPage = newPage;
+        await LoadCustomers();
+    }
+
+    private async Task OnPageSizeChanged(int newPageSize)
+    {
+        pageSize = newPageSize;
+        currentPage = 1; // Reset to first page when changing page size
+        await LoadCustomers();
+    }
+
+    private async Task HandleRowClick(sacmy.Client.Components.CustomDataGrid.DataGridRowClickEventArgs<CustomerViewModel> args)
+    {
+        await ViewCustomerDetails(args.Item);
+    }
+
+    private async Task ViewCustomerDetails(CustomerViewModel customer)
+    {
+        selectedCustomer = customer;
+        isDetailModalVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseDetailModal()
+    {
+        isDetailModalVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task EditCustomer(CustomerViewModel customer)
+    {
+        selectedCustomer = customer;
+        isNewCustomer = false;
+        isEditModalVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void CloseEditModal()
+    {
+        isEditModalVisible = false;
+        StateHasChanged();
+    }
+
+    private async Task AddNewCustomer()
+    {
+        selectedCustomer = new CustomerViewModel { Active = true };
+        isNewCustomer = true;
+        isEditModalVisible = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleCustomerSaved(CustomerViewModel customer)
+    {
+        await LoadCustomers();
+        ToastService.ShowToast($"Customer {(isNewCustomer ? "created" : "updated")} successfully", "success");
+    }
+
+    private async Task SendNotification(CustomerViewModel customer)
+    {
+        try
+        {
+            var response = await CustomerService.SendNotificationToCustomerAsync(customer.Name);
+            if (response.Success)
+            {
+                ToastService.ShowToast("Notification sent successfully", "success");
+            }
+            else
+            {
+                ToastService.ShowToast(response.Message, "danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Failed to send notification: {ex.Message}", "danger");
+        }
+    }
+}
