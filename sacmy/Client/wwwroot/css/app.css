@@ -1,7 +1,18 @@
+/* Import variables */
+@import url('variables.css');
+
 html, body {
     height: 100%;
     margin: 0;
     overflow-x: hidden;
+    font-family: var(--font-family-main);
+    color: var(--text-color);
+}
+
+body {
+    font-family: var(--font-family-main);
+    font-size: var(--font-size-md);
+    line-height: 1.5;
 }
 
 .d-flex {
@@ -12,41 +23,42 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.5rem 1rem;
-    background-color: #007BFF;
-    color: white;
+    padding: var(--spacing-sm) var(--spacing-md);
+    background-color: var(--primary-color);
+    color: var(--text-white);
     position: fixed;
     top: 0;
     width: 100%;
-    z-index: 1000;
+    z-index: var(--z-index-appbar);
+    height: var(--appbar-height);
 }
 
 .navbar-toggler {
-    background-color: white;
+    background-color: var(--text-white);
     border: none;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: var(--border-radius);
     cursor: pointer;
 }
 
 .navbar-toggler-icon {
-    font-size: 1.25rem;
+    font-size: var(--font-size-lg);
 }
 
 .sidebar {
-    width: 280px;
+    width: var(--sidebar-width);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    padding: 15px;
-    background-color: #f8f9fa;
+    padding: var(--spacing-md);
+    background-color: var(--bg-light);
     position: fixed;
-    top: 56px;
+    top: var(--appbar-height);
     bottom: 0;
     left: 0;
-    transform: translateX(-280px);
+    transform: translateX(calc(-1 * var(--sidebar-width)));
     transition: transform 0.3s ease;
-    z-index: 1000;
+    z-index: var(--z-index-sidebar);
 }
 
     .sidebar.show {
@@ -54,48 +66,48 @@ html, body {
     }
 
 .sidebar-header {
-    padding: 16px;
-    font-size: 1.25rem;
+    padding: var(--spacing-lg);
+    font-size: var(--font-size-lg);
     text-align: center;
 }
 
 .nav-link {
-    padding: 10px 15px;
-    font-size: 1rem;
-    color: #333;
+    padding: var(--spacing-sm) var(--spacing-md);
+    font-size: var(--font-size-md);
+    color: var(--text-color);
 }
 
     .nav-link i {
-        margin-right: 10px;
+        margin-right: var(--spacing-sm);
     }
 
     .nav-link.active {
-        background-color: #007bff;
-        color: white;
+        background-color: var(--primary-color);
+        color: var(--text-white);
     }
 
 .user-info {
-    padding: 16px;
+    padding: var(--spacing-lg);
     text-align: center;
 }
 
 .main-content {
     flex-grow: 1;
-    padding: 16px;
+    padding: var(--spacing-lg);
     overflow-y: auto;
-    margin-top: 56px;
+    margin-top: var(--appbar-height);
     transition: margin-left 0.3s ease;
 }
 
     .main-content.shifted {
-        margin-left: 280px;
+        margin-left: var(--sidebar-width);
     }
 
 .toast-container {
     position: fixed;
-    bottom: 1rem;
-    right: 1rem;
-    z-index: 1050;
+    bottom: var(--spacing-md);
+    right: var(--spacing-md);
+    z-index: var(--z-index-toast);
 }
 
 .toast {
@@ -109,24 +121,21 @@ html, body {
     }
 
 .bg-success {
-    background-color: #198754 !important;
+    background-color: var(--bg-success) !important;
 }
 
 .bg-danger {
-    background-color: #dc3545 !important;
+    background-color: var(--bg-danger) !important;
 }
 
 .bg-warning {
-    background-color: #ffc107 !important;
+    background-color: var(--bg-warning) !important;
 }
 
 .bg-info {
-    background-color: #0dcaf0 !important;
+    background-color: var(--bg-info) !important;
 }
 
 .toast-body {
-    padding: 0.75rem 1.25rem;
+    padding: var(--spacing-sm) var(--spacing-lg);
 }
-
-
-

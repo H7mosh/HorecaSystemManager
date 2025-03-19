@@ -1,0 +1,143 @@
+﻿@using sacmy.Shared.ViewModels.CustomerViewModel
+@using sacmy.Shared.ViewModels.UserViewModel
+@using sacmy.Client.Services
+@using sacmy.Client.Shared.Toast
+@inject IJSRuntime JSRuntime
+
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop fade show" style="z-index: 1040;"></div>
+
+    <div class="modal fade show d-block" tabindex="-1" role="dialog" style="z-index: 1050;">
+        <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header custom-header">
+                    <h5 class="modal-title">Customer Details</h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    @if (Customer != null)
+                    {
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Name</label>
+                                    <p>@Customer.Name</p>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Phone Number</label>
+                                    <p>@Customer.PhoneNumber</p>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Address</label>
+                                    <p>@Customer.Address</p>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Branch</label>
+                                    <p>@Customer.Branch</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Cost Type</label>
+                                    <p>@Customer.CostType</p>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Profit Percentage</label>
+                                    <p>@(Customer.ProfitPercentage?.ToString("0.##") ?? "N/A")%</p>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Extra Profit Percentage</label>
+                                    <p>@(Customer.ExtraProfitPercentage?.ToString("0.##") ?? "N/A")%</p>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Status</label>
+                                    <span class="badge @(Customer.Active == true ? "badge-success" : "badge-danger")">
+                                        @(Customer.Active == true ? "Active" : "Inactive")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center p-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    @if (Customer != null)
+                    {
+                        <button type="button" class="btn btn-primary" @onclick="OnEditClick">
+                            <i class="bi bi-pencil me-1"></i> Edit
+                        </button>
+                        <button type="button" class="btn btn-info" @onclick="OnNotifyClick">
+                            <i class="bi bi-bell me-1"></i> Send Notification
+                        </button>
+                    }
+                    <button type="button" class="btn btn-secondary" @onclick="CloseModal">
+                        <i class="bi bi-x-circle me-1"></i> Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public CustomerViewModel Customer { get; set; }
+    [Parameter] public EventCallback<CustomerViewModel> OnEdit { get; set; }
+    [Parameter] public EventCallback<CustomerViewModel> OnNotify { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (IsVisible)
+        {
+            JSRuntime.InvokeVoidAsync("document.body.classList.add", "modal-open");
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsVisible)
+        {
+            JSRuntime.InvokeVoidAsync("document.body.classList.add", "modal-open");
+        }
+        else
+        {
+            JSRuntime.InvokeVoidAsync("document.body.classList.remove", "modal-open");
+        }
+    }
+
+    private async Task CloseModal()
+    {
+        await JSRuntime.InvokeVoidAsync("document.body.classList.remove", "modal-open");
+
+        if (OnClose.HasDelegate)
+        {
+            await OnClose.InvokeAsync();
+        }
+    }
+
+    private async Task OnEditClick()
+    {
+        if (OnEdit.HasDelegate && Customer != null)
+        {
+            await OnEdit.InvokeAsync(Customer);
+        }
+    }
+
+    private async Task OnNotifyClick()
+    {
+        if (OnNotify.HasDelegate && Customer != null)
+        {
+            await OnNotify.InvokeAsync(Customer);
+        }
+    }
+}

@@ -27,11 +27,39 @@ namespace sacmy.Server.Controller
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<InvoiceViewModel>>> GetInvoice()
+        public async Task<ActionResult<IEnumerable<InvoiceViewModel>>> GetInvoice([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 20,[FromQuery] bool? isCompleted = null,[FromQuery] string searchTerm = null)
         {
             try
             {
-                var invoices = await _context.BuyFatoras
+                _context.Database.SetCommandTimeout(TimeSpan.FromMinutes(2));
+
+                var query = _context.BuyFatoras.AsQueryable();
+
+                if (isCompleted.HasValue)
+                {
+                    query = query.Where(i => i.Checkeed == isCompleted.Value);
+                }
+
+
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.ToLower();
+                    query = query.Where(i =>
+                        (i.Customer != null && i.Customer.ToLower().Contains(searchTerm)) ||
+                        (i.CostType != null && i.CostType.ToLower().Contains(searchTerm)) ||
+                        (i.Address != null && i.Address.ToLower().Contains(searchTerm)) ||
+                        (i.Subb != null && i.Subb.ToLower().Contains(searchTerm))
+                    );
+                }
+
+                // Get total count with all filters applied
+                var totalCount = await query.CountAsync();
+
+                // Calculate the number of records to skip
+                int skip = (pageNumber - 1) * pageSize;
+
+                // Execute the query with includes and pagination
+                var invoices = await query
                     .Include(c => c.Tasks)
                     .ThenInclude(t => t.Type)
                     .Include(c => c.Tasks)
@@ -39,21 +67,47 @@ namespace sacmy.Server.Controller
                     .Include(c => c.Tasks)
                     .ThenInclude(t => t.Status)
                     .OrderByDescending(e => e.Now)
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .AsSplitQuery()  
                     .ToListAsync();
 
                 var invoiceViewModels = new List<InvoiceViewModel>();
 
-
                 foreach (var invoice in invoices)
                 {
-
                     var lastTask = invoice.Tasks?.LastOrDefault();
-
                     if (lastTask != null)
                     {
                         var taskType = lastTask.Type?.TypeAr;
                         var taskStatus = lastTask.Status?.StateEn;
                         var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
+
+                        if (!string.IsNullOrWhiteSpace(searchTerm))
+                        {
+                            bool includeInvoice = true;
+
+                            
+                            if ((taskStatus == null || !taskStatus.ToLower().Contains(searchTerm)) &&
+                                (lastTaskComment == null || !lastTaskComment.ToLower().Contains(searchTerm)))
+                            {
+ 
+                                if (!(
+                                    (invoice.Customer != null && invoice.Customer.ToLower().Contains(searchTerm)) ||
+                                    (invoice.CostType != null && invoice.CostType.ToLower().Contains(searchTerm)) ||
+                                    (invoice.Address != null && invoice.Address.ToLower().Contains(searchTerm)) ||
+                                    (invoice.Subb != null && invoice.Subb.ToLower().Contains(searchTerm))
+                                ))
+                                {
+                                    includeInvoice = false;
+                                }
+                            }
+
+                            if (!includeInvoice)
+                            {
+                                continue; 
+                            }
+                        }
 
                         invoiceViewModels.Add(new InvoiceViewModel
                         {
@@ -63,15 +117,14 @@ namespace sacmy.Server.Controller
                             Address = invoice.Address,
                             InvoiceBranch = invoice.Subb,
                             Total = Convert.ToDouble(invoice.Tootal.ToString()),
-                            IsCompleted = invoice.Checkeed??false,
-                            IsPdfGenerated = invoice.IsPdfGenerated??false,
+                            IsCompleted = invoice.Checkeed ?? false,
+                            IsPdfGenerated = invoice.IsPdfGenerated ?? false,
                             DateTime = invoice.Now ?? DateTime.Today,
                             TaskId = lastTask.Id,
                             TaskStatus = taskStatus,
                             LastComment = lastTaskComment,
                         });
                     }
-
                     else
                     {
                         invoiceViewModels.Add(new InvoiceViewModel
@@ -91,6 +144,17 @@ namespace sacmy.Server.Controller
                         });
                     }
                 }
+
+                var paginationMetadata = new
+                {
+                    TotalCount = totalCount,
+                    PageSize = pageSize,
+                    CurrentPage = pageNumber,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                };
+
+
+                Response.Headers.Add("X-Pagination", System.Text.Json.JsonSerializer.Serialize(paginationMetadata));
 
                 return Ok(invoiceViewModels);
             }
@@ -133,7 +197,6 @@ namespace sacmy.Server.Controller
 
             return Ok(invoiceCounts);
         }
-
 
         [HttpGet("GetInvoiceItems")]
         public async Task<ActionResult<IEnumerable<InvoiceItemsViewModel>>> GetInvoiceItems(int InvoiceId)
@@ -633,11 +696,11 @@ namespace sacmy.Server.Controller
         }
 
         [HttpGet("GetUncompleteInvoices")]
-        public async Task<IActionResult> GetUncompleteInvoices()
+        public async Task<IActionResult> GetUncompleteInvoices([FromQuery] int pageNumber = 1,[FromQuery] int pageSize = 15,[FromQuery] string searchTerm = null)
         {
             try
             {
-                var invoices = await _context.BuyFatoras
+                var query = _context.BuyFatoras
                     .Where(e => e.Checkeed == true)
                     .Include(c => c.Tasks)
                     .ThenInclude(t => t.Type)
@@ -646,14 +709,33 @@ namespace sacmy.Server.Controller
                     .Include(c => c.Tasks)
                     .ThenInclude(t => t.Status)
                     .OrderByDescending(e => e.Now)
+                    .AsQueryable();
+
+                // Apply search filter if provided
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    searchTerm = searchTerm.ToLower();
+                    query = query.Where(i =>
+                        (i.Customer != null && i.Customer.ToLower().Contains(searchTerm)) ||
+                        (i.CostType != null && i.CostType.ToLower().Contains(searchTerm)) ||
+                        (i.Address != null && i.Address.ToLower().Contains(searchTerm)) ||
+                        (i.Subb != null && i.Subb.ToLower().Contains(searchTerm))
+                    );
+                }
+
+                // Get total count with filter applied
+                var totalCount = await query.CountAsync();
+
+                // Apply pagination
+                var invoices = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
                     .ToListAsync();
 
                 var invoiceViewModels = new List<InvoiceViewModel>();
 
-
                 foreach (var invoice in invoices)
                 {
-
                     var lastTask = invoice.Tasks?.LastOrDefault();
 
                     if (lastTask != null)
@@ -661,6 +743,31 @@ namespace sacmy.Server.Controller
                         var taskType = lastTask.Type?.TypeAr;
                         var taskStatus = lastTask.Status?.StateEn;
                         var lastTaskComment = lastTask.TaskNotes?.LastOrDefault()?.Note;
+
+                        // If search term is provided, apply additional filtering for task-related fields
+                        if (!string.IsNullOrWhiteSpace(searchTerm))
+                        {
+                            bool includeInvoice = true;
+
+                            if ((taskStatus == null || !taskStatus.ToLower().Contains(searchTerm)) &&
+                                (lastTaskComment == null || !lastTaskComment.ToLower().Contains(searchTerm)))
+                            {
+                                if (!(
+                                    (invoice.Customer != null && invoice.Customer.ToLower().Contains(searchTerm)) ||
+                                    (invoice.CostType != null && invoice.CostType.ToLower().Contains(searchTerm)) ||
+                                    (invoice.Address != null && invoice.Address.ToLower().Contains(searchTerm)) ||
+                                    (invoice.Subb != null && invoice.Subb.ToLower().Contains(searchTerm))
+                                ))
+                                {
+                                    includeInvoice = false;
+                                }
+                            }
+
+                            if (!includeInvoice)
+                            {
+                                continue;
+                            }
+                        }
 
                         invoiceViewModels.Add(new InvoiceViewModel
                         {
@@ -672,12 +779,12 @@ namespace sacmy.Server.Controller
                             Total = Convert.ToDouble(invoice.Tootal.ToString()),
                             DateTime = invoice.Now ?? DateTime.Today,
                             TaskId = lastTask.Id,
-                            TaskStatus = taskStatus, 
+                            TaskStatus = taskStatus,
                             LastComment = lastTaskComment,
                         });
                     }
-
-                    else {
+                    else
+                    {
                         invoiceViewModels.Add(new InvoiceViewModel
                         {
                             Id = invoice.Id,
@@ -693,6 +800,18 @@ namespace sacmy.Server.Controller
                         });
                     }
                 }
+
+                // Create pagination metadata
+                var paginationMetadata = new
+                {
+                    TotalCount = totalCount,
+                    PageSize = pageSize,
+                    CurrentPage = pageNumber,
+                    TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+                };
+
+                // Add pagination metadata to response headers
+                Response.Headers.Add("X-Pagination", System.Text.Json.JsonSerializer.Serialize(paginationMetadata));
 
                 return Ok(invoiceViewModels);
             }

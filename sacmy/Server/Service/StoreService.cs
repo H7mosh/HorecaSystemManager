@@ -212,6 +212,7 @@ namespace sacmy.Server.Service
 
                 // Find the data for the requested brandId
                 var brandData = cachedData.FirstOrDefault(brand => Guid.Parse(brand.Id) == Guid.Parse(brandId));
+
                 if (brandData == null)
                 {
                     _logger.LogInformation("No data found for BrandId: {brandId}", brandId);

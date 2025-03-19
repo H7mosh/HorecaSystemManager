@@ -6,110 +6,406 @@
 
 
 <div class="overview-card">
-    <h2 class="stat-header">Overview</h2>
-    <div>
-        <div class="stat-label">SKU Total</div>
-        <div class="stat-value">@(FilteredProducts?.Count() ?? 0)</div>
-    </div>
-    <div style="margin-top: 1.5rem;">
-        <div class="stat-row">
-            <span class="stat-label">Available</span>
-            <span class="stat-number" style="color: #10B981;">
-                @(FilteredProducts?.Count(p => p.Quantity > 0) ?? 0)
-            </span>
-        </div>
-        <div class="progress-bar">
-            <div class="progress-fill available" style="width: @(GetAvailablePercentage())%"></div>
-        </div>
-        <div class="stat-row">
-            <span class="stat-label">Out of Stock</span>
-            <span class="stat-number" style="color: #EF4444;">
-                @(FilteredProducts?.Count(p => p.Quantity == 0) ?? 0)
-            </span>
-        </div>
-        <div class="progress-bar">
-            <div class="progress-fill out-of-stock" style="width: @(GetOutOfStockPercentage())%"></div>
-        </div>
+    <div class="card-header">
+        <h2 class="stat-header">
+            <i class="bi bi-clipboard-data me-2"></i>Overview
+        </h2>
     </div>
 
-    @if (SelectedProductId != null)
-    {
-        <div class="hot-products">
-            <div class="hot-header">
-                <i class="bi bi-tag-fill" style="color: #EF4444;"></i>
-                <h5 class="mb-0">Customer Pricing</h5>
+    <div class="card-body">
+        <!-- SKU Total Section -->
+        <div class="sku-total-section">
+            <div class="stat-label">SKU Total</div>
+            <div class="stat-value">@(FilteredProducts?.Count() ?? 0)</div>
+        </div>
+
+        <!-- Stock Status Section -->
+        <div class="stock-status-section">
+            <!-- Available Products -->
+            <div class="status-item">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="stat-label">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>Available
+                    </span>
+                    <span class="stat-number available-count">
+                        @(FilteredProducts?.Count(p => p.Quantity > 0) ?? 0)
+                    </span>
+                </div>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill available" style="width: @(GetAvailablePercentage())%"></div>
+                    </div>
+                </div>
             </div>
 
-            @if (isLoadingPrices)
-            {
-                <div class="d-flex justify-content-center my-3">
-                    <div class="spinner-border spinner-border-sm text-primary"></div>
+            <!-- Out of Stock Products -->
+            <div class="status-item">
+                <div class="d-flex justify-content-between align-items-center mb-1">
+                    <span class="stat-label">
+                        <i class="bi bi-x-circle-fill text-danger me-1"></i>Out of Stock
+                    </span>
+                    <span class="stat-number out-of-stock-count">
+                        @(FilteredProducts?.Count(p => p.Quantity == 0) ?? 0)
+                    </span>
                 </div>
-            }
-            else if (priceChanges?.Any() == true)
-            {
-                <div class="hot-stats mt-3">
-                    <table class="table table-sm table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th>Customer</th>
-                                <th class="text-end">Price Change</th>
-                                <th class="text-end">Final Price</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var priceChange in priceChanges)
-                            {
-                                <tr>
-                                    <td>@priceChange.CustomerName</td>
-                                    <td class="text-end">
-                                        <span class="@(priceChange.IsDiscounted ? "text-danger" : "text-success")">
-                                            @{
-                                                string displayValue = "0.00";
-                                                string priceChangeStr = priceChange.PriceChange.ToString();
-
-                                                // Check if the value contains a percentage sign
-                                                if (priceChangeStr.Contains("%"))
-                                                {
-                                                    // Remove the % symbol and try parsing
-                                                    string numValue = priceChangeStr.Replace("%", "").Trim();
-                                                    if (decimal.TryParse(numValue, out decimal percentValue))
-                                                    {
-                                                        displayValue = Math.Abs(percentValue).ToString("F2") + "%";
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    // Regular decimal parsing for non-percentage values
-                                                    if (decimal.TryParse(priceChangeStr, out decimal value))
-                                                    {
-                                                        displayValue = Math.Abs(value).ToString("F2");
-                                                    }
-                                                }
-                                            }
-                                            @(priceChange.IsDiscounted ? "-" : "+")$@displayValue
-                                        </span>
-                                    </td>
-                                    <td class="text-end">
-                                        <span class="badge @(priceChange.IsDiscounted ? "bg-danger" : "bg-primary") p-2">
-                                            $@(decimal.TryParse(priceChange.FinalPrice.ToString(), out decimal final) ? final.ToString("F2") : "0.00")
-                                        </span>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress-fill out-of-stock" style="width: @(GetOutOfStockPercentage())%"></div>
+                    </div>
                 </div>
-            }
-            else
-            {
-                <div class="alert alert-light text-center mt-3 p-3 border">
-                    <i class="bi bi-info-circle me-2"></i>No custom pricing found
-                </div>
-            }
+            </div>
         </div>
-    }
+
+        <!-- Customer Pricing Section -->
+        @if (SelectedProductId != null)
+        {
+            <div class="customer-pricing-section">
+                <div class="section-header">
+                    <div class="d-flex align-items-center">
+                        <div class="section-icon">
+                            <i class="bi bi-tag-fill"></i>
+                        </div>
+                        <h5 class="section-title">Customer Pricing</h5>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    @if (isLoadingPrices)
+                    {
+                        <div class="loading-container">
+                            <div class="spinner-container">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else if (priceChanges?.Any() == true)
+                    {
+                        <div class="pricing-table-container">
+                            <table class="pricing-table">
+                                <thead>
+                                    <tr>
+                                        <th>Customer</th>
+                                        <th class="text-end">Price Change</th>
+                                        <th class="text-end">Final Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var priceChange in priceChanges)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="customer-name">@priceChange.CustomerName</div>
+                                            </td>
+                                            <td class="text-end">
+                                                <span class="price-change @(priceChange.IsDiscounted ? "discount" : "markup")">
+                                                    @{
+                                                        string displayValue = "0.00";
+                                                        string priceChangeStr = priceChange.PriceChange.ToString();
+
+                                                        // Check if the value contains a percentage sign
+                                                        if (priceChangeStr.Contains("%"))
+                                                        {
+                                                            // Remove the % symbol and try parsing
+                                                            string numValue = priceChangeStr.Replace("%", "").Trim();
+                                                            if (decimal.TryParse(numValue, out decimal percentValue))
+                                                            {
+                                                                displayValue = Math.Abs(percentValue).ToString("F2") + "%";
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            // Regular decimal parsing for non-percentage values
+                                                            if (decimal.TryParse(priceChangeStr, out decimal value))
+                                                            {
+                                                                displayValue = Math.Abs(value).ToString("F2");
+                                                            }
+                                                        }
+                                                    }
+                                                    @(priceChange.IsDiscounted ? "-" : "+")$@displayValue
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="final-price @(priceChange.IsDiscounted ? "discount" : "markup")">
+                                                    $@(decimal.TryParse(priceChange.FinalPrice.ToString(), out decimal final) ? final.ToString("F2") : "0.00")
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="bi bi-info-circle"></i>
+                            <p>No custom pricing found</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
 </div>
+
+<style>
+    /* Card Structure */
+    .overview-card {
+        background-color: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+        transition: box-shadow 0.3s ease;
+    }
+
+        .overview-card:hover {
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        }
+
+    .card-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Typography */
+    .stat-header {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0;
+        color: #333;
+        display: flex;
+        align-items: center;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6B7280;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+    }
+
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #333;
+        margin-top: 0.25rem;
+    }
+
+    .stat-number {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .available-count {
+        color: #10B981;
+    }
+
+    .out-of-stock-count {
+        color: #EF4444;
+    }
+
+    /* Section Spacing */
+    .sku-total-section {
+        margin-bottom: 2rem;
+    }
+
+    .stock-status-section {
+        margin-bottom: 2rem;
+    }
+
+    .status-item {
+        margin-bottom: 1rem;
+    }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+    /* Progress Bars */
+    .progress-container {
+        margin-top: 0.25rem;
+    }
+
+    .progress-bar {
+        background-color: #F3F4F6;
+        height: 8px;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.5s ease;
+    }
+
+        .progress-fill.available {
+            background-color: #10B981;
+        }
+
+        .progress-fill.out-of-stock {
+            background-color: #EF4444;
+        }
+
+    /* Customer Pricing Section */
+    .customer-pricing-section {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .section-header {
+        margin-bottom: 1rem;
+    }
+
+    .section-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background-color: rgba(239, 68, 68, 0.1);
+        border-radius: 8px;
+        margin-right: 0.75rem;
+    }
+
+        .section-icon i {
+            color: #EF4444;
+            font-size: 1rem;
+        }
+
+    .section-title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* Loading State */
+    .loading-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem 0;
+    }
+
+    .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Pricing Table */
+    .pricing-table-container {
+        margin-top: 1rem;
+    }
+
+    .pricing-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+        .pricing-table th {
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: #6B7280;
+            text-transform: uppercase;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .pricing-table td {
+            padding: 0.75rem 0.5rem;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .pricing-table tr:last-child td {
+            border-bottom: none;
+        }
+
+    .customer-name {
+        font-weight: 500;
+        color: #333;
+    }
+
+    .price-change {
+        font-weight: 600;
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+    }
+
+        .price-change.discount {
+            color: #EF4444;
+            background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        .price-change.markup {
+            color: #10B981;
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+    .final-price {
+        display: inline-block;
+        padding: 0.4rem 0.75rem;
+        border-radius: 6px;
+        font-weight: 600;
+        color: white;
+    }
+
+        .final-price.discount {
+            background-color: #EF4444;
+        }
+
+        .final-price.markup {
+            background-color: #0D6EFD;
+        }
+
+    /* Empty State */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background-color: #F9FAFB;
+        border-radius: 8px;
+        color: #6B7280;
+    }
+
+        .empty-state i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            margin: 0;
+        }
+
+    /* Responsive Adjustments */
+    @@media (max-width: 768px) {
+        .card-header, .card-body
+
+    {
+        padding: 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.75rem;
+    }
+
+    }
+</style>
 
 @code {
     [Parameter] public IEnumerable<Product> FilteredProducts { get; set; }

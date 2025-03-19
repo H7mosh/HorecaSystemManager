@@ -1,11 +1,13 @@
-﻿body, html {
+﻿@import url('variables.css');
+
+body, html {
     height: 100%;
     margin: 0;
 }
 
 .tasks-container {
     display: flex;
-    gap: 20px;
+    gap: var(--spacing-lg);
     height: 100vh;
     margin: 0;
 }
@@ -14,85 +16,85 @@
     display: flex;
     flex-direction: column;
     width: 70%;
-    padding: 0.5% 0.5% 0.5% 0.5%;
-    border-right: 2px solid #ccc;
+    padding: 0.5%;
+    border-right: 2px solid var(--border-color);
 }
 
 .tasks-list-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 10px;
-    font-size: 24px;
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-xl);
     font-weight: bold;
-    color: #212529;
+    color: var(--text-color);
 }
 
 .tasks-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    padding: 10px;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
     flex: 1;
 }
 
 .task-item {
     display: flex;
     align-items: center;
-    padding: 10px;
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+    padding: var(--spacing-sm);
+    background-color: var(--text-white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
     cursor: pointer;
 }
 
     .task-item.selected {
-        border: 2px solid #007bff;
+        border: 2px solid var(--primary-color);
     }
 
 .task-title {
-    font-size: 16px;
+    font-size: var(--font-size-md);
     font-weight: bold;
-    margin-right: 20px;
+    margin-right: var(--spacing-lg);
     min-width: 150px;
 }
 
 .task-meta {
     display: flex;
     align-items: center;
-    font-size: 12px;
-    color: #888;
-    margin-right: 20px;
+    font-size: var(--font-size-xs);
+    color: var(--text-light);
+    margin-right: var(--spacing-lg);
 }
 
     .task-meta span {
-        background-color: #f5f5f5;
+        background-color: var(--bg-light);
         padding: 2px 5px;
-        border-radius: 3px;
-        margin-right: 10px;
+        border-radius: var(--border-radius);
+        margin-right: var(--spacing-sm);
     }
 
 .task-status {
-    font-size: 14px;
+    font-size: var(--font-size-sm);
     font-weight: bold;
-    margin-right: 20px;
+    margin-right: var(--spacing-lg);
     min-width: 100px;
 }
 
     .task-status.closed, .task-status.done {
-        color: #198754;
+        color: var(--success-color);
     }
 
     .task-status.pending {
-        color: #ff9800;
+        color: var(--warning-color);
     }
 
     .task-status.inProgress {
-        color: #555555;
+        color: var(--text-color);
     }
 
 .task-deadline {
-    color: red;
+    color: var(--danger-color);
 }
 
 .task-assigned {
@@ -101,9 +103,9 @@
 }
 
     .task-assigned span {
-        font-size: 14px;
-        color: #333;
-        margin-right: 10px;
+        font-size: var(--font-size-sm);
+        color: var(--text-color);
+        margin-right: var(--spacing-sm);
         white-space: nowrap;
         width: 120px;
         overflow: hidden;
@@ -124,17 +126,17 @@
 }
 
 .task-detail-content {
-    padding: 10px 10px 8px 10px;
-    background-color: #ffffff;
-    border-radius: 10px;
+    padding: var(--spacing-sm);
+    background-color: var(--text-white);
+    border-radius: var(--border-radius-lg);
 }
 
     .task-detail-content .description {
         padding: 5px;
         margin: 5px;
-        background-color: #ffffff;
-        border-radius: 10px;
-        font-size: 14px;
+        background-color: var(--text-white);
+        border-radius: var(--border-radius-lg);
+        font-size: var(--font-size-sm);
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
@@ -150,257 +152,30 @@
 }
 
 .view-more-button {
-    margin-left: 10px;
+    margin-left: var(--spacing-sm);
     background-color: transparent;
     border: none;
-    color: #007bff;
+    color: var(--primary-color);
     cursor: pointer;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
 }
 
 .add-task-button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px 20px;
+    background-color: var(--primary-color);
+    color: var(--text-white);
+    padding: var(--spacing-sm) var(--spacing-lg);
     border: none;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-sm);
 }
 
 .reminder-button {
-    background-color: grey;
-    color: white;
-    padding: 10px 20px;
+    background-color: var(--secondary-color);
+    color: var(--text-white);
+    padding: var(--spacing-sm) var(--spacing-lg);
     border: none;
-    border-radius: 5px;
+    border-radius: var(--border-radius);
     cursor: pointer;
-    font-size: 14px;
-}
-
-.modal-content {
-    padding: 0px;
-}
-
-.modal-backdrop {
-    opacity: 0.5 !important;
-}
-
-.task-comments {
-    flex: 1;
-    overflow-y: auto;
-    height: 40vh;
-    padding: 5px 10px;
-    border-radius: 10px;
-}
-
-.comment-container {
-    display: flex;
-    align-items: flex-start;
-    padding: 8px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    margin-bottom: 15px;
-}
-
-.comment-avatar {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    margin-right: 15px;
-}
-
-.comment-content {
-    flex: 1;
-    margin-left: 15px;
-}
-
-.comment-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin: 5px;
-}
-
-.comment-author {
-    font-weight: bold;
-}
-
-.comment-date {
-    color: #888;
-    font-size: 14px;
-}
-
-.comment-text {
-    margin: 10px 0;
-    font-size: 14px;
-}
-
-.comment-attachment {
-    display: flex;
-    align-items: center;
-    margin-top: 10px;
-}
-
-    .comment-attachment button {
-        background-color: #007bff;
-        color: white;
-        border: none;
-        padding: 10px 5px;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 14px;
-    }
-
-.message-box-container {
-    padding: 10px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.message-box {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    flex-wrap: wrap;
-}
-
-    .message-box textarea {
-        flex: 1;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 5px;
-        resize: none;
-        height: 100px;
-        min-width: 200px;
-    }
-
-.button-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.message-box button {
-    padding: 10px 20px;
-    background-color: #007bff;
-    color: #fff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    width: 100px;
-}
-
-.attach-button {
-    background-color: #ff9800;
-}
-
-.send-button {
-    background-color: #007bff;
-}
-
-.no-comments {
-    text-align: center;
-    color: #888;
-    font-size: 14px;
-    margin-top: 20px;
-}
-
-.file-display {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-    margin-bottom: 10px;
-}
-
-.file-name {
-    font-size: 14px;
-    color: #555;
-}
-
-.remove-file {
-    cursor: pointer;
-    font-size: 18px;
-    color: red;
-}
-
-.download-button .download-attachment {
-    display: inline-block;
-    padding: 6px 20px;
-    background-color: #007bff;
-    color: #fff;
-    text-decoration: none;
-    border-radius: 5px;
-}
-
-    .download-button .download-attachment:hover {
-        background-color: #0056b3;
-    }
-
-.status-container {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-    .status-container label {
-        margin-bottom: 0;
-        white-space: nowrap;
-    }
-
-    .status-container select {
-        flex-grow: 1;
-    }
-
-.comments-header {
-    margin: 10px;
-}
-
-.form-group-status-container {
-    margin: 10px;
-}
-
-.created-by {
-    margin: 10px 0;
-}
-
-.creator-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-    .creator-info span {
-        font-size: 14px;
-        color: #333;
-    }
-
-    .creator-info img {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-    }
-
-@media (max-width: 768px) {
-    .tasks-container {
-        flex-direction: column;
-    }
-
-    .tasks-list-container, .task-detail {
-        flex: 1 1 100%;
-        width: 100%;
-    }
-
-    .task-title, .task-meta, .task-status, .task-assigned {
-        flex: 1;
-    }
-
-    .message-box {
-        flex-direction: column;
-    }
+    font-size: var(--font-size-sm);
 }

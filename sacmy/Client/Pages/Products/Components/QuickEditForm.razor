@@ -1,215 +1,277 @@
 ﻿@using sacmy.Shared.ViewModels.Products
 
 <div class="quick-edit-form">
-    <div class="form-row">
-        <div class="form-group">
-            <label>Height</label>
-            <input type="number" step="0.01" @bind="Product.Height" />
-        </div>
-        <div class="form-group">
-            <label>Diameter</label>
-            <input type="number" step="0.01" @bind="Product.Diameter" />
-        </div>
-    </div>
-
-    <div class="form-row">
-        <div class="form-group">
-            <label>Top</label>
-            <input type="number" step="0.01" @bind="Product.Top" />
-        </div>
-        <div class="form-group">
-            <label>Base</label>
-            <input type="number" step="0.01" @bind="Product.Base" />
-        </div>
-    </div>
-
-    <div class="form-row three-columns">
-        <div class="form-group">
-            <label>Volume</label>
-            <input type="number" step="0.01" @bind="Product.Volume" />
-        </div>
-        <div class="form-group">
-            <label>Weight</label>
-            <input type="number" step="0.01" @bind="Product.Weight" />
-        </div>
-        <div class="form-group">
-            <label>Area</label>
-            <input type="number" step="0.01" @bind="Product.Area" />
+    <div class="form-section">
+        <h6 class="section-title">
+            <i class="bi bi-rulers"></i>
+            <span>Dimensions</span>
+        </h6>
+        <div class="form-grid dimensions-grid">
+            <div class="form-field">
+                <label>Height</label>
+                <div class="input-container">
+                    <input type="number" step="0.01" @bind="Product.Height" />
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Diameter</label>
+                <div class="input-container">
+                    <input type="number" step="0.01" @bind="Product.Diameter" />
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Top</label>
+                <div class="input-container">
+                    <input type="number" step="0.01" @bind="Product.Top" />
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Base</label>
+                <div class="input-container">
+                    <input type="number" step="0.01" @bind="Product.Base" />
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="form-row">
-        <div class="form-group">
-            <label>EAN</label>
-            <input type="text" @bind="Product.Ean" />
+    <div class="form-section">
+        <h6 class="section-title">
+            <i class="bi bi-box-seam"></i>
+            <span>Measurements</span>
+        </h6>
+        <div class="form-grid measurements-grid">
+            <div class="form-field">
+                <label>Volume</label>
+                <div class="input-container">
+                    <input type="number" step="0.01" @bind="Product.Volume" />
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Weight</label>
+                <div class="input-container">
+                    <input type="number" step="0.01" @bind="Product.Weight" />
+                </div>
+            </div>
+            <div class="form-field">
+                <label>Area</label>
+                <div class="input-container">
+                    <input type="number" step="0.01" @bind="Product.Area" />
+                </div>
+            </div>
         </div>
-        <div class="form-group">
-            <label>UPC</label>
-            <input type="text" @bind="Product.Upc" />
+    </div>
+
+    <div class="form-section">
+        <h6 class="section-title">
+            <i class="bi bi-upc"></i>
+            <span>Product Codes</span>
+        </h6>
+        <div class="form-grid codes-grid">
+            <div class="form-field">
+                <label>EAN</label>
+                <div class="input-container">
+                    <input type="text" @bind="Product.Ean" />
+                </div>
+            </div>
+            <div class="form-field">
+                <label>UPC</label>
+                <div class="input-container">
+                    <input type="text" @bind="Product.Upc" />
+                </div>
+            </div>
         </div>
     </div>
 
     <div class="form-actions">
-        <button class="btn btn-secondary" @onclick="() => OnAdvancedEdit.InvokeAsync()">
+        <button class="btn btn-outline-primary" @onclick="() => OnAdvancedEdit.InvokeAsync()">
             <i class="bi bi-sliders"></i> Advanced Edit
         </button>
-        <button class="btn btn-primary position-relative"
-                @onclick="() => OnSaveChanges.InvokeAsync(Product)"
-                disabled="@IsUpdating">
-            @if (IsUpdating)
-            {
-                <span class="spinner-border spinner-border-sm me-2"
-                      role="status"
-                      aria-hidden="true">
-                </span>
-                <span>Saving...</span>
-            }
-            else
-            {
-                <span>Save Changes</span>
-            }
-        </button>
-        <button class="btn btn-link"
-                @onclick="() => OnCancel.InvokeAsync()"
-                disabled="@IsUpdating">
-            Cancel
-        </button>
+        <div class="action-group">
+            <button class="btn btn-link"
+                    @onclick="() => OnCancel.InvokeAsync()"
+                    disabled="@IsUpdating">
+                Cancel
+            </button>
+            <button class="btn btn-primary"
+                    @onclick="() => OnSaveChanges.InvokeAsync(Product)"
+                    disabled="@IsUpdating">
+                @if (IsUpdating)
+                {
+                    <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    <span>Saving...</span>
+                }
+                else
+                {
+                    <i class="bi bi-check2"></i>
+                    <span>Save Changes</span>
+                }
+            </button>
+        </div>
     </div>
 </div>
 
 <style>
+    /* === QUICK EDIT FORM STYLES === */
     .quick-edit-form {
         padding: 1.5rem;
-        background: #F8FAFC;
-        border-radius: 0.5rem;
-        margin: 0.5rem 1rem;
-        box-shadow: 0 1px 3px rgba(59, 130, 246, 0.1);
-        border: 1px solid #E0E7FF;
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        margin: 0 1rem 1rem;
+        border: 1px solid var(--gray-200);
     }
 
-    .form-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
+    .form-section {
         margin-bottom: 1.5rem;
     }
 
-        .form-row.three-columns {
-            grid-template-columns: 1fr 1fr 1fr;
+        .form-section:last-child {
+            margin-bottom: 0;
         }
 
-    .form-group {
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .form-grid {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .dimensions-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .measurements-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .codes-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .form-field {
         display: flex;
         flex-direction: column;
     }
 
-        .form-group label {
-            font-size: 0.875rem;
+        .form-field label {
+            font-size: 0.8rem;
             font-weight: 500;
-            color: #1E40AF;
-            margin-bottom: 0.5rem;
+            color: var(--gray-700);
+            margin-bottom: 0.375rem;
         }
 
-        .form-group input,
-        .form-group select {
-            height: 2.5rem;
-            padding: 0.5rem 0.75rem;
-            border: 1px solid #BFDBFE;
-            border-radius: 0.375rem;
+    .input-container {
+        position: relative;
+    }
+
+        .input-container input {
+            width: 100%;
+            padding: 0.625rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--border-radius-sm);
             font-size: 0.875rem;
-            color: #1E293B;
-            background-color: white;
-            transition: all 0.15s ease-in-out;
+            transition: var(--transition);
         }
 
-            .form-group input:focus,
-            .form-group select:focus {
+            .input-container input:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.1);
                 outline: none;
-                border-color: #60A5FA;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            }
-
-            .form-group input:hover,
-            .form-group select:hover {
-                border-color: #93C5FD;
             }
 
     .form-actions {
         display: flex;
-        justify-content: flex-start;
-        gap: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid #E0E7FF;
-        margin-top: 1rem;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1.5rem;
+        margin-top: 1.5rem;
+        border-top: 1px solid var(--gray-200);
     }
 
-        .form-actions .btn-secondary {
-            background-color: #F3F4F6;
-            color: #374151;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: 1px solid #D1D5DB;
-            transition: all 0.15s ease-in-out;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+    .action-group {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .quick-edit-form .btn-outline-primary {
+        color: var(--primary-color);
+        border-color: var(--primary-color);
+        background-color: transparent;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border-radius: var(--border-radius-sm);
+        transition: var(--transition);
+    }
+
+        .quick-edit-form .btn-outline-primary:hover {
+            background-color: var(--primary-light);
         }
 
-            .form-actions .btn-secondary:hover {
-                background-color: #E5E7EB;
-                border-color: #9CA3AF;
-            }
+    .quick-edit-form .btn-primary {
+        background-color: var(--primary-color);
+        border: none;
+        color: white;
+        padding: 0.5rem 1.25rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        border-radius: var(--border-radius-sm);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: var(--transition);
+    }
 
-        .form-actions .btn-primary,
-        .form-actions .btn-link {
-            margin-left: auto;
+        .quick-edit-form .btn-primary:hover:not(:disabled) {
+            background-color: #0b5ed7;
+            transform: translateY(-1px);
         }
 
-            .form-actions .btn-primary + .btn-link {
-                margin-left: 0;
-            }
+    .quick-edit-form .btn-link {
+        color: var(--gray-500);
+        background: none;
+        border: none;
+        padding: 0.5rem 1rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+        text-decoration: none;
+        transition: var(--transition);
+    }
 
-        .form-actions .btn-primary {
-            background-color: #2563EB;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 0.375rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            border: none;
-            transition: background-color 0.15s ease-in-out;
+        .quick-edit-form .btn-link:hover:not(:disabled) {
+            color: var(--gray-700);
         }
 
-            .form-actions .btn-primary:hover {
-                background-color: #1D4ED8;
-            }
-
-        .form-actions .btn-link {
-            color: #6B7280;
-            text-decoration: none;
-            padding: 0.5rem 1rem;
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: color 0.15s ease-in-out;
-        }
-
-            .form-actions .btn-link:hover {
-                color: #1E40AF;
-            }
-
-    @@media (max-width: 768px) {
-        .form-row, .form-row.three-columns
+        @@media (max-width: 768px) {
+        .form-grid
 
     {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+        grid-template-columns: 1fr !important;
     }
 
-    .quick-edit-form {
-        padding: 1rem;
-        margin: 0.5rem;
+    .form-actions {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+    }
+
+    .action-group {
+        width: 100%;
+        justify-content: flex-end;
     }
 
     }

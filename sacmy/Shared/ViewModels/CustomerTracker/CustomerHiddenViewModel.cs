@@ -11,13 +11,13 @@ namespace sacmy.Shared.ViewModels.CustomerTracker
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public string Type { get; set; }
         public string Location { get; set; }
-        public DateTime? LastDate { get; set; }
+        public string Type { get; set; }
+        public DateTime LastDate { get; set; }
+        public int DaysSinceLastInvoice { get; set; } 
         public Guid? TaskId { get; set; }
-        public string? TaskType { get; set; }
-        public string? TaskStatus { get; set; }
-        public string? LastComment { get; set; }
-        public List<GetStickyNoteViewModel> StickyNotes { get; set; } = new List<GetStickyNoteViewModel>();
+        public string TaskStatus { get; set; }
+        public string LastComment { get; set; }
+        public List<GetStickyNoteViewModel> StickyNotes { get; set; }
     }
 }

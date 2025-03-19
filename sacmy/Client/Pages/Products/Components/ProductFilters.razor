@@ -1,14 +1,16 @@
 ﻿@using sacmy.Shared.ViewModels.Products
 
 
-<div class="bg-white p-3 rounded-3 shadow-sm mb-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h5 class="text-dark mb-0 fw-semibold">PRODUCTS</h5>
+<div class="product-filter-container">
+    <div class="filter-bar">
+        <div class="filter-title">
+            <h5>PRODUCTS</h5>
+        </div>
 
-        <div class="d-flex align-items-center gap-4 flex-wrap">
+        <div class="filter-controls">
             <!-- Stock Filter Checkbox -->
-            <div class="form-check d-flex align-items-center">
-                <input class="form-check-input me-2"
+            <div class="filter-control stock-filter">
+                <input class="form-check-input"
                        type="checkbox"
                        id="inStockFilter"
                        @bind="ShowOnlyInStock" />
@@ -18,41 +20,44 @@
             </div>
 
             <!-- Category Filter -->
-            <select class="form-select bg-white border"
-                    style="min-width: 150px; max-width: 200px;"
-                    value="@SelectedCategory"
-                    @onchange="(e) => CategorySelectionChanged(e)">
-                <option value="">All Categories</option>
-                @foreach (var category in Categories ?? new List<Category>())
-                {
-                    <option value="@category.Id">@category.NameEn</option>
-                }
-            </select>
+            <div class="filter-control category-filter">
+                <select class="form-select"
+                        value="@SelectedCategory"
+                        @onchange="(e) => CategorySelectionChanged(e)">
+                    <option value="">All Categories</option>
+                    @foreach (var category in Categories ?? new List<Category>())
+                    {
+                        <option value="@category.Id">@category.NameEn</option>
+                    }
+                </select>
+            </div>
 
             <!-- Search Box -->
-            <div class="search-box">
-                <i class="bi bi-search"></i>
-                <input type="text"
-                       class="form-control"
-                       placeholder="Search SKU, Name..."
-                       @bind="SearchString"
-                       @bind:event="oninput"
-                       @onkeyup="OnSearchKeyUp" />
+            <div class="filter-control search-filter">
+                <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input type="text"
+                           class="form-control"
+                           placeholder="Search SKU, Name..."
+                           @bind="SearchString"
+                           @bind:event="oninput"
+                           @onkeyup="OnSearchKeyUp" />
+                </div>
             </div>
 
             <!-- Action Buttons -->
-            <div class="d-flex align-items-center gap-2">
-                <button class="btn btn-primary d-flex align-items-center gap-2 px-3" @onclick="OnGeneratePdf">
+            <div class="filter-control action-buttons">
+                <button class="btn btn-primary" @onclick="OnGeneratePdf">
                     <i class="bi bi-file-pdf"></i>
                     <span>Generate PDF</span>
                 </button>
 
-                <button class="btn btn-secondary d-flex align-items-center gap-2 px-3"
+                <button class="btn btn-secondary"
                         @onclick="OnResetCache"
                         disabled="@IsResettingCache">
                     @if (IsResettingCache)
                     {
-                        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                         <span>Resetting...</span>
                     }
                     else
@@ -67,38 +72,191 @@
 </div>
 
 <style>
-    /* Search and Filter Controls */
-    .search-box {
-        position: relative;
-        min-width: 200px;
-        max-width: 280px;
+    @@import url('../../../wwwroot/css/variables.css'); 
+    .product-filter-container {
+        margin-bottom: var(--spacing-md);
     }
 
-        .search-box input {
-            width: 100%;
-            padding: 0.5rem 1rem 0.5rem 2.5rem;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.375rem;
-        }
+    .filter-bar {
+        background-color: var(--text-white);
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: var(--spacing-sm) var(--spacing-lg);
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-lg);
+    }
+
+    /* Title styling */
+    .filter-title h5 {
+        margin: 0;
+        font-weight: 600;
+        font-size: var(--font-size-sm);
+        color: var(--text-color);
+        white-space: nowrap;
+    }
+
+    /* Controls container */
+    .filter-controls {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: var(--spacing-md);
+        flex: 1;
+    }
+
+    /* Individual control styling */
+    .filter-control {
+        display: flex;
+        align-items: center;
+    }
+
+    /* Stock filter styling */
+    .stock-filter {
+        display: flex;
+        align-items: center;
+        gap: var(--spacing-xs);
+    }
+
+    .form-check-input {
+        width: 1rem;
+        height: 1rem;
+        margin-top: 0;
+    }
+
+    .form-check-label {
+        font-size: var(--font-size-sm);
+        color: var(--text-light);
+        user-select: none;
+    }
+
+    /* Category filter styling */
+    .category-filter .form-select {
+        padding: calc(var(--spacing-xs) + 0.1rem) calc(var(--spacing-lg) + 0.5rem) calc(var(--spacing-xs) + 0.1rem) var(--spacing-sm);
+        font-size: var(--font-size-sm);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        min-width: 150px;
+        max-width: 200px;
+        background-position: right 0.5rem center;
+    }
+
+    /* Search box styling */
+    .search-filter {
+        flex: 1;
+        min-width: 200px;
+        max-width: 300px;
+    }
+
+    .search-box {
+        position: relative;
+        width: 100%;
+    }
 
         .search-box i {
             position: absolute;
-            left: 0.75rem;
+            left: var(--spacing-sm);
             top: 50%;
             transform: translateY(-50%);
-            color: #6b7280;
+            color: var(--text-light);
+            font-size: var(--font-size-sm);
         }
 
-    @@media (max-width: 992px) {
-        .d-flex.align-items-center.gap-4
+        .search-box .form-control {
+            padding: calc(var(--spacing-xs) + 0.1rem) var(--spacing-sm) calc(var(--spacing-xs) + 0.1rem) calc(var(--spacing-lg) + 0.75rem);
+            font-size: var(--font-size-sm);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius);
+            width: 100%;
+        }
 
-    {
-        flex-wrap: wrap;
+            .search-box .form-control:focus {
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            }
+
+    /* Action buttons styling */
+    .action-buttons {
+        display: flex;
+        gap: var(--spacing-sm);
+        margin-left: auto;
     }
 
-    .search-box {
+    .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--spacing-sm);
+        padding: calc(var(--spacing-xs) + 0.1rem) var(--spacing-sm);
+        font-size: var(--font-size-sm);
+        font-weight: 500;
+        border-radius: var(--border-radius);
+        border: none;
+        transition: var(--transition, all 0.15s ease);
+    }
+
+    .btn-primary {
+        background-color: var(--primary-color);
+        color: var(--text-white);
+    }
+
+        .btn-primary:hover:not(:disabled) {
+            background-color: #0b5ed7;
+        }
+
+    .btn-secondary {
+        background-color: var(--secondary-color);
+        color: var(--text-white);
+    }
+
+        .btn-secondary:hover:not(:disabled) {
+            background-color: #5c636a;
+        }
+
+    @@media (max-width: 1200px) {
+        .filter-bar
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--spacing-sm);
+        padding: var(--spacing-sm) var(--spacing-md);
+    }
+
+    .filter-controls {
         width: 100%;
-        margin-top: 0.5rem;
+    }
+
+    .action-buttons {
+        margin-left: 0;
+        align-self: flex-end;
+    }
+
+    }
+
+    @@media (max-width: 768px) {
+        .filter-controls
+
+    {
+        flex-direction: column;
+        align-items: stretch;
+        gap: var(--spacing-sm);
+    }
+
+    .category-filter .form-select {
+        max-width: none;
+    }
+
+    .search-filter {
+        max-width: none;
+    }
+
+    .action-buttons {
+        align-self: stretch;
+        flex-direction: column;
+    }
+
+    .btn {
+        justify-content: center;
     }
 
     }

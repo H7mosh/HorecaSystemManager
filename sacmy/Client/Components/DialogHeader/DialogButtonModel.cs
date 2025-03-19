@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Components;
 
-namespace sacmy.Client.Shared.Components.DialogHeader
+namespace sacmy.Client.Components.DialogHeader
 {
     public class DialogButtonModel
     {
