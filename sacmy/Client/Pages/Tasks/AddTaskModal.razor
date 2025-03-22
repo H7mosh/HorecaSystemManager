@@ -48,7 +48,6 @@
 
 </style>
 
-
 @if (IsVisible)
 {
     <div class="modal fade show d-block" id="addTaskModal" tabindex="-1" role="dialog" aria-labelledby="addTaskModalLabel" aria-hidden="true">
@@ -173,6 +172,7 @@
         </div>
     </div>
 }
+
 
 @code {
     [Parameter] public string TaskType { get; set; } = "other"; // Default TaskType
