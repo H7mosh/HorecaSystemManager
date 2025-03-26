@@ -83,20 +83,48 @@
 
                                     <div class="mb-3">
                                         <label for="password" class="form-label">Password</label>
-                                        <InputText id="password" class="form-control" type="password" @bind-Value="customerModel.Password" />
+                                        <div class="input-group">
+                                            <InputText id="password" class="form-control" type="@(showPassword ? "text" : "password")" @bind-Value="customerModel.Password" />
+                                            <button class="btn btn-outline-secondary" type="button" @onclick="TogglePasswordVisibility">
+                                                <i class="bi @(showPassword ? "bi-eye-slash" : "bi-eye")"></i>
+                                            </button>
+                                        </div>
                                         <ValidationMessage For="@(() => customerModel.Password)" />
                                     </div>
 
+                                    <!-- Profit Calculation Section -->
                                     <div class="mb-3">
-                                        <label for="profitPercentage" class="form-label">Profit Percentage (%)</label>
-                                        <InputNumber id="profitPercentage" class="form-control" @bind-Value="customerModel.ProfitPercentage" />
-                                        <ValidationMessage For="@(() => customerModel.ProfitPercentage)" />
-                                    </div>
+                                        <div class="form-check mb-3">
+                                            <InputCheckbox id="isPlusOneChecked" class="form-check-input" @bind-Value="isPlusOneChecked" @oninput="UpdateProfitCalculationMode" />
+                                            <label class="form-check-label" for="isPlusOneChecked">
+                                                Use Static Profit
+                                            </label>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="constProfit" class="form-label">Static Profit Value</label>
+                                            <InputNumber id="constProfit" class="@GetFieldClass(isPlusOneChecked)" 
+                                                        @bind-Value="customerModel.ConstProfit" 
+                                                        disabled="@(!isPlusOneChecked)" />
+                                            <ValidationMessage For="@(() => customerModel.ConstProfit)" />
+                                            <small class="text-muted">Enter a fixed amount (e.g., 1, 2, 3, 0.5)</small>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label for="profitPercentage" class="form-label">Profit Percentage (%)</label>
+                                            <InputNumber id="profitPercentage" class="@GetPercentageFieldClass(isPlusOneChecked)" 
+                                                        @bind-Value="customerModel.ProfitPercentage" 
+                                                        disabled="@(isPlusOneChecked)" />
+                                            <ValidationMessage For="@(() => customerModel.ProfitPercentage)" />
+                                        </div>
 
-                                    <div class="mb-3">
-                                        <label for="extraProfitPercentage" class="form-label">Extra Profit Percentage (%)</label>
-                                        <InputNumber id="extraProfitPercentage" class="form-control" @bind-Value="customerModel.ExtraProfitPercentage" />
-                                        <ValidationMessage For="@(() => customerModel.ExtraProfitPercentage)" />
+                                        <div class="mb-3">
+                                            <label for="extraProfitPercentage" class="form-label">Extra Profit Percentage (%)</label>
+                                            <InputNumber id="extraProfitPercentage" class="@GetPercentageFieldClass(isPlusOneChecked)" 
+                                                        @bind-Value="customerModel.ExtraProfitPercentage" 
+                                                        disabled="@(isPlusOneChecked)" />
+                                            <ValidationMessage For="@(() => customerModel.ExtraProfitPercentage)" />
+                                        </div>
                                     </div>
 
                                     <div class="form-check mb-3">
@@ -131,7 +159,59 @@
 
     private CustomerViewModel customerModel = new CustomerViewModel();
     private bool isSaving = false;
-    private bool activeValue = false; // Helper property for InputCheckbox
+    private bool activeValue = false;
+    private bool isPlusOneChecked = false;
+
+    private bool showPassword = false;
+    
+    // Helper methods for conditional CSS classes
+    private string GetFieldClass(bool isEnabled)
+    {
+        return isEnabled ? "form-control" : "form-control bg-light";
+    }
+    
+    private string GetPercentageFieldClass(bool isStaticProfitEnabled)
+    {
+        return isStaticProfitEnabled ? "form-control bg-light" : "form-control";
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private void UpdateProfitCalculationMode()
+    {
+        customerModel.IsPlusOneChecked = isPlusOneChecked;
+        
+        if (isPlusOneChecked)
+        {
+            // If switching to static profit, initialize constant profit if needed
+            if (!customerModel.ConstProfit.HasValue)
+            {
+                customerModel.ConstProfit = 0;
+            }
+            
+            // Keep the percentage values but they won't be used
+        }
+        else
+        {
+            // If switching to percentage, initialize percentage values if needed
+            if (!customerModel.ProfitPercentage.HasValue)
+            {
+                customerModel.ProfitPercentage = 0;
+            }
+            
+            if (!customerModel.ExtraProfitPercentage.HasValue)
+            {
+                customerModel.ExtraProfitPercentage = 0;
+            }
+            
+            // Keep the constant profit value but it won't be used
+        }
+        
+        StateHasChanged();
+    }
 
     protected override void OnInitialized()
     {
@@ -155,34 +235,41 @@
         if (Customer != null)
         {
             customerModel = new CustomerViewModel
-                {
-                    Id = Customer.Id,
-                    Name = Customer.Name,
-                    PhoneNumber = Customer.PhoneNumber,
-                    Address = Customer.Address,
-                    Branch = Customer.Branch,
-                    CostType = Customer.CostType,
-                    UserName = Customer.UserName,
-                    Password = Customer.Password,
-                    ConstProfit = Customer.ConstProfit,
-                    ProfitPercentage = Customer.ProfitPercentage,
-                    ExtraProfitPercentage = Customer.ExtraProfitPercentage,
-                    DeviceId = Customer.DeviceId,
-                    Active = Customer.Active,
-                    FirebaseToken = Customer.FirebaseToken
-                };
+            {
+                Id = Customer.Id,
+                Name = Customer.Name,
+                PhoneNumber = Customer.PhoneNumber,
+                Address = Customer.Address,
+                Branch = Customer.Branch,
+                CostType = Customer.CostType,
+                UserName = Customer.UserName,
+                Password = Customer.Password,
+                IsPlusOneChecked = Customer.IsPlusOneChecked,
+                ConstProfit = Customer.ConstProfit,
+                ProfitPercentage = Customer.ProfitPercentage,
+                ExtraProfitPercentage = Customer.ExtraProfitPercentage,
+                DeviceId = Customer.DeviceId,
+                Active = Customer.Active,
+                FirebaseToken = Customer.FirebaseToken
+            };
 
             activeValue = Customer.Active.GetValueOrDefault(false);
+            isPlusOneChecked = Customer.IsPlusOneChecked.GetValueOrDefault(false);
         }
         else if (IsNewCustomer)
         {
             customerModel = new CustomerViewModel
-                {
-                    Id = 0,
-                    Active = true
-                };
+            {
+                Id = 0,
+                Active = true,
+                IsPlusOneChecked = false,
+                ProfitPercentage = 0,
+                ExtraProfitPercentage = 0,
+                ConstProfit = 0
+            };
 
             activeValue = true;
+            isPlusOneChecked = false;
         }
     }
 
@@ -193,6 +280,20 @@
         try
         {
             customerModel.Active = activeValue;
+            customerModel.IsPlusOneChecked = isPlusOneChecked;
+
+            // Make sure the backend uses the right values based on IsPlusOneChecked
+            if (isPlusOneChecked)
+            {
+                // Server will ignore these, but we'll still send null to be clear
+                customerModel.ProfitPercentage = null;
+                customerModel.ExtraProfitPercentage = null;
+            }
+            else
+            {
+                // Server will ignore this, but we'll still send null to be clear
+                customerModel.ConstProfit = null;
+            }
 
             ApiResponse<CustomerViewModel> response;
 

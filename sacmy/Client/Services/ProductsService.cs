@@ -248,14 +248,17 @@ namespace sacmy.Client.Services
             {
                 var client = _httpClientFactory.CreateClient("sacmy.ServerAPI");
 
-                var response = await client.DeleteAsync($"api/Product/DeleteProductImage/{imageId}");
+                // Create an empty content since PostAsync requires a content parameter
+                var emptyContent = new StringContent("", Encoding.UTF8, "application/json");
+
+                // Send the request with the empty content
+                var response = await client.PostAsync($"api/Product/DeleteProductImage/{imageId}", emptyContent);
 
                 if (response.IsSuccessStatusCode)
                 {
                     var responseContent = await response.Content.ReadAsStringAsync();
                     return JsonConvert.DeserializeObject<ApiResponse>(responseContent);
                 }
-
                 else
                 {
                     var errorContent = await response.Content.ReadAsStringAsync();

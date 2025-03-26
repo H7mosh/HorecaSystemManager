@@ -58,7 +58,15 @@ namespace sacmy.Client.Services
             try
             {
                 var apiUrl = $"api/Customer";
+                Console.WriteLine($"Sending request to: {apiUrl}");
+                Console.WriteLine($"Customer data: {System.Text.Json.JsonSerializer.Serialize(customer)}");
+
                 var response = await _httpClient.PostAsJsonAsync(apiUrl, customer);
+
+                // Log the response details
+                Console.WriteLine($"Response status: {response.StatusCode}");
+                var responseBody = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Response body: {responseBody}");
 
                 if (response.IsSuccessStatusCode)
                 {
@@ -74,12 +82,15 @@ namespace sacmy.Client.Services
                 return new ApiResponse<CustomerViewModel>
                 {
                     Success = false,
-                    Message = $"Failed to create customer. Status code: {response.StatusCode}",
+                    Message = $"Failed to create customer. Status code: {response.StatusCode}, Details: {responseBody}",
                     Data = null
                 };
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Exception in CreateCustomerAsync: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+
                 return new ApiResponse<CustomerViewModel>
                 {
                     Success = false,

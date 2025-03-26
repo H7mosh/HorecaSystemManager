@@ -62,6 +62,88 @@ namespace sacmy.Server.Controller
             return Ok(invoiceList);
         }
 
+        [HttpPost]
+        public async Task<ActionResult<ApiResponse<CustomerViewModel>>> CreateCustomer([FromBody] CustomerViewModel customerViewModel)
+        {
+            try
+            {
+                // Validate business rules
+                if (customerViewModel.IsPlusOneChecked.GetValueOrDefault())
+                {
+                    // If PlusOne is checked, ensure PlusOne has a value and reset percentages
+                    if (!customerViewModel.ConstProfit.HasValue)
+                    {
+                        return BadRequest(new ApiResponse<CustomerViewModel>
+                        {
+                            Success = false,
+                            Message = "Static profit value (PlusOne) is required when static profit is enabled",
+                            Data = null
+                        });
+                    }
+
+                    // Clear percentage values as they should not be used together with static profit
+                    customerViewModel.ProfitPercentage = null;
+                    customerViewModel.ExtraProfitPercentage = null;
+                }
+                else
+                {
+                    // If using percentages, clear PlusOne
+                    customerViewModel.ConstProfit = null;
+
+                    // Ensure at least one percentage value is specified
+                    if ((!customerViewModel.ProfitPercentage.HasValue || customerViewModel.ProfitPercentage.Value == 0) &&
+                        (!customerViewModel.ExtraProfitPercentage.HasValue || customerViewModel.ExtraProfitPercentage.Value == 0))
+                    {
+                        // Initialize with defaults if both are null or zero
+                        customerViewModel.ProfitPercentage = 0;
+                    }
+                }
+
+                // Create a new Customer entity from the view model
+                var customer = new Customer
+                {
+                    Customer1 = customerViewModel.Name,
+                    Mob = customerViewModel.PhoneNumber,
+                    Address = customerViewModel.Address,
+                    Subb = customerViewModel.Branch,
+                    CostType = customerViewModel.CostType,
+                    UserAcc = customerViewModel.UserName,
+                    Password = customerViewModel.Password,
+                    IsPlusOneChecked = customerViewModel.IsPlusOneChecked,
+                    PlusOne = customerViewModel.ConstProfit,
+                    Nsba = customerViewModel.ProfitPercentage,
+                    OtherNsba = customerViewModel.ExtraProfitPercentage,
+                    DeviceId = customerViewModel.DeviceId,
+                    Active = customerViewModel.Active,
+                    FirebaseToken = customerViewModel.FirebaseToken
+                };
+
+                // Add to context and save
+                _context.Customers.Add(customer);
+                await _context.SaveChangesAsync();
+
+                // Update the view model with the generated ID
+                customerViewModel.Id = customer.Id;
+
+                // Return success response
+                return Ok(new ApiResponse<CustomerViewModel>
+                {
+                    Success = true,
+                    Message = "Customer created successfully",
+                    Data = customerViewModel
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new ApiResponse<CustomerViewModel>
+                {
+                    Success = false,
+                    Message = $"An error occurred while creating the customer: {ex.Message}",
+                    Data = null
+                });
+            }
+        }
+
         [HttpPost("SendNotification/{customerName}")]
         public async Task<IActionResult> SendNotificationToCustomer(string customerName)
         {
@@ -396,6 +478,38 @@ namespace sacmy.Server.Controller
                     });
                 }
 
+                // Apply business rules for profit calculation
+                if (customerViewModel.IsPlusOneChecked.GetValueOrDefault())
+                {
+                    // If PlusOne is checked, ensure PlusOne has a value and reset percentages
+                    if (!customerViewModel.ConstProfit.HasValue)
+                    {
+                        return BadRequest(new ApiResponse<CustomerViewModel>
+                        {
+                            Success = false,
+                            Message = "Static profit value (PlusOne) is required when static profit is enabled",
+                            Data = null
+                        });
+                    }
+
+                    // Clear percentage values as they should not be used together with static profit
+                    customerViewModel.ProfitPercentage = null;
+                    customerViewModel.ExtraProfitPercentage = null;
+                }
+                else
+                {
+                    // If using percentages, clear PlusOne
+                    customerViewModel.ConstProfit = null;
+
+                    // Ensure at least one percentage value is specified
+                    if ((!customerViewModel.ProfitPercentage.HasValue || customerViewModel.ProfitPercentage.Value == 0) &&
+                        (!customerViewModel.ExtraProfitPercentage.HasValue || customerViewModel.ExtraProfitPercentage.Value == 0))
+                    {
+                        // Initialize with defaults if both are null or zero
+                        customerViewModel.ProfitPercentage = 0;
+                    }
+                }
+
                 // Update customer properties
                 customer.Customer1 = customerViewModel.Name;
                 customer.Mob = customerViewModel.PhoneNumber;
@@ -404,6 +518,7 @@ namespace sacmy.Server.Controller
                 customer.CostType = customerViewModel.CostType;
                 customer.UserAcc = customerViewModel.UserName;
                 customer.Password = customerViewModel.Password;
+                customer.IsPlusOneChecked = customerViewModel.IsPlusOneChecked;
                 customer.PlusOne = customerViewModel.ConstProfit;
                 customer.Nsba = customerViewModel.ProfitPercentage;
                 customer.OtherNsba = customerViewModel.ExtraProfitPercentage;

@@ -248,6 +248,9 @@ namespace sacmy.Server.Controller
             if (model.Ean != null)
                 product.Ean = model.Ean;
 
+            if (model.Upc != null)
+                product.Upc = model.Upc;
+
             // 4. Update metadata
             product.UpdateDate = DateTime.UtcNow;
 
@@ -354,7 +357,7 @@ namespace sacmy.Server.Controller
             }
         }
 
-        [HttpDelete("DeleteProductImage/{imageId}")]
+        [HttpPost("DeleteProductImage/{imageId}")]
         public async Task<ActionResult<ApiResponse>> DeleteProductImage(Guid imageId)
         {
             try
@@ -414,7 +417,7 @@ namespace sacmy.Server.Controller
             }
         }
 
-        [HttpDelete("DeleteBonnaImage/{imageId}")]
+        [HttpPost("DeleteBonnaImage/{imageId}")]
         public async Task<ActionResult<ApiResponse>> DeleteBonnaImage(Guid imageId)
         {
             try
