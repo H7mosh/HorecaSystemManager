@@ -6,6 +6,8 @@
 @inject OrderService orderService
 @inject UserGlobalClass _userGlobalClass
 @inject NotificationClientService NotificationClientService
+@using System.Globalization
+
 
 <div class="modal fade @(_isOpen ? "show d-block" : "d-none")" tabindex="-1" style="background-color: rgba(0, 0, 0, 0.5);">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -125,6 +127,7 @@
     </div>
 }
 
+
 @if (_showErrorMessage)
 
 {
@@ -140,6 +143,7 @@
         </div>
     </div>
 }
+
 
 @code {
     [Parameter]
@@ -202,57 +206,55 @@
             foreach (var branch in Results)
             {
                 var invoiceModel = new InvoiceFromOrderViewModel
+                {
+                    OrderId = OrderId,
+                    CustomerId = CustomerId,
+                    UserId = _userGlobalClass.User.Id.ToString(),
+
+                    Sub = branch.Key,
+
+                    Payed = 0,
+
+                    Remain = 0,
+
+                    Total = branch.Value.Sum(x => x.Quantity * (x.PriceValue)),
+
+                    Hamalya = 0,
+
+                    FatoraDate = DateTime.Now,
+
+                    Note = "",
+
+                    Checked = false,
+
+                    invoiceFromOrderItemsViewModel = new Collection<InvoiceFromOrderItemsViewModel>(branch.Value.Select(item => new InvoiceFromOrderItemsViewModel
                     {
-                        OrderId = OrderId,
-                        CustomerId = CustomerId,
-                        UserId = _userGlobalClass.User.Id.ToString(),
 
-                        Sub = branch.Key,
+                            Sku = item.Sku,
 
-                        Payed = 0,
+                            ItemId = item.Id,
 
-                        Remain = 0,
+                            Secode = item.Secode,
 
-                        Total = branch.Value.Sum(x => x.Quantity * double.Parse(x.Price.ToString())),
+                            OrderItemId = OrderId,
 
-                        Hamalya = 0,
+                            Quantity = item.Quantity,
 
-                        FatoraDate = DateTime.Now,
+                            Price = item.PriceValue,
 
-                        Note = "",
+                            Storage = branch.Key,
 
-                        Checked = false,
+                            Wajba = item.Batch,
 
-                        invoiceFromOrderItemsViewModel = new Collection<InvoiceFromOrderItemsViewModel>(
-                            branch.Value.Select(item => new InvoiceFromOrderItemsViewModel
-                            {
+                            Point = 0,
 
-                                Sku = item.Sku,
-
-                                ItemId = item.Id,
-
-                                Secode = item.Secode,
-
-                                OrderItemId = OrderId,
-
-                                Quantity = item.Quantity,
-
-                                Price = double.Parse(item.Price.ToString()),
-
-                                Storage = branch.Key,
-
-                                Wajba = item.Batch,
-
-                                Point = 0,
-
-                            }).ToList())
-                    };
-
-
+                    }).ToList())
+                };
 
                 var result = await orderService.CreateInvoiceAsync(invoiceModel);
                
                 if (result)
+
                 successCount++;
             }
 
@@ -318,4 +320,6 @@
         _isLoading = false;
 
     }
+
+
 }
