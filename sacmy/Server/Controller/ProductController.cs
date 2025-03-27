@@ -155,6 +155,72 @@ namespace sacmy.Server.Controller
             }
         }
 
+        [HttpGet("SearchBySku")]
+        public async Task<ActionResult<ApiResponse<List<ProductDetailViewModel>>>> SearchBySku(string sku)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sku))
+                {
+                    return BadRequest(new ApiResponse<List<ProductDetailViewModel>>
+                    {
+                        Success = false,
+                        Message = "SKU is required",
+                        Data = new List<ProductDetailViewModel>()
+                    });
+                }
+
+                // Search for products with the given SKU
+                var products = await _context.Products
+                    .Include(p => p.ProductImages)
+                    .Where(p => p.Sku.Contains(sku) && !p.IsDeleted)
+                    .Select(p => new ProductDetailViewModel
+                    {
+                        Id = p.Id.ToString(),
+                        Sku = p.Sku,
+                        PatternNumber = p.PatternNumber,
+                        Name = p.Name,
+                        Images = p.ProductImages
+                            .Where(pi => !pi.IsDeleted)
+                            .Select(pi => new ProductImageViewModel
+                            {
+                                Id = pi.Id.ToString(),
+                                ImageLink = pi.ImageLink.Replace("https://api.safinahmedtech.com", "http://46.165.247.249")
+                            })
+                            .ToList()
+                    })
+                    .ToListAsync();
+
+                if (!products.Any())
+                {
+                    return Ok(new ApiResponse<List<ProductDetailViewModel>>
+                    {
+                        Success = false,
+                        Message = "No products found with the specified SKU",
+                        Data = new List<ProductDetailViewModel>()
+                    });
+                }
+
+                return Ok(new ApiResponse<List<ProductDetailViewModel>>
+                {
+                    Success = true,
+                    Message = "Products retrieved successfully",
+                    Data = products,
+                    TotalCount = products.Count
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error in {nameof(SearchBySku)}: {ex.Message}");
+                return StatusCode(500, new ApiResponse<List<ProductDetailViewModel>>
+                {
+                    Success = false,
+                    Message = $"An error occurred while searching for products: {ex.Message}",
+                    Data = new List<ProductDetailViewModel>()
+                });
+            }
+        }
+
         [HttpPost("UpdateProduct")]
         public async Task<ActionResult<ApiResponse>> UpdateProduct([FromBody] UpdateProductViewModel model)
         {

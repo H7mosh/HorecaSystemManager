@@ -1,0 +1,345 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Client.Services
+@using sacmy.Shared.ViewModels.AdvertiseVewModels
+@using sacmy.Shared.ViewModels.Products
+@inject IJSRuntime JSRuntime
+@inject AdvertiseService AdvertiseService
+
+
+<style>
+    .modal-backdrop {
+        opacity: 0.5;
+    }
+
+    .modal.show {
+        display: block;
+    }
+
+    /* Product image */
+    .product-image {
+        max-width: 100%;
+        height: auto;
+        max-height: 150px;
+        object-fit: contain;
+    }
+
+    /* Fix for position-relative on images */
+    .position-relative {
+        display: inline-block;
+    }
+
+    /* Simple improvements for buttons and forms */
+    .form-control:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    .btn-outline-danger {
+        color: #dc3545;
+        border-color: #dc3545;
+    }
+
+        .btn-outline-danger:hover {
+            color: #fff;
+            background-color: #dc3545;
+            border-color: #dc3545;
+        }
+
+    /* Simple validation styling */
+    .validation-message {
+        color: #dc3545;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+    }
+</style>
+
+
+<!-- Simple backdrop -->
+<div class="@(IsVisible ? "modal-backdrop fade show" : "d-none")"></div>
+
+<div class="modal fade @(IsVisible ? "show d-block" : "d-none")" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">@(IsNewAdvertisement ? "Add New Advertisement" : "Edit Advertisement")</h5>
+                <button type="button" class="btn-close btn-close-white" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (IsSaving)
+                {
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Saving...</span>
+                        </div>
+                        <p class="mt-2">Saving changes...</p>
+                    </div>
+                }
+                else
+                {
+                    <EditForm Model="@CurrentAdvertise" OnValidSubmit="OnSave">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <!-- Product Selection Section -->
+                        <div class="mb-3">
+                            <label for="skuSearch" class="form-label">Search Product by SKU</label>
+                            <div class="input-group">
+                                <input id="skuSearch" type="text" class="form-control"
+                                       value="@SkuSearchText"
+                                       @oninput="HandleSkuChange"
+                                       placeholder="Enter product SKU" />
+                                <button type="button" class="btn btn-primary" @onclick="OnSearchProduct">
+                                    Search
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">Enter product SKU to link advertisement</small>
+                        </div>
+
+                        @if (IsProductSearching)
+                        {
+                            <div class="text-center my-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2">Searching for product...</span>
+                            </div>
+                        }
+                        else if (!string.IsNullOrEmpty(ProductSearchError))
+                        {
+                            <div class="alert alert-danger my-3">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                @ProductSearchError
+                            </div>
+                        }
+                        else if (SelectedProduct != null)
+                        {
+                            <div class="card mb-3 border">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="mb-1">Selected Product</h6>
+                                            <p class="mb-1"><strong>SKU:</strong> @SelectedProduct.Sku</p>
+                                            <p class="mb-1"><strong>Pattern:</strong> @SelectedProduct.PatternNumber</p>
+                                            @if (!string.IsNullOrEmpty(SelectedProduct.Name))
+                                            {
+                                                <p class="mb-1"><strong>Name:</strong> @SelectedProduct.Name</p>
+                                            }
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" @onclick="OnClearProduct">
+                                            Remove
+                                        </button>
+                                    </div>
+
+                                    @if (SelectedProduct.Images != null && SelectedProduct.Images.Any())
+                                    {
+                                        <div class="mt-2 text-center">
+                                            @if (_productImageError)
+                                            {
+                                                <div class="alert alert-warning">
+                                                    Product image could not be loaded
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                <img src="@GetSafeImageUrl(SelectedProduct.Images.First().ImageLink)"
+                                                     alt="Product Image"
+                                                     class="product-image"
+                                                     style="max-height: 150px;"
+                                                     @onload="HandleProductImageLoaded"
+                                                     @onerror="HandleProductImageError" />
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Advertisement Image Section -->
+                        <div class="mb-3">
+                            <label class="form-label">Advertisement Image</label>
+                            <InputFile OnChange="@OnFileSelected" class="form-control" accept="image/*" />
+                            <ValidationMessage For="@(() => CurrentAdvertise.Image)" />
+                            <small class="form-text text-muted">Select an image for the advertisement (max 10MB)</small>
+                        </div>
+
+                        @if (IsUploading)
+                        {
+                            <div class="alert alert-info my-3">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Uploading...</span>
+                                </div>
+                                Uploading image, please wait...
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(CurrentAdvertise.Image))
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body text-center">
+                                    @if (_advertisementImageError)
+                                    {
+                                        <div class="alert alert-warning">
+                                            Advertisement image could not be loaded
+                                            <button type="button" class="btn btn-sm btn-outline-danger mt-2"
+                                                    @onclick="OnClearImage">
+                                                Remove Image
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="position-relative">
+                                            <img src="@GetSafeImageUrl(CurrentAdvertise.Image)"
+                                                 alt="Advertisement Preview"
+                                                 style="max-height: 200px;"
+                                                 class="img-thumbnail"
+                                                 @onload="HandleAdvertisementImageLoaded"
+                                                 @onerror="HandleAdvertisementImageError" />
+                                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                                                    @onclick="OnClearImage" title="Remove image">
+                                                Remove
+                                            </button>
+                                        </div>
+                                        <div class="mt-2 small text-muted">
+                                            @GetImageFileName(CurrentAdvertise.Image)
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-secondary" @onclick="OnClose">
+                                Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary"
+                                    disabled="@(SelectedProduct == null || string.IsNullOrEmpty(CurrentAdvertise.Image))">
+                                Save Changes
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public bool IsNewAdvertisement { get; set; }
+
+    [Parameter]
+    public CreateAdvertiseViewModel CurrentAdvertise { get; set; }
+
+    [Parameter]
+    public ProductDetailViewModel SelectedProduct { get; set; }
+
+    [Parameter]
+    public string SkuSearchText { get; set; }
+
+    [Parameter]
+    public EventCallback<string> SkuSearchTextChanged { get; set; }
+
+    [Parameter]
+    public bool IsSaving { get; set; }
+
+    [Parameter]
+    public bool IsProductSearching { get; set; }
+
+    [Parameter]
+    public bool IsUploading { get; set; }
+
+    [Parameter]
+    public string ProductSearchError { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    [Parameter]
+    public EventCallback OnSearchProduct { get; set; }
+
+    [Parameter]
+    public EventCallback OnClearProduct { get; set; }
+
+    [Parameter]
+    public EventCallback<InputFileChangeEventArgs> OnFileSelected { get; set; }
+
+    [Parameter]
+    public EventCallback OnClearImage { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    private string _localSkuText;
+    private bool _productImageError = false;
+    private bool _advertisementImageError = false;
+
+    protected override void OnParametersSet()
+    {
+        // Keep local copy of SKU text in sync with parameter
+        _localSkuText = SkuSearchText;
+    }
+
+    private async Task HandleSkuChange(ChangeEventArgs e)
+    {
+        _localSkuText = e.Value?.ToString();
+        await SkuSearchTextChanged.InvokeAsync(_localSkuText);
+    }
+
+    private void HandleProductImageLoaded()
+    {
+        _productImageError = false;
+        StateHasChanged();
+    }
+
+    private void HandleProductImageError()
+    {
+        _productImageError = true;
+        StateHasChanged();
+    }
+
+    private void HandleAdvertisementImageLoaded()
+    {
+        _advertisementImageError = false;
+        StateHasChanged();
+    }
+
+    private void HandleAdvertisementImageError()
+    {
+        _advertisementImageError = true;
+        StateHasChanged();
+    }
+
+    private string GetSafeImageUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url))
+            return string.Empty;
+
+        // If the URL is a relative path, ensure it starts with a slash
+        if (!url.StartsWith("http") && !url.StartsWith("/"))
+            return "/" + url;
+
+        return url;
+    }
+
+    private string GetImageFileName(string imageUrl)
+    {
+        if (string.IsNullOrEmpty(imageUrl))
+            return string.Empty;
+
+        // Extract just the filename from the URL for display
+        try
+        {
+            return System.IO.Path.GetFileName(new Uri(imageUrl).AbsolutePath);
+        }
+        catch
+        {
+            // Return the truncated URL if parsing fails
+            return imageUrl.Length > 30 ? imageUrl.Substring(0, 30) + "..." : imageUrl;
+        }
+    }
+}

@@ -1,0 +1,680 @@
+﻿@page "/Advertise"
+@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Client.Services
+@using sacmy.Shared.Core
+@using sacmy.Shared.ViewModels
+@using System.Net.Http.Json
+@using sacmy.Client.Components.CustomDataGrid
+@using sacmy.Client.Components.DialogHeader
+@using sacmy.Shared.ViewModels.AdvertiseVewModels
+@using sacmy.Shared.ViewModels.Products
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject UserGlobalClass UserGlobal
+@inject AdvertiseService AdvertiseService
+@inject ProductsService ProductService
+@inject ToastService ToastService
+
+<style>
+    /* Page Layout Styles */
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--spacing-lg, 1.5rem);
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color, #dee2e6);
+    }
+
+    .search-container {
+        display: flex;
+        gap: var(--spacing-md, 0.75rem);
+        margin-bottom: var(--spacing-lg, 1.5rem);
+    }
+
+    .search-input {
+        flex: 1;
+        max-width: 400px;
+    }
+
+    /* Table and Image Styles */
+    .table-responsive {
+        overflow-x: auto;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        border-radius: var(--border-radius, 0.25rem);
+    }
+
+    .table {
+        margin-bottom: 0;
+    }
+
+        .table tr {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+            .table tr:hover {
+                background-color: rgba(0, 123, 255, 0.05);
+            }
+
+    .advertisement-thumbnail {
+        width: auto;
+        height: 50px;
+        max-width: 100px;
+        object-fit: contain;
+        border-radius: var(--border-radius, 0.25rem);
+    }
+
+    .image-preview {
+        max-height: 150px;
+        max-width: 100%;
+        width: auto;
+        object-fit: contain;
+        border-radius: var(--border-radius, 0.25rem);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .product-card {
+        border: 1px solid var(--border-color, #dee2e6);
+        border-radius: var(--border-radius, 0.25rem);
+        padding: var(--spacing-md, 0.75rem);
+        background-color: var(--bg-light, #f8f9fa);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        transition: box-shadow 0.3s;
+    }
+
+        .product-card:hover {
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+
+    .product-image {
+        max-height: 80px;
+        max-width: 100%;
+        width: auto;
+        object-fit: contain;
+        border-radius: var(--border-radius, 0.25rem);
+    }
+
+    /* Modal Styles */
+    .modal-content {
+        border: none;
+        border-radius: var(--border-radius, 0.375rem);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+        border-top-left-radius: calc(var(--border-radius, 0.375rem) - 1px);
+        border-top-right-radius: calc(var(--border-radius, 0.375rem) - 1px);
+        padding: 1rem 1.25rem;
+    }
+
+        .modal-header .btn-close-white {
+            filter: brightness(0) invert(1);
+        }
+
+        .modal-header.bg-primary {
+            background-color: #0d6efd !important;
+        }
+
+        .modal-header.bg-danger {
+            background-color: #dc3545 !important;
+        }
+
+    /* Image Handling Styles */
+    .image-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .image-error-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: var(--border-radius, 0.25rem);
+    }
+
+    .image-error-message {
+        font-size: 0.75rem;
+        color: #6c757d;
+        background-color: rgba(255, 255, 255, 0.8);
+        padding: 2px 6px;
+        border-radius: 4px;
+    }
+
+    /* Form Styles */
+    .form-label.fw-medium {
+        font-weight: 500;
+    }
+
+    .btn-search {
+        min-width: 90px;
+    }
+
+    .file-preview-area {
+        min-height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Responsive Styles */
+    @@media (max-width: 768px) {
+        .page-header
+
+    {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .search-container {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .search-input {
+        max-width: 100%;
+    }
+
+    .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    }
+</style>
+
+<div class="container-fluid px-4 py-3">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+        <div class="d-flex align-items-center mb-2 mb-md-0">
+            <i class="bi bi-images fs-4 me-2"></i>
+            <h4 class="mb-0">Advertisement Management</h4>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenCreateModal">
+            <i class="bi bi-plus-circle me-1"></i> Add Advertisement
+        </button>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body p-3">
+            <div class="d-flex flex-column flex-md-row gap-2 mb-3">
+                <div class="input-group search-input">
+                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                    <input type="text" class="form-control" placeholder="Search advertisements..."
+                           @bind="SearchString" @bind:event="oninput"
+                           @onkeyup="@(e => { if (e.Key == "Enter") DoSearch(); })" />
+
+                    @if (!string.IsNullOrEmpty(SearchString))
+                    {
+                        <button class="btn btn-outline-secondary" type="button" @onclick="ClearSearch">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    }
+                </div>
+                <button class="btn btn-primary" @onclick="DoSearch">
+                    <i class="bi bi-search me-1"></i> Search
+                </button>
+            </div>
+
+            @if (IsLoading)
+            {
+                <div class="d-flex justify-content-center p-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            }
+            else if (Advertisements == null || !Advertisements.Any())
+            {
+                <div class="alert alert-info" role="alert">
+                    <i class="bi bi-info-circle me-2"></i> No advertisements found.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>SKU</th>
+                                <th>Pattern Code</th>
+                                <th class="text-center">Image</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var adv in Advertisements)
+                            {
+                                <tr @onclick="() => EditAdvertisement(adv)" style="cursor: pointer;">
+                                    <td class="fw-medium">@adv.Sku</td>
+                                    <td>@adv.PatternCode</td>
+                                    <td class="text-center">
+                                        @if (string.IsNullOrEmpty(adv.Image))
+                                        {
+                                            <span class="badge bg-light text-dark">No Image</span>
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex justify-content-center">
+                                                <img src="@adv.Image"
+                                                     alt="Advertisement"
+                                                     class="img-thumbnail advertisement-thumbnail"
+                                                     @onerror="e => HandleImageError(e, adv.Id)" />
+                                            </div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="d-flex justify-content-end gap-1">
+                                            <button class="btn btn-primary btn-sm"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => EditAdvertisement(adv)"
+                                                    title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm"
+                                                    @onclick:stopPropagation="true"
+                                                    @onclick="() => OpenDeleteModal(adv)"
+                                                    title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+@if (IsEditModalVisible)
+{
+    <AdvertiseEditModal IsVisible="@IsEditModalVisible"
+                        IsNewAdvertisement="@IsNewAdvertisement"
+                        CurrentAdvertise="@CurrentAdvertise"
+                        SelectedProduct="@SelectedProduct"
+                        SkuSearchText="@SkuSearchText"
+                        SkuSearchTextChanged="@HandleSkuSearchTextChanged"
+                        IsSaving="@IsSaving"
+                        IsProductSearching="@IsProductSearching"
+                        IsUploading="@IsUploading"
+                        ProductSearchError="@ProductSearchError"
+                        OnClose="@CloseModal"
+                        OnSearchProduct="@SearchProductBySku"
+                        OnClearProduct="@ClearSelectedProduct"
+                        OnFileSelected="@HandleFileSelected"
+                        OnClearImage="@ClearImage"
+                        OnSave="@SaveAdvertisement" />
+}
+
+
+@if (IsDeleteModalVisible)
+{
+    <AdvertiseDeleteModal IsVisible="@IsDeleteModalVisible"
+                          AdvertisementToDelete="@AdvertisementToDelete"
+                          OnClose="@CloseDeleteModal"
+                          OnDelete="@DeleteAdvertisement" />
+}
+
+
+@code {
+    // Data properties
+    private List<GetAdvertiseViewModel> Advertisements = new List<GetAdvertiseViewModel>();
+    private string SearchString = "";
+    private bool IsLoading = true;
+    private Dictionary<Guid, bool> ImagesWithErrors = new Dictionary<Guid, bool>();
+
+    // Edit modal properties
+    private bool IsEditModalVisible = false;
+    private bool IsNewAdvertisement = false;
+    private bool IsSaving = false;
+    private CreateAdvertiseViewModel CurrentAdvertise = new CreateAdvertiseViewModel();
+
+    // Delete modal properties
+    private bool IsDeleteModalVisible = false;
+    private GetAdvertiseViewModel AdvertisementToDelete;
+
+    // Product search properties
+    private string SkuSearchText = "";
+    private ProductDetailViewModel SelectedProduct;
+    private bool IsProductSearching = false;
+    private string ProductSearchError;
+
+    // File upload properties
+    private IBrowserFile selectedFile;
+    private bool IsUploading = false;
+    private long maxFileSize = 10 * 1024 * 1024; // 10MB max
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAdvertisements();
+    }
+
+    private async Task LoadAdvertisements()
+    {
+        IsLoading = true;
+        try
+        {
+            Advertisements = await AdvertiseService.GetAllAdvertisementsAsync();
+            if (!string.IsNullOrWhiteSpace(SearchString))
+            {
+                Advertisements = Advertisements
+                    .Where(a =>
+                        (a.Sku?.Contains(SearchString, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (a.PatternCode?.Contains(SearchString, StringComparison.OrdinalIgnoreCase) ?? false))
+                    .ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error loading advertisements: {ex.Message}", "danger");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+
+    private void HandleImageError(EventArgs e, Guid id)
+    {
+        ImagesWithErrors[id] = true;
+        StateHasChanged();
+    }
+
+    private async Task DoSearch()
+    {
+        await LoadAdvertisements();
+    }
+
+    private async Task ClearSearch()
+    {
+        SearchString = "";
+        await DoSearch();
+    }
+
+    private Task HandleSkuSearchTextChanged(string newValue)
+    {
+        SkuSearchText = newValue;
+        return Task.CompletedTask;
+    }
+
+    private void OpenCreateModal()
+    {
+        CurrentAdvertise = new CreateAdvertiseViewModel();
+        SelectedProduct = null;
+        SkuSearchText = "";
+        ProductSearchError = null;
+        IsNewAdvertisement = true;
+        IsEditModalVisible = true;
+    }
+
+    private void EditAdvertisement(GetAdvertiseViewModel advertisement)
+    {
+        CurrentAdvertise = new CreateAdvertiseViewModel
+            {
+                ProductId = advertisement.ProductId,
+                Image = advertisement.Image
+            };
+
+        SkuSearchText = advertisement.Sku;
+        ProductSearchError = null;
+
+        IsNewAdvertisement = false;
+        AdvertisementToDelete = advertisement;
+        IsEditModalVisible = true;
+
+        // Load the product information after the modal is open
+        StateHasChanged();
+        SearchProductBySku();
+    }
+
+    private void CloseModal()
+    {
+        IsEditModalVisible = false;
+    }
+
+    private void OpenDeleteModal(GetAdvertiseViewModel advertisement)
+    {
+        AdvertisementToDelete = advertisement;
+        IsDeleteModalVisible = true;
+    }
+
+    private void CloseDeleteModal()
+    {
+        IsDeleteModalVisible = false;
+    }
+
+    private async Task SearchProductBySku()
+    {
+        if (string.IsNullOrWhiteSpace(SkuSearchText))
+        {
+            ProductSearchError = "Please enter a SKU to search";
+            return;
+        }
+
+        try
+        {
+            IsProductSearching = true;
+            ProductSearchError = null;
+            StateHasChanged();
+
+            // Store the SKU we're searching for to verify it later
+            string searchedSku = SkuSearchText;
+
+            // Search for products by SKU using the service
+            var response = await ProductService.SearchProductsBySkuAsync(searchedSku);
+
+            // Verify the SKU hasn't changed during the async operation
+            if (SkuSearchText != searchedSku)
+            {
+                // If the user changed the SKU while searching, we should abort
+                return;
+            }
+
+            if (response.Success && response.Data != null && response.Data.Any())
+            {
+                SelectedProduct = response.Data.First();
+                CurrentAdvertise.ProductId = Guid.Parse(SelectedProduct.Id);
+
+                if (SelectedProduct.Images != null && SelectedProduct.Images.Any() && string.IsNullOrEmpty(CurrentAdvertise.Image))
+                {
+                    // Optionally pre-populate the image field with the first product image
+                    CurrentAdvertise.Image = SelectedProduct.Images.First().ImageLink;
+                }
+            }
+            else
+            {
+                ProductSearchError = response.Message ?? "No product found with the specified SKU";
+                SelectedProduct = null;
+            }
+        }
+        catch (Exception ex)
+        {
+            ProductSearchError = $"Error searching for product: {ex.Message}";
+            SelectedProduct = null;
+        }
+        finally
+        {
+            IsProductSearching = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearSelectedProduct()
+    {
+        SelectedProduct = null;
+        // Don't clear SkuSearchText to allow the user to modify and search again
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            // Check if a product is selected
+            if (SelectedProduct == null)
+            {
+                ToastService.ShowToast("Please select a product first", "warning");
+                return;
+            }
+
+            // Get the selected file
+            selectedFile = e.File;
+
+            // Validate file type
+            if (!selectedFile.ContentType.StartsWith("image/"))
+            {
+                ToastService.ShowToast("Please select an image file", "warning");
+                return;
+            }
+
+            // Check file size
+            if (selectedFile.Size > maxFileSize)
+            {
+                ToastService.ShowToast($"File size exceeds the maximum allowed size of {maxFileSize / (1024 * 1024)}MB", "warning");
+                return;
+            }
+
+            // Upload the file
+            await UploadFile(selectedFile);
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error selecting file: {ex.Message}", "danger");
+        }
+    }
+
+    private async Task UploadFile(IBrowserFile file)
+    {
+        if (SelectedProduct == null)
+        {
+            ToastService.ShowToast("Please select a product first", "warning");
+            return;
+        }
+
+        IsUploading = true;
+        StateHasChanged();
+
+        try
+        {
+            // Prepare content for file upload
+            using var content = new MultipartFormDataContent();
+
+            // Read file into memory
+            var fileContent = new StreamContent(file.OpenReadStream(maxFileSize));
+            fileContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(file.ContentType);
+
+            // Add file to form data
+            content.Add(fileContent, "image", file.Name);
+
+            // Add product ID
+            content.Add(new StringContent(SelectedProduct.Id.ToString()), "productId");
+
+            // Upload the file
+            var response = await AdvertiseService.UploadAdvertisementImageAsync(content);
+
+            if (response.Success && response.Data != null)
+            {
+                // Set image URL in the model
+                CurrentAdvertise.Image = response.Data.ToString();
+                ToastService.ShowToast("Image uploaded successfully", "success");
+            }
+            else
+            {
+                ToastService.ShowToast($"Upload failed: {response.Message}", "danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error uploading file: {ex.Message}", "danger");
+        }
+        finally
+        {
+            IsUploading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearImage()
+    {
+        CurrentAdvertise.Image = null;
+        selectedFile = null;
+    }
+
+    private async Task SaveAdvertisement()
+    {
+        if (SelectedProduct == null)
+        {
+            ProductSearchError = "Please select a product first";
+            return;
+        }
+
+        if (string.IsNullOrEmpty(CurrentAdvertise.Image))
+        {
+            ToastService.ShowToast("Please upload an image", "warning");
+            return;
+        }
+
+        IsSaving = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = IsNewAdvertisement
+                ? await AdvertiseService.CreateAdvertisementAsync(CurrentAdvertise)
+                : await AdvertiseService.UpdateAdvertisementAsync(AdvertisementToDelete.Id, CurrentAdvertise);
+
+            if (response != null && response.Success)
+            {
+                await LoadAdvertisements();
+                CloseModal();
+                ToastService.ShowToast(response.Message, "success");
+            }
+            else
+            {
+                ToastService.ShowToast($"Error: {response?.Message ?? "Unknown error"}", "danger");
+            }
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error saving advertisement: {ex.Message}", "danger");
+        }
+        finally
+        {
+            IsSaving = false;
+        }
+    }
+
+    private async Task DeleteAdvertisement()
+    {
+        if (AdvertisementToDelete != null)
+        {
+            try
+            {
+                var response = await AdvertiseService.DeleteAdvertisementAsync(AdvertisementToDelete.Id);
+
+                if (response != null && response.Success)
+                {
+                    await LoadAdvertisements();
+                    CloseDeleteModal();
+                    ToastService.ShowToast(response.Message, "success");
+                }
+                else
+                {
+                    ToastService.ShowToast($"Error: {response?.Message ?? "Unknown error"}", "danger");
+                }
+            }
+            catch (Exception ex)
+            {
+                ToastService.ShowToast($"Error deleting advertisement: {ex.Message}", "danger");
+            }
+        }
+    }
+}

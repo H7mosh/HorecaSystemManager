@@ -80,6 +80,46 @@ namespace sacmy.Client.Services
             }
         }
 
+        public async Task<ApiResponse<List<ProductDetailViewModel>>> SearchProductsBySkuAsync(string sku)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(sku))
+                {
+                    return new ApiResponse<List<ProductDetailViewModel>>
+                    {
+                        Success = false,
+                        Message = "SKU is required",
+                        Data = new List<ProductDetailViewModel>()
+                    };
+                }
+
+                var response = await _httpClient.GetFromJsonAsync<ApiResponse<List<ProductDetailViewModel>>>($"api/Product/SearchBySku?sku={sku}");
+
+                if (response == null)
+                {
+                    return new ApiResponse<List<ProductDetailViewModel>>
+                    {
+                        Success = false,
+                        Message = "Failed to get response from server",
+                        Data = new List<ProductDetailViewModel>()
+                    };
+                }
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+
+                return new ApiResponse<List<ProductDetailViewModel>>
+                {
+                    Success = false,
+                    Message = $"An error occurred: {ex.Message}",
+                    Data = new List<ProductDetailViewModel>()
+                };
+            }
+        }
+
         private BrandResponse CreateEmptyBrandResponse(string brandId)
         {
             return new BrandResponse
