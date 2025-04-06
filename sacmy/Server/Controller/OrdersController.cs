@@ -450,6 +450,7 @@ namespace sacmy.Server.Controller
                             _context.UnavilableOrderedItems.Add(unavilableOrderedItem);
                         }
                     }
+
                     else
                     {
                         KpStore item = await _context.KpStores.FirstOrDefaultAsync(e => e.Sku == fatoraItem.Sku);
@@ -478,7 +479,7 @@ namespace sacmy.Server.Controller
                                 Total = (decimal)(double.Parse(fatoraItem.Quantity.ToString()) * fatoraItem!.Price),
                                 Wajba = fatoraItem?.Wajba,
                                 Subb = fatoraItem?.Storage,
-                                PurchasePrise = (decimal)qqMaxzanFullItemProc!.AvrgPrice,
+                                PurchasePrise = (decimal)fatoraItem!.Cost,
                                 QttRemaining = 0,
                                 Rub7Karton = 0,
                                 Weznn = 0,

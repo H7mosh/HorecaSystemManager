@@ -32,6 +32,7 @@ namespace sacmy.Shared.ViewModels.OrdersViewModel
         public int OrderItemId { get; set; }
         public double Quantity { get; set; }
         public string Storage { get; set; }
+        public double Cost { get; set; }
         public double Price { get; set; }
         public int Point { get; set; }
     }

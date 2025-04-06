@@ -54,6 +54,7 @@
                                                     <th>Batch</th>
                                                     <th class="text-end">Quantity</th>
                                                     <th class="text-end">Price</th>
+                                                    <th class="text-end">Cost</th>
                                                     <th class="text-center">Status</th>
                                                 </tr>
                                             </thead>
@@ -68,6 +69,7 @@
                                                         <td>@item.Batch</td>
                                                         <td class="text-end">@item.Quantity.ToString("N0")</td>
                                                         <td class="text-end">$@item.Price</td>
+                                                        <td class="text-end">$@item.Cost</td>
                                                         <td class="text-center">
                                                             <span class="@GetAvailabilityClass(item.IsAvailable)">
                                                                 @(item.IsAvailable ? "Available" : "Unavailable")
@@ -239,6 +241,8 @@
                             OrderItemId = OrderId,
 
                             Quantity = item.Quantity,
+
+                            Cost = double.Parse(item.Cost.ToString()),
 
                             Price = item.PriceValue,
 
