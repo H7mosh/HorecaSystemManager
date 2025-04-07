@@ -1,0 +1,410 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using sacmy.Shared.ViewModels.BrandViewModel
+@using sacmy.Shared.ViewModels.Products
+@using sacmy.Shared.ViewModels.StoryViewModel
+<style>
+    .modal-backdrop {
+        opacity: 0.5;
+    }
+
+    .modal.show {
+        display: block;
+    }
+
+    /* Media Preview */
+    .media-preview {
+        max-width: 100%;
+        height: auto;
+        max-height: 250px;
+        object-fit: contain;
+        border-radius: var(--border-radius);
+    }
+
+    .media-preview-container {
+        position: relative;
+        display: inline-block;
+    }
+
+    .media-type-badge {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        padding: 4px 8px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: white;
+    }
+
+    .remove-media-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background-color: rgba(220, 53, 69, 0.8);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .remove-media-btn:hover {
+        background-color: rgba(220, 53, 69, 1);
+    }
+
+    /* Product Selection */
+    .product-card {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: box-shadow 0.2s;
+    }
+
+    .product-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Brand Selection */
+    .brand-selector {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+    }
+
+    .brand-item {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .brand-item:hover {
+        background-color: rgba(0, 123, 255, 0.1);
+    }
+
+    .brand-item.selected {
+        background-color: rgba(0, 123, 255, 0.2);
+    }
+
+    .brand-logo {
+        width: 30px;
+        height: 30px;
+        object-fit: cover;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+
+    /* Expiration Timer */
+    .expiration-timer {
+        font-size: 14px;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+        margin-top: 5px;
+    }
+
+    .timer-icon {
+        margin-right: 5px;
+    }
+</style>
+
+<div class="@(IsVisible ? "modal-backdrop fade show" : "d-none")"></div>
+
+<div class="modal fade @(IsVisible ? "show d-block" : "d-none")" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">@(IsNewStory ? "Create New Story" : "Edit Story")</h5>
+                <button type="button" class="btn-close btn-close-white" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                @if (IsSaving)
+                {
+                    <div class="text-center p-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Saving...</span>
+                        </div>
+                        <p class="mt-2">Saving story...</p>
+                    </div>
+                }
+                else
+                {
+                    <EditForm Model="@CurrentStory" OnValidSubmit="OnSave">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary />
+
+                        <!-- Media Upload Section -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Story Media (Image/Video)</label>
+                            <InputFile OnChange="@OnFileSelected" class="form-control" accept="image/*,video/*" />
+                            <ValidationMessage For="@(() => CurrentStory.MediaUrl)" />
+                            <small class="form-text text-muted">Select an image or video file for your story (max 15MB)</small>
+                        </div>
+
+                        @if (IsUploading)
+                        {
+                            <div class="alert alert-info my-3">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Uploading...</span>
+                                </div>
+                                Uploading media, please wait...
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrEmpty(CurrentStory.MediaUrl))
+                        {
+                            <div class="card mb-3">
+                                <div class="card-body text-center">
+                                    @if (MediaError)
+                                    {
+                                        <div class="alert alert-warning">
+                                            Media could not be loaded
+                                            <button type="button" class="btn btn-sm btn-outline-danger mt-2"
+                                                @onclick="OnClearMedia">
+                                                Remove Media
+                                            </button>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="media-preview-container">
+                                            @if (CurrentStory.MediaType == "image")
+                                            {
+                                                <img src="@CurrentStory.MediaUrl"
+                                                    alt="Story Media Preview"
+                                                    class="media-preview img-thumbnail"
+                                                    @onload="HandleMediaLoaded"
+                                                    @onerror="HandleMediaError" />
+                                                <span class="media-type-badge">Image</span>
+                                            }
+                                            else if (CurrentStory.MediaType == "video")
+                                            {
+                                                <video controls class="media-preview img-thumbnail"
+                                                    @onload="HandleMediaLoaded"
+                                                    @onerror="HandleMediaError">
+                                                    <source src="@CurrentStory.MediaUrl" type="video/mp4">
+                                                    Your browser does not support the video tag.
+                                                </video>
+                                                <span class="media-type-badge">Video</span>
+                                            }
+                                            <button type="button" class="remove-media-btn"
+                                                @onclick="OnClearMedia" title="Remove media">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
+                                        <div class="mt-2 small text-muted">
+                                            @GetMediaFileName(CurrentStory.MediaUrl)
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Product Selection Section -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Select Product for Story</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control"
+                                    value="@ProductSkuSearchText"
+                                    @oninput="HandleSkuSearchChange"
+                                    placeholder="Enter product SKU" />
+                                <button type="button" class="btn btn-primary" @onclick="SearchProduct">
+                                    <i class="bi bi-search me-1"></i> Search
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">Enter product SKU to link to this story</small>
+                        </div>
+
+                        @if (IsProductSearching)
+                        {
+                            <div class="text-center my-3">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <span class="ms-2">Searching for product...</span>
+                            </div>
+                        }
+                        else if (!string.IsNullOrEmpty(ProductSearchError))
+                        {
+                            <div class="alert alert-danger">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                @ProductSearchError
+                            </div>
+                        }
+                        else if (SelectedProduct != null)
+                        {
+                            <div class="product-card">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="fw-bold mb-1">@SelectedProduct.Name</h6>
+                                        <p class="mb-1"><span class="text-muted">SKU:</span> @SelectedProduct.Sku</p>
+                                        <p class="mb-0"><span class="text-muted">Pattern:</span> @SelectedProduct.PatternNumber</p>
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-outline-danger align-self-start" @onclick="ClearSelectedProduct">
+                                        <i class="bi bi-x"></i>
+                                    </button>
+                                </div>
+
+                                @if (SelectedProduct.Images != null && SelectedProduct.Images.Any())
+                                {
+                                    <div class="mt-2 text-center">
+                                        <img src="@SelectedProduct.Images.First().ImageLink"
+                                             alt="Product Image"
+                                             class="product-image"
+                                             style="max-height: 100px;"
+                                             onerror="this.onerror=null; this.src='/images/placeholder-product.png';" />
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                   
+
+                        <!-- Brand Selection Section -->
+                        <div class="mb-3">
+                            <label class="form-label fw-medium">Select Brand</label>
+                            <div class="input-group mb-2">
+                                <span class="input-group-text"><i class="bi bi-building"></i></span>
+                                <select @bind="CurrentStory.CreatedBy" class="form-select">
+                                    <option value="">-- Select a Brand --</option>
+                                    @foreach (var brand in Brands)
+                                    {
+                                        <option value="@brand.Id">@brand.NameAr</option>
+                                    }
+                                </select>
+                            </div>
+                            <ValidationMessage For="@(() => CurrentStory.CreatedBy)" />
+                        </div>
+
+                        <!-- Expiration Information -->
+                        @if (!IsNewStory && StoryDetails != null)
+                        {
+                            <div class="alert alert-info">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-clock-history fs-4 me-2"></i>
+                                    <div>
+                                        <h6 class="mb-1">Story Expiration</h6>
+                                        <p class="mb-0 small">
+                                            Created: @StoryDetails.CreatedAt.ToString("MM/dd/yyyy HH:mm")<br />
+                                            Expires: @StoryDetails.Expiration.ToString("MM/dd/yyyy HH:mm")<br />
+                                            @if (StoryDetails.IsExpired)
+                                            {
+                                                <span class="text-danger">This story has expired</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Time remaining: @StoryDetails.TimeRemaining</span>
+                                            }
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-end gap-2 mt-3">
+                            <button type="button" class="btn btn-secondary" @onclick="OnClose">
+                                <i class="bi bi-x-circle me-1"></i> Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary"
+                                    disabled="@(string.IsNullOrEmpty(CurrentStory.MediaUrl) || 
+                                               CurrentStory.CreatedBy == Guid.Empty || 
+                                               SelectedProduct == null)">
+                                <i class="bi bi-check-circle me-1"></i> Save Story
+                            </button>
+                        </div>
+                    </EditForm>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public bool IsNewStory { get; set; }
+    [Parameter] public CreateStoryViewModel CurrentStory { get; set; }
+    [Parameter] public GetStoryViewModel StoryDetails { get; set; }
+    [Parameter] public ProductDetailViewModel SelectedProduct { get; set; }
+    [Parameter] public string ProductSkuSearchText { get; set; }
+    [Parameter] public EventCallback<string> ProductSkuSearchTextChanged { get; set; }
+    [Parameter] public bool IsSaving { get; set; }
+    [Parameter] public bool IsProductSearching { get; set; }
+    [Parameter] public bool IsUploading { get; set; }
+    [Parameter] public string ProductSearchError { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSearchProduct { get; set; }
+    [Parameter] public EventCallback OnClearProduct { get; set; }
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnFileSelected { get; set; }
+    [Parameter] public EventCallback OnClearMedia { get; set; }
+    [Parameter] public EventCallback OnSave { get; set; }
+    [Parameter] public List<BrandViewModel> Brands { get; set; } = new();
+
+    private string _localSkuText;
+    private bool MediaError = false;
+
+    protected override void OnParametersSet()
+    {
+        _localSkuText = ProductSkuSearchText;
+    }
+
+    private async Task HandleSkuSearchChange(ChangeEventArgs e)
+    {
+        _localSkuText = e.Value?.ToString();
+        await ProductSkuSearchTextChanged.InvokeAsync(_localSkuText);
+    }
+
+    private void HandleMediaLoaded()
+    {
+        MediaError = false;
+        StateHasChanged();
+    }
+
+    private void HandleMediaError()
+    {
+        MediaError = true;
+        StateHasChanged();
+    }
+
+    private async Task SearchProduct()
+    {
+        if (OnSearchProduct.HasDelegate)
+        {
+            await OnSearchProduct.InvokeAsync();
+        }
+    }
+
+    private async Task ClearSelectedProduct()
+    {
+        if (OnClearProduct.HasDelegate)
+        {
+            await OnClearProduct.InvokeAsync();
+        }
+    }
+
+    private string GetMediaFileName(string mediaUrl)
+    {
+        if (string.IsNullOrEmpty(mediaUrl))
+            return string.Empty;
+
+        // Extract just the filename from the URL for display
+        try
+        {
+            return System.IO.Path.GetFileName(new Uri(mediaUrl).AbsolutePath);
+        }
+        catch
+        {
+            // Return the truncated URL if parsing fails
+            return mediaUrl.Length > 30 ? mediaUrl.Substring(0, 30) + "..." : mediaUrl;
+        }
+    }
+}

@@ -50,6 +50,8 @@ builder.Services.AddScoped<InvoiceService>();
 builder.Services.AddScoped<CustomerService>();
 builder.Services.AddScoped<CustomerInvoiceTrackService>();
 builder.Services.AddScoped<AdvertiseService>();
+builder.Services.AddScoped<StoryService>();
+
 builder.Services.AddMudServices(config =>
 {
     config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomRight;

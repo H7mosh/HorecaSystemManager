@@ -16,7 +16,6 @@
 @inject ToastService ToastService
 
 <style>
-    /* Page Layout Styles */
     .page-header {
         display: flex;
         justify-content: space-between;
@@ -511,7 +510,6 @@
     private void ClearSelectedProduct()
     {
         SelectedProduct = null;
-        // Don't clear SkuSearchText to allow the user to modify and search again
     }
 
     private async Task HandleFileSelected(InputFileChangeEventArgs e)

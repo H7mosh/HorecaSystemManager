@@ -211,9 +211,8 @@ namespace sacmy.Server.Controller
                     });
                 }
 
-                // Validate product exists
-                var product = await _context.Products
-                    .FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
+                var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == productId && !p.IsDeleted);
+
                 if (product == null)
                 {
                     return NotFound(new ApiResponse

@@ -1,0 +1,66 @@
+﻿@using sacmy.Shared.ViewModels.StoryViewModel
+
+<div class="@(IsVisible ? "modal-backdrop fade show" : "d-none")"></div>
+
+<div class="modal fade @(IsVisible ? "show d-block" : "d-none")" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
+        <div class="modal-content shadow">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close btn-close-white" @onclick="OnClose" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-3">
+                    <i class="bi bi-exclamation-triangle-fill text-danger fs-1"></i>
+                </div>
+
+                <p class="text-center mb-3">Are you sure you want to delete this story?</p>
+
+                @if (StoryToDelete != null && !string.IsNullOrEmpty(StoryToDelete.MediaUrl))
+                {
+                    <div class="text-center mb-3">
+                        @if (StoryToDelete.MediaType == "image")
+                        {
+                            <img src="@StoryToDelete.MediaUrl" alt="Story Preview"
+                                 class="image-preview img-thumbnail" style="max-height: 200px;" />
+                        }
+                        else if (StoryToDelete.MediaType == "video")
+                        {
+                            <div class="alert alert-secondary">
+                                <i class="bi bi-film me-2"></i> Video Story
+                            </div>
+                        }
+                    </div>
+
+                    <div class="alert alert-secondary text-center small mb-3">
+                        <strong>Brand:</strong> @StoryToDelete.BrandName
+                        <br />
+                        <strong>Expires:</strong> @StoryToDelete.Expiration.ToString("MM/dd/yyyy HH:mm")
+                        <br />
+                        <strong>Views:</strong> @StoryToDelete.ViewCount
+                    </div>
+                }
+
+                <div class="alert alert-danger text-center">
+                    <i class="bi bi-exclamation-circle me-1"></i>
+                    This action cannot be undone.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" @onclick="OnClose">
+                    <i class="bi bi-x-circle me-1"></i> Cancel
+                </button>
+                <button type="button" class="btn btn-danger" @onclick="OnDelete">
+                    <i class="bi bi-trash me-1"></i> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public GetStoryViewModel StoryToDelete { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnDelete { get; set; }
+}

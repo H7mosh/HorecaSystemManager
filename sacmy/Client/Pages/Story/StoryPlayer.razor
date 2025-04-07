@@ -1,0 +1,467 @@
+﻿@using sacmy.Shared.ViewModels.Products
+@using sacmy.Shared.ViewModels.StoryViewModel
+@using sacmy.Client.Services
+@inject IJSRuntime JSRuntime
+@inject StoryService StoryService
+
+<style>
+    .story-player-container {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .story-content {
+        position: relative;
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+
+    .story-media {
+        width: 100%;
+        height: auto;
+        max-height: 90vh;
+        object-fit: contain;
+        background-color: black;
+    }
+
+    .story-video {
+        width: 100%;
+        max-height: 90vh;
+        object-fit: contain;
+    }
+
+    .story-header {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: linear-gradient(to bottom, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
+        z-index: 10;
+    }
+
+    .story-brand {
+        display: flex;
+        align-items: center;
+        color: white;
+    }
+
+    .brand-image {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin-right: 10px;
+        object-fit: cover;
+        border: 2px solid white;
+    }
+
+    .brand-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .brand-name {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .story-time {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+
+    .close-btn {
+        color: white;
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        cursor: pointer;
+        z-index: 20;
+    }
+
+    .story-progress {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: rgba(255, 255, 255, 0.3);
+        z-index: 15;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background-color: white;
+        transition: width 0.1s linear;
+    }
+
+    .story-footer {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 15px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 100%);
+        color: white;
+        z-index: 10;
+    }
+
+    .story-message {
+        font-size: 16px;
+        margin-bottom: 10px;
+    }
+
+    .product-info {
+        display: flex;
+        align-items: center;
+        background-color: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 8px 12px;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+        .product-info:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+    .product-details {
+        flex-grow: 1;
+    }
+
+    .product-name {
+        font-weight: bold;
+        font-size: 14px;
+    }
+
+    .product-sku {
+        font-size: 12px;
+        opacity: 0.8;
+    }
+
+    .view-product-btn {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+
+    .navigation-controls {
+        position: absolute;
+        top: 50%;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        transform: translateY(-50%);
+        z-index: 10;
+    }
+
+    .nav-btn {
+        background-color: rgba(0, 0, 0, 0.3);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        margin: 0 10px;
+    }
+
+        .nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+    /* Mobile Optimization */
+    @@media (max-width: 768px) {
+        .story-content
+
+    {
+        max-width: 100%;
+        height: 100%;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .story-media, .story-video {
+        height: 100%;
+        max-height: none;
+        object-fit: cover;
+    }
+
+    }
+</style>
+
+@if (IsVisible && CurrentStory != null)
+{
+    <div class="story-player-container" @onclick="ClosePlayer">
+        <div class="story-content" @onclick:stopPropagation="true">
+            <!-- Progress Bar -->
+            <div class="story-progress">
+                <div class="progress-bar" style="width: @(_progressPercentage)%;"></div>
+            </div>
+
+            <!-- Story Header -->
+            <div class="story-header">
+                <div class="story-brand">
+                    <img src=@CurrentStory.BrandImage alt="Brand" class="brand-image" />
+                    <div class="brand-info">
+                        <span class="brand-name">@CurrentStory.BrandName</span>
+                        <span class="story-time">@GetTimeAgo(CurrentStory.CreatedAt)</span>
+                    </div>
+                </div>
+                <button class="close-btn" @onclick="ClosePlayer">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+
+            <!-- Story Media -->
+            @if (CurrentStory.MediaType == "image")
+            {
+                <img src="@CurrentStory.MediaUrl" alt="Story" class="story-media" @onload="MediaLoaded" />
+            }
+            else if (CurrentStory.MediaType == "video")
+            {
+                <video class="story-video" autoplay controls @onloadeddata="MediaLoaded" @ref="_videoRef">
+                    <source src="@CurrentStory.MediaUrl" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            }
+
+            <!-- Navigation Controls -->
+            @if (HasMultipleStories)
+            {
+                <div class="navigation-controls">
+                    <button class="nav-btn" @onclick="PreviousStory" disabled="@(!HasPreviousStory)">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <button class="nav-btn" @onclick="NextStory" disabled="@(!HasNextStory)">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+            }
+
+            <!-- Story Footer -->
+            <div class="story-footer">
+                @if (!string.IsNullOrEmpty(CurrentStory.Message))
+                {
+                    <div class="story-message">@CurrentStory.Message</div>
+                }
+
+                @if (ProductDetails != null)
+                {
+                    <div class="product-info" @onclick="ViewProduct">
+                        <div class="product-details">
+                            <div class="product-name">@ProductDetails.Name</div>
+                            <div class="product-sku">SKU: @ProductDetails.Sku</div>
+                        </div>
+                        <button class="view-product-btn">
+                            <i class="bi bi-eye me-1"></i> View
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public GetStoryViewModel CurrentStory { get; set; }
+    [Parameter] public ProductDetailViewModel ProductDetails { get; set; }
+    [Parameter] public List<GetStoryViewModel> StoryList { get; set; } = new List<GetStoryViewModel>();
+    [Parameter] public int CurrentIndex { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<int> OnStoryChange { get; set; }
+    [Parameter] public EventCallback<Guid> OnViewProduct { get; set; }
+
+    private ElementReference _videoRef;
+    private bool _isMediaLoaded = false;
+    private int _storyDuration = 10000; // 10 seconds for images, videos use their own duration
+    private int _progressPercentage = 0;
+    private System.Threading.Timer _timer;
+    private bool _isPaused = false;
+
+    protected override void OnParametersSet()
+    {
+        // Reset progress when story changes
+        if (IsVisible && CurrentStory != null)
+        {
+            _progressPercentage = 0;
+            _isMediaLoaded = false;
+
+            // Record view on story open
+            RecordStoryView();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (IsVisible && CurrentStory != null && CurrentStory.MediaType == "video" && _isMediaLoaded)
+        {
+            try
+            {
+                // For videos, get the actual duration
+                var duration = await JSRuntime.InvokeAsync<double>("getVideoDuration", _videoRef);
+                _storyDuration = (int)(duration * 1000);
+                StartProgressTimer();
+            }
+            catch (Exception)
+            {
+                // Fallback to default duration if JS interop fails
+                _storyDuration = 15000;
+                StartProgressTimer();
+            }
+        }
+    }
+
+    private void MediaLoaded()
+    {
+        _isMediaLoaded = true;
+        _progressPercentage = 0;
+
+        if (CurrentStory.MediaType == "image")
+        {
+            // Fixed duration for images
+            _storyDuration = 10000;
+            StartProgressTimer();
+        }
+
+        StateHasChanged();
+    }
+
+    private async void RecordStoryView()
+    {
+        try
+        {
+            var viewModel = new AddStoryViewModel
+                {
+                    StoryId = CurrentStory.Id,
+                    CustomerId = 1 // Replace with actual customer ID from your auth system
+                };
+
+            await StoryService.AddStoryViewAsync(viewModel);
+        }
+        catch (Exception)
+        {
+            // Handle error silently
+        }
+    }
+
+    private void StartProgressTimer()
+    {
+        // Dispose existing timer if any
+        _timer?.Dispose();
+
+        // Create a new timer that updates progress every 100ms
+        _timer = new System.Threading.Timer(UpdateProgress, null, 0, 100);
+    }
+
+    private async void UpdateProgress(object state)
+    {
+        if (!IsVisible || _isPaused) return;
+
+        _progressPercentage += (100 * 100) / _storyDuration;
+
+        if (_progressPercentage >= 100)
+        {
+            _progressPercentage = 100;
+            _timer?.Dispose();
+
+            // Move to next story after current one completes
+            await InvokeAsync(() =>
+            {
+                if (HasNextStory)
+                {
+                    NextStory();
+                }
+                else
+                {
+                    ClosePlayer();
+                }
+                StateHasChanged();
+            });
+        }
+        else
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private bool HasMultipleStories => StoryList.Count > 1;
+    private bool HasPreviousStory => CurrentIndex > 0;
+    private bool HasNextStory => CurrentIndex < StoryList.Count - 1;
+
+    private async Task PreviousStory()
+    {
+        if (HasPreviousStory)
+        {
+            _timer?.Dispose();
+            await OnStoryChange.InvokeAsync(CurrentIndex - 1);
+        }
+    }
+
+    private async Task NextStory()
+    {
+        if (HasNextStory)
+        {
+            _timer?.Dispose();
+            await OnStoryChange.InvokeAsync(CurrentIndex + 1);
+        }
+    }
+
+    private async Task ClosePlayer()
+    {
+        _timer?.Dispose();
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task ViewProduct()
+    {
+        if (ProductDetails != null)
+        {
+            _isPaused = true;
+            _timer?.Dispose();
+            await OnViewProduct.InvokeAsync(Guid.Parse(ProductDetails.Id));
+        }
+    }
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var timeSpan = DateTime.Now - dateTime;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "Just now";
+        if (timeSpan.TotalHours < 1)
+            return $"{(int)timeSpan.TotalMinutes}m ago";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours}h ago";
+
+        return dateTime.ToString("MMM dd");
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

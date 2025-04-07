@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.DependencyInjection;
 using sacmy.Server.Service;
+using sacmy.Shared.Core;
 using sacmy.Shared.ViewModels;
 using sacmy.Shared.ViewModels.LowStockViewModels;
 using System.Data;

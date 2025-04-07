@@ -53,8 +53,6 @@
     }
 </style>
 
-
-<!-- Simple backdrop -->
 <div class="@(IsVisible ? "modal-backdrop fade show" : "d-none")"></div>
 
 <div class="modal fade @(IsVisible ? "show d-block" : "d-none")" tabindex="-1" role="dialog">
@@ -280,7 +278,6 @@
 
     protected override void OnParametersSet()
     {
-        // Keep local copy of SKU text in sync with parameter
         _localSkuText = SkuSearchText;
     }
 
