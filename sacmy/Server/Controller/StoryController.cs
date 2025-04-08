@@ -382,6 +382,8 @@ namespace sacmy.Server.Controller
                     .Select(c => new { Id = c.Id, FirebaseToken = c.FirebaseToken })
                     .ToListAsync();
 
+                message = "هناك قصه جديده من شركة pasabahce";
+
                 if (!customers.Any())
                 {
                     // No customers to notify
@@ -398,7 +400,7 @@ namespace sacmy.Server.Controller
                 {
                     Title = title,
                     Body = description ?? "Check out our new story!",
-                    Type = "story",
+                    Type = "",
                     Message = message ?? "",
                     IsEmployeeNotification = false
                 };
@@ -409,7 +411,7 @@ namespace sacmy.Server.Controller
                     Id = Guid.NewGuid(),
                     Title = title,
                     Description = description ?? "Check out our new story!",
-                    Type = "story",
+                    Type = "",
                     Message = message ?? "",
                     IsDeleted = false,
                     CreatedDate = DateTime.Now,
