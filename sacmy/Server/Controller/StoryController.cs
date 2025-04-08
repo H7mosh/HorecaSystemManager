@@ -157,7 +157,7 @@ namespace sacmy.Server.Controller
                 };
 
                 // Send notification to all customers
-                await SendStoryNotificationToAllCustomers(brand?.NameAr, story.Description, story.Message);
+                await SendStoryNotificationToAllCustomers(brand?.NameAr, story.Description);
 
                 return Ok(new ApiResponse<GetStoryViewModel>
                 {
