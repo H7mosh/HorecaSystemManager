@@ -372,7 +372,7 @@ namespace sacmy.Server.Controller
             return _context.Stories.Any(e => e.Id == id && !e.IsDeleted);
         }
 
-        private async System.Threading.Tasks.Task SendStoryNotificationToAllCustomers(string brandName, string description, string message)
+        private async System.Threading.Tasks.Task SendStoryNotificationToAllCustomers(string brandName, string description)
         {
             try
             {
@@ -382,7 +382,7 @@ namespace sacmy.Server.Controller
                     .Select(c => new { Id = c.Id, FirebaseToken = c.FirebaseToken })
                     .ToListAsync();
 
-                message = "هناك قصه جديده من شركة pasabahce";
+                string message = "هناك قصه جديده من شركة pasabahce";
 
                 if (!customers.Any())
                 {
