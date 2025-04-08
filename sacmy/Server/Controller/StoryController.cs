@@ -5,7 +5,9 @@ using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
 using sacmy.Shared.Core;
+using sacmy.Shared.ViewModels.Notification;
 using sacmy.Shared.ViewModels.StoryViewModel;
+using SixLabors.ImageSharp;
 
 namespace sacmy.Server.Controller
 {
@@ -14,10 +16,19 @@ namespace sacmy.Server.Controller
     public class StoryController : ControllerBase
     {
         private readonly SafeenCompanyDbContext _context;
+        private readonly NotificationService _customerNotificationService;
+        private readonly ILogger<NotificationService> _notificationLogger;
 
-        public StoryController(SafeenCompanyDbContext context)
+
+        public StoryController(IConfiguration configuration, SafeenCompanyDbContext context, ILogger<NotificationService> notificationLogger)
         {
             _context = context;
+            _notificationLogger = notificationLogger;
+            _customerNotificationService = new NotificationService(
+               configuration,
+               "SafinAhmedNotificationKeys",
+               _notificationLogger
+           );
         }
 
         [HttpGet]
@@ -98,61 +109,71 @@ namespace sacmy.Server.Controller
         [HttpPost]
         public async Task<ActionResult<ApiResponse<GetStoryViewModel>>> CreateStory(CreateStoryViewModel request)
         {
-            var brandExists = await _context.Brands.AnyAsync(b => b.Id == request.CreatedBy);
-
-            if (!brandExists)
+            try
             {
-                return BadRequest(new ApiResponse
+                var brandExists = await _context.Brands.AnyAsync(b => b.Id == request.CreatedBy);
+                if (!brandExists)
                 {
-                    Success = false,
-                    Message = "The specified brand does not exist."
+                    return BadRequest(new ApiResponse
+                    {
+                        Success = false,
+                        Message = "The specified brand does not exist."
+                    });
+                }
+
+                var creationTime = DateTime.Now;
+                var expirationTime = creationTime.AddHours(24);
+                var story = new Story
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = request.UserId,
+                    MediaUrl = request.MediaUrl,
+                    MediaType = request.MediaType,
+                    Description = request.Description,
+                    Message = request.Message,
+                    CreatedBy = request.CreatedBy,
+                    CreatedAt = creationTime,
+                    Expiration = expirationTime,
+                    IsDeleted = false
+                };
+
+                _context.Stories.Add(story);
+                await _context.SaveChangesAsync();
+
+                var brand = await _context.Brands.FindAsync(request.CreatedBy);
+                var viewModel = new GetStoryViewModel
+                {
+                    Id = story.Id,
+                    UserId = story.UserId,
+                    MediaUrl = story.MediaUrl,
+                    MediaType = story.MediaType,
+                    Description = story.Description,
+                    Message = story.Message,
+                    CreatedBy = story.CreatedBy,
+                    BrandName = brand?.NameAr,
+                    CreatedAt = story.CreatedAt,
+                    Expiration = story.Expiration,
+                    ViewCount = 0
+                };
+
+                // Send notification to all customers
+                await SendStoryNotificationToAllCustomers(brand?.NameAr, story.Description, story.Message);
+
+                return Ok(new ApiResponse<GetStoryViewModel>
+                {
+                    Success = true,
+                    Message = "Story created successfully",
+                    Data = viewModel
                 });
             }
-
-            var creationTime = DateTime.Now;
-
-            var expirationTime = creationTime.AddHours(24);
-
-            var story = new Story
+            catch (Exception ex)
             {
-                Id = Guid.NewGuid(),
-                UserId = request.UserId,
-                MediaUrl = request.MediaUrl,
-                MediaType = request.MediaType,
-                Description = request.Description,
-                Message = request.Message,
-                CreatedBy = request.CreatedBy,
-                CreatedAt = creationTime,
-                Expiration = expirationTime,
-                IsDeleted = false
-            };
-
-            _context.Stories.Add(story);
-            await _context.SaveChangesAsync();
-
-            var brand = await _context.Brands.FindAsync(request.CreatedBy);
-
-            var viewModel = new GetStoryViewModel
-            {
-                Id = story.Id,
-                UserId = story.UserId,
-                MediaUrl = story.MediaUrl,
-                MediaType = story.MediaType,
-                Description = story.Description,
-                Message = story.Message,
-                CreatedBy = story.CreatedBy,
-                BrandName = brand?.NameAr,
-                CreatedAt = story.CreatedAt,
-                Expiration = story.Expiration,
-                ViewCount = 0
-            };
-
-            return Ok(new ApiResponse<GetStoryViewModel>
-            {
-                Success = true,
-                Message = "Story created successfully",
-                Data = viewModel
-            });
+                return StatusCode(500, new ApiResponse
+                {
+                    Success = false,
+                    Message = $"An error occurred while creating the story: {ex.Message}"
+                });
+            }
         }
 
         [HttpPost("Update/{id}")]
@@ -349,6 +370,105 @@ namespace sacmy.Server.Controller
         private bool StoryExists(Guid id)
         {
             return _context.Stories.Any(e => e.Id == id && !e.IsDeleted);
+        }
+
+        private async System.Threading.Tasks.Task SendStoryNotificationToAllCustomers(string brandName, string description, string message)
+        {
+            try
+            {
+                // Get all active customers with Firebase tokens
+                var customers = await _context.Customers
+                    .Where(c => c.Active == true && !string.IsNullOrEmpty(c.FirebaseToken))
+                    .Select(c => new { Id = c.Id, FirebaseToken = c.FirebaseToken })
+                    .ToListAsync();
+
+                if (!customers.Any())
+                {
+                    // No customers to notify
+                    return;
+                }
+
+                // Prepare notification title
+                string title = string.IsNullOrEmpty(brandName)
+                    ? "New Story Available"
+                    : $"New Story from {brandName}";
+
+                // Create notification payload
+                var payload = new NotificationPayload
+                {
+                    Title = title,
+                    Body = description ?? "Check out our new story!",
+                    Type = "story",
+                    Message = message ?? "",
+                    IsEmployeeNotification = false
+                };
+
+                // Create and save notification record first
+                var notification = new Notification
+                {
+                    Id = Guid.NewGuid(),
+                    Title = title,
+                    Description = description ?? "Check out our new story!",
+                    Type = "story",
+                    Message = message ?? "",
+                    IsDeleted = false,
+                    CreatedDate = DateTime.Now,
+                };
+
+                _context.Notifications.Add(notification);
+                await _context.SaveChangesAsync();
+
+                // Create user notifications for all customers
+                var userNotifications = customers.Select(customer => new UserNotification
+                {
+                    Id = Guid.NewGuid(),
+                    NotificationId = notification.Id,
+                    CustomerId = customer.Id,
+                    Status = "unviewed",
+                    CreatedDate = DateTime.Now,
+                }).ToList();
+
+                _context.UserNotifications.AddRange(userNotifications);
+                await _context.SaveChangesAsync();
+
+                // Track successful/failed tokens for logging
+                var successfulTokens = new List<string>();
+                var failedTokens = new List<string>();
+
+                // Send to each token individually to handle tokens from different Firebase projects
+                foreach (var customer in customers)
+                {
+                    try
+                    {
+                        // Try to send notification to individual customer
+                        await _customerNotificationService.SendNotificationAsync(
+                            payload,
+                            new List<string> { customer.FirebaseToken }
+                        );
+
+                        successfulTokens.Add(customer.FirebaseToken);
+                    }
+                    catch (Exception tokenEx)
+                    {
+                        // Log the specific error for this token
+                        Console.WriteLine($"Failed to send notification to customer ID {customer.Id}: {tokenEx.Message}");
+                        failedTokens.Add(customer.FirebaseToken);
+
+                        // Continue with other tokens - don't let one failure stop the process
+                    }
+                }
+
+                // Log the summary
+                Console.WriteLine($"Story notification summary: {successfulTokens.Count} successful, {failedTokens.Count} failed");
+            }
+            catch (Exception ex)
+            {
+                // Log the general error
+                Console.WriteLine($"Failed to send story notifications: {ex.Message}");
+
+                // Optional: You may want to log the stack trace for more serious debugging
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            }
         }
     }
 }

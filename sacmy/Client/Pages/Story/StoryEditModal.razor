@@ -396,7 +396,6 @@
         if (string.IsNullOrEmpty(mediaUrl))
             return string.Empty;
 
-        // Extract just the filename from the URL for display
         try
         {
             return System.IO.Path.GetFileName(new Uri(mediaUrl).AbsolutePath);

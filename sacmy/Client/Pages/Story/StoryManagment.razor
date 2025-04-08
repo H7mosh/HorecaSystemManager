@@ -399,7 +399,6 @@
 
 
 @code {
-    // Data properties
     private List<GetStoryViewModel> Stories = new List<GetStoryViewModel>();
     private List<GetStoryViewModel> FilteredStories = new List<GetStoryViewModel>();
     private List<BrandViewModel> Brands = new List<BrandViewModel>();
@@ -489,7 +488,6 @@
     {
         FilteredStories = Stories;
 
-        // Apply search filter
         if (!string.IsNullOrWhiteSpace(SearchQuery))
         {
             FilteredStories = FilteredStories
@@ -588,6 +586,7 @@
             UserId = UserGlobal.User.Id,
             Description = "product",
             CreatedBy = Guid.Empty
+            
         };
 
         SelectedProduct = null;
@@ -619,12 +618,12 @@
         IsEditModalVisible = true;
 
         // Load the product information if available
-        if (!string.IsNullOrEmpty(story.Message) && story.Message.Contains("SKU:"))
-        {
-            var sku = story.Message.Split("SKU:")[1].Trim().Split(' ')[0];
-            ProductSkuSearchText = sku;
-            SearchProductBySku();
-        }
+        // if (!string.IsNullOrEmpty(story.Message) && story.Message.Contains("SKU:"))
+        // {
+        //     var sku = story;
+        //     ProductSkuSearchText = sku;
+        //     SearchProductBySku();
+        // }
     }
 
     private void CloseEditModal()
@@ -678,7 +677,7 @@
 
                 if (SelectedProduct != null)
                 {
-                    StoryToEdit.Message = $"Check out our product: {SelectedProduct.Name}\nSKU: {SelectedProduct.Sku}";
+                    StoryToEdit.Message =SelectedProduct.Id;
                 }
             }
             else
