@@ -127,6 +127,11 @@
                             <button class="btn action-btn" @onclick="() => OnToggleExpand(product.Id)" title="Quick Edit">
                                 <i class="bi @(IsProductExpanded(product.Id) ? "bi-chevron-up" : "bi-chevron-down")"></i>
                             </button>
+                            <button class="btn btn-outline-info btn-sm rounded-circle"
+                                    title="Notify Customers"
+                                    @onclick="() => OnNotifyCustomersCallback.InvokeAsync(product.Id)">
+                                <i class="bi bi-bell"></i>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -583,6 +588,9 @@
 
     [Parameter]
     public EventCallback<int> OnPageChangedCallback { get; set; }
+
+    [Parameter] 
+    public EventCallback<string> OnNotifyCustomersCallback { get; set; }
 
     // Track image loading state
     private Dictionary<string, bool> imageLoadStatus = new Dictionary<string, bool>();

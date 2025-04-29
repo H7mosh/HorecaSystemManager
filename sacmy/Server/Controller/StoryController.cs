@@ -147,7 +147,7 @@ namespace sacmy.Server.Controller
                     UserId = story.UserId,
                     MediaUrl = story.MediaUrl,
                     MediaType = story.MediaType,
-                    Description = story.Description,
+                    Description = story.Description,    
                     Message = story.Message,
                     CreatedBy = story.CreatedBy,
                     BrandName = brand?.NameAr,

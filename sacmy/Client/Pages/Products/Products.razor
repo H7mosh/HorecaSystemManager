@@ -7,6 +7,7 @@
 @using sacmy.Shared.ViewModels.BrandViewModel
 @using sacmy.Shared.ViewModels.CustomerViewModel
 @using sacmy.Shared.ViewModels.LowStockViewModels
+@using sacmy.Shared.ViewModels.Notification
 @using sacmy.Shared.ViewModels.Products
 @using sacmy.Client.Pages.Components
 @using sacmy.Client.Components.Dialogs
@@ -17,6 +18,8 @@
 @inject IJSRuntime JS
 @inject UserGlobalClass UserGlobal
 @inject ToastService ToastService
+@inject NotificationClientService NotificationService
+@inject CustomerService CustomerService
 
 
 
@@ -29,8 +32,8 @@
             <div class="d-flex align-items-center gap-3">
                 <div class="brand-select-container">
                     <select class="form-select bg-white border-0 shadow-sm rounded-pill"
-                            @bind="selectedBrandId"
-                            @oninput="OnBrandSelected">
+                    @bind="selectedBrandId"
+                    @oninput="OnBrandSelected">
                         <option value="">All Brands</option>
                         @if (brands != null)
                         {
@@ -43,7 +46,7 @@
                     <i class="bi bi-building position-absolute text-primary"></i>
                 </div>
                 <button class="btn btn-primary btn-sm rounded-pill shadow-sm"
-                        @onclick="ShowAddBrandDialog">
+                @onclick="ShowAddBrandDialog">
                     <i class="bi bi-plus-lg me-1"></i>
                     <span>Add Brand</span>
                 </button>
@@ -56,16 +59,16 @@
             <div class="card border-0 shadow-sm mb-4">
                 <div class="card-body">
                     <ProductFilters SearchString="@searchString"
-                                    SelectedCategory="@SelectedCategory"
-                                    ShowOnlyInStock="@showOnlyInStock"
-                                    IsResettingCache="@isResettingCache"
-                                    Categories="@brandResponse?.Data?.Categories"
-                                    SearchStringChanged="value => { searchString = value; ApplyFilters(); }"
-                                    SelectedCategoryChanged="value => { SelectedCategory = value; ApplyFilters(); }"
-                                    ShowOnlyInStockChanged="value => { showOnlyInStock = value; ApplyFilters(); }"
-                                    OnFilterChangeCallback="ApplyFilters"
-                                    OnGeneratePdfCallback="GeneratePDF"
-                                    OnResetCacheCallback="ResetCache" />
+                    SelectedCategory="@SelectedCategory"
+                    ShowOnlyInStock="@showOnlyInStock"
+                    IsResettingCache="@isResettingCache"
+                    Categories="@brandResponse?.Data?.Categories"
+                    SearchStringChanged="value => { searchString = value; ApplyFilters(); }"
+                    SelectedCategoryChanged="value => { SelectedCategory = value; ApplyFilters(); }"
+                    ShowOnlyInStockChanged="value => { showOnlyInStock = value; ApplyFilters(); }"
+                    OnFilterChangeCallback="ApplyFilters"
+                    OnGeneratePdfCallback="GeneratePDF"
+                    OnResetCacheCallback="ResetCache" />
                 </div>
             </div>
 
@@ -81,7 +84,7 @@
                                 </div>
                                 <span class="fw-medium text-dark">Products selected</span>
                                 <button class="btn btn-link text-decoration-none p-0 ms-3"
-                                        @onclick="() => { selectedProductIds.Clear(); StateHasChanged(); }">
+                                @onclick="() => { selectedProductIds.Clear(); StateHasChanged(); }">
                                     Clear selection
                                 </button>
                             </div>
@@ -113,24 +116,25 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-body p-0">
                         <ProductListView Products="@PaginatedProducts"
-                                         AllProductsSelected="@AllProductsSelected"
-                                         SelectedProductIds="@selectedProductIds"
-                                         ExpandedProductIds="@expandedProductIds"
-                                         CurrentPage="@CurrentPage"
-                                         PageSize="@PageSize"
-                                         TotalItems="@(FilteredProducts?.Count() ?? 0)"
-                                         IsUpdating="@isUpdating"
-                                         Categories="@brandResponse?.Data?.Categories"
-                                         AllProductsSelectedChanged="value => { AllProductsSelected = value; }"
-                                         OnProductSelectCallback="SelectProduct"
-                                         OnProductSelectionToggleCallback="ToggleProductSelection"
-                                         OnToggleExpandCallback="ToggleProductExpand"
-                                         OnShowNotesCallback="ShowAllNotes"
-                                         OnAddNoteCallback="ShowAddNoteDialog"
-                                         OnMonitorProductCallback="ShowMonitorDialog"
-                                         OnAdvancedEditCallback="ShowAdvancedEdit"
-                                         OnSaveChangesCallback="SaveChanges"
-                                         OnPageChangedCallback="NavigateToPage" />
+                        AllProductsSelected="@AllProductsSelected"
+                        SelectedProductIds="@selectedProductIds"
+                        ExpandedProductIds="@expandedProductIds"
+                        CurrentPage="@CurrentPage"
+                        PageSize="@PageSize"
+                        TotalItems="@(FilteredProducts?.Count() ?? 0)"
+                        IsUpdating="@isUpdating"
+                        Categories="@brandResponse?.Data?.Categories"
+                        AllProductsSelectedChanged="value => { AllProductsSelected = value; }"
+                        OnProductSelectCallback="SelectProduct"
+                        OnProductSelectionToggleCallback="ToggleProductSelection"
+                        OnToggleExpandCallback="ToggleProductExpand"
+                        OnShowNotesCallback="ShowAllNotes"
+                        OnAddNoteCallback="ShowAddNoteDialog"
+                        OnMonitorProductCallback="ShowMonitorDialog"
+                        OnAdvancedEditCallback="ShowAdvancedEdit"
+                        OnSaveChangesCallback="SaveChanges"
+                        OnPageChangedCallback="NavigateToPage"
+                        OnNotifyCustomersCallback="ShowProductNotificationDialog" />
                     </div>
                 </div>
             }
@@ -203,20 +207,20 @@
                                         <div class="input-group">
                                             <span class="input-group-text border-0 bg-light">From</span>
                                             <input type="number"
-                                                   class="form-control border-0 shadow-sm"
-                                                   id="rangeFrom"
-                                                   min="1"
-                                                   value="1">
+                                            class="form-control border-0 shadow-sm"
+                                            id="rangeFrom"
+                                            min="1"
+                                            value="1">
                                         </div>
                                     </div>
                                     <div class="col">
                                         <div class="input-group">
                                             <span class="input-group-text border-0 bg-light">To</span>
                                             <input type="number"
-                                                   class="form-control border-0 shadow-sm"
-                                                   id="rangeTo"
-                                                   min="1"
-                                                   value="999">
+                                            class="form-control border-0 shadow-sm"
+                                            id="rangeTo"
+                                            min="1"
+                                            value="999">
                                         </div>
                                     </div>
                                 </div>
@@ -238,12 +242,12 @@
                                 <div class="input-group" style="max-width: 200px;">
                                     <span class="input-group-text border-0 bg-light">$</span>
                                     <input type="number"
-                                           class="form-control border-0 shadow-sm"
-                                           id="priceIncrease"
-                                           step="0.01"
-                                           min="0"
-                                           value="0.00"
-                                           placeholder="0.00">
+                                    class="form-control border-0 shadow-sm"
+                                    id="priceIncrease"
+                                    step="0.01"
+                                    min="0"
+                                    value="0.00"
+                                    placeholder="0.00">
                                 </div>
                             </div>
 
@@ -263,11 +267,11 @@
 
                             <div class="progress mb-3" style="height: 8px;">
                                 <div class="progress-bar bg-primary"
-                                     role="progressbar"
-                                     style="width: 0%"
-                                     aria-valuenow="0"
-                                     aria-valuemin="0"
-                                     aria-valuemax="100">
+                                role="progressbar"
+                                style="width: 0%"
+                                aria-valuenow="0"
+                                aria-valuemin="0"
+                                aria-valuemax="100">
                                 </div>
                             </div>
 
@@ -284,176 +288,245 @@
 
     <!-- Other Modals/Dialogs -->
     <StickyNoteDetailsDialog IsVisible="@showNoteDialog"
-                             Note="@selectedNote"
-                             OnClose="@CloseNoteDialog" />
+    Note="@selectedNote"
+    OnClose="@CloseNoteDialog" />
 
     <AddStickyNoteDialog IsVisible="@showAddDialog"
-                         ProductId="@selectedProductId"
-                         OnClose="@CloseAddDialog"
-                         OnNoteSaved="@AddNote" />
+    ProductId="@selectedProductId"
+    OnClose="@CloseAddDialog"
+    OnNoteSaved="@AddNote" />
 
     <AllNotesDialog IsVisible="@showAllNotesDialog"
-                    ProductId="@selectedProductForNotes"
-                    Notes="@currentProductNotes"
-                    OnClose="@CloseAllNotesDialog"
-                    OnNoteSaved="@AddNoteFromTimeline" />
+    ProductId="@selectedProductForNotes"
+    Notes="@currentProductNotes"
+    OnClose="@CloseAllNotesDialog"
+    OnNoteSaved="@AddNoteFromTimeline" />
 
     <StockMonitorDialog IsVisible="@showMonitorDialog"
-                        Model="@monitorModel"
-                        OnClose="@CloseMonitorDialog"
-                        OnSave="@SaveMonitoring" />
+    Model="@monitorModel"
+    OnClose="@CloseMonitorDialog"
+    OnSave="@SaveMonitoring" />
 
     <AddBrandDialog IsVisible="@showAddBrandDialog"
-                    Brand="@newBrand"
-                    Error="@brandError"
-                    IsCreating="@isCreatingBrand"
-                    OnClose="@CloseAddBrandDialog"
-                    OnSave="@CreateBrand" />
+    Brand="@newBrand"
+    Error="@brandError"
+    IsCreating="@isCreatingBrand"
+    OnClose="@CloseAddBrandDialog"
+    OnSave="@CreateBrand" />
 
     <AdvancedEditDialog Product="@selectedProduct"
-                        IsVisible="@showAdvancedEdit"
-                        IsVisibleChanged="(value) => showAdvancedEdit = value"
-                        OnSaved="@HandleAdvancedEditSaved"
-                        Categories="@brandResponse?.Data?.Categories"
-                        Collections="@brandResponse?.Data?.Collections"
-                        Brands="@brands" />
+    IsVisible="@showAdvancedEdit"
+    IsVisibleChanged="(value) => showAdvancedEdit = value"
+    OnSaved="@HandleAdvancedEditSaved"
+    Categories="@brandResponse?.Data?.Categories"
+    Collections="@brandResponse?.Data?.Collections"
+    Brands="@brands" />
 
     <CustomizePriceDialog IsVisible="@showCustomizePriceDialog"
-                          SelectedCount="@selectedProductIds.Count"
-                          SelectedProductIds="@selectedProductIds.ToList()"
-                          OnClose="CloseCustomizePriceDialog"
-                          OnApplyCustomPrice="ApplyCustomPrice" />
+    SelectedCount="@selectedProductIds.Count"
+    SelectedProductIds="@selectedProductIds.ToList()"
+    OnClose="CloseCustomizePriceDialog"
+    OnApplyCustomPrice="ApplyCustomPrice" />
+
+    <!-- Notification Dialog -->
+    <div class="modal fade @(showNotificationDialog ? "show" : "")" id="notificationModal" tabindex="-1" role="dialog"
+    style="display: @(showNotificationDialog ? "block" : "none")">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title fw-bold">
+                        <i class="bi bi-bell me-2 text-info"></i>Send Product Notification
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseNotificationDialog"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label for="notificationTitle" class="form-label fw-medium">Title</label>
+                        <input type="text" class="form-control shadow-sm border-0"
+                        id="notificationTitle" @bind="notificationTitle"
+                        placeholder="Enter notification title" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="notificationMessage" class="form-label fw-medium">Message</label>
+                        <textarea class="form-control shadow-sm border-0" rows="3"
+                        id="notificationMessage" @bind="notificationMessage"
+                        placeholder="Enter notification message"></textarea>
+                    </div>
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="scheduleNotification"
+                        @bind="scheduleNotification">
+                        <label class="form-check-label" for="scheduleNotification">
+                            Schedule for later
+                        </label>
+                    </div>
+                    @if (scheduleNotification)
+                    {
+                        <div class="mb-3">
+                            <label for="scheduleDateTime" class="form-label fw-medium">Schedule Date/Time</label>
+                            <input type="datetime-local" class="form-control shadow-sm border-0"
+                            id="scheduleDateTime" @bind="scheduleDateTime" />
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light rounded-pill" @onclick="CloseNotificationDialog">
+                        Cancel
+                    </button>
+                    <button type="button" class="btn btn-primary rounded-pill"
+                    @onclick="SendNotificationToAllCustomers"
+                    disabled="@isSendingNotification">
+                        @if (isSendingNotification)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+                            <span>Sending...</span>
+                        }
+                        else
+                        {
+                            <i class="bi bi-send me-1"></i>
+                            <span>Send Notification</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal backdrop -->
+    @if (showNotificationDialog)
+    {
+        <div class="modal-backdrop fade show"></div>
+    }
 </div>
 
 <style>
 
     :root {
-        --primary-color: #0D6EFD;
-        --primary-light: #E6F0FF;
-        --success-color: #10B981;
-        --success-light: #ECFDF5;
-        --danger-color: #EF4444;
-        --danger-light: #FEE2E2;
-        --warning-color: #F59E0B;
-        --warning-light: #FEF3C7;
-        --gray-100: #F3F4F6;
-        --gray-200: #E5E7EB;
-        --gray-300: #D1D5DB;
-        --gray-400: #9CA3AF;
-        --gray-500: #6B7280;
-        --gray-700: #374151;
-        --gray-800: #1F2937;
-        --gray-900: #111827;
-        --border-radius: 0.5rem;
-        --border-radius-lg: 0.75rem;
-        --border-radius-sm: 0.25rem;
-        --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-        --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
-        --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025);
-        --transition: all 0.2s ease;
+    --primary-color: #0D6EFD;
+    --primary-light: #E6F0FF;
+    --success-color: #10B981;
+    --success-light: #ECFDF5;
+    --danger-color: #EF4444;
+    --danger-light: #FEE2E2;
+    --warning-color: #F59E0B;
+    --warning-light: #FEF3C7;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --border-radius: 0.5rem;
+    --border-radius-lg: 0.75rem;
+    --border-radius-sm: 0.25rem;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -2px rgba(0,0,0,0.025);
+    --transition: all 0.2s ease;
     }
 
     .brand-select-container {
-        position: relative;
-        width: 220px;
+    position: relative;
+    width: 220px;
     }
 
     .brand-select-container select {
-        padding-left: 2.5rem;
-        height: 42px;
-        font-weight: 500;
+    padding-left: 2.5rem;
+    height: 42px;
+    font-weight: 500;
     }
 
     .brand-select-container i {
-        position: absolute;
-        left: 1rem;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 1.1rem;
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.1rem;
     }
 
     .selection-toolbar {
-        animation: fadeIn 0.3s ease-in-out;
-        background-color: var(--primary-light);
-        border-left: 4px solid var(--primary-color) !important;
+    animation: fadeIn 0.3s ease-in-out;
+    background-color: var(--primary-light);
+    border-left: 4px solid var(--primary-color) !important;
     }
 
     .selection-badge {
-        background-color: var(--primary-color);
-        color: white;
-        padding: 0.25rem 0.75rem;
-        font-weight: 600;
-        font-size: 0.875rem;
+    background-color: var(--primary-color);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.875rem;
     }
 
     .loading-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
     }
 
     .spinner-container {
-        text-align: center;
+    text-align: center;
     }
 
     .empty-state-container {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
     }
 
     .empty-state {
-        text-align: center;
-        padding: 3rem;
-        background-color: var(--gray-100);
-        border-radius: var(--border-radius);
-        max-width: 400px;
+    text-align: center;
+    padding: 3rem;
+    background-color: var(--gray-100);
+    border-radius: var(--border-radius);
+    max-width: 400px;
     }
 
     .empty-state i {
-        font-size: 3rem;
-        color: var(--gray-400);
-        margin-bottom: 1rem;
+    font-size: 3rem;
+    color: var(--gray-400);
+    margin-bottom: 1rem;
     }
 
     .empty-state h5 {
-        margin-bottom: 0.5rem;
-        font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
     }
 
     .icon-container {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 64px;
-        height: 64px;
-        margin: 0 auto;
-        border-radius: 50%;
-        background-color: var(--primary-light);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background-color: var(--primary-light);
     }
 
     .icon-container i {
-        font-size: 1.75rem;
-        color: var(--primary-color);
+    font-size: 1.75rem;
+    color: var(--primary-color);
     }
 
     .options-section {
-        background-color: white;
-        border-radius: var(--border-radius);
-        padding: 1rem;
+    background-color: white;
+    border-radius: var(--border-radius);
+    padding: 1rem;
     }
 
     @@keyframes fadeIn {
-        from {
-        opacity: 0;
-        transform: translateY(-10px);
+    from {
+    opacity: 0;
+    transform: translateY(-10px);
     }
 
     to {
-        opacity: 1;
-        transform: translateY(0);
+    opacity: 1;
+    transform: translateY(0);
     }
 
     }
@@ -496,9 +569,14 @@
     private BrandViewModel newBrand = new();
     private bool isResettingCache = false;
     private bool showCustomizePriceDialog = false;
-
-    // Selection properties
     private HashSet<string> selectedProductIds = new HashSet<string>();
+    private bool showNotificationDialog = false;
+    private string notificationTitle = "";
+    private string notificationMessage = "";
+    private bool scheduleNotification = false;
+    private DateTime scheduleDateTime = DateTime.Now.AddHours(1);
+    private bool isSendingNotification = false;
+    private string selectedProductIdForNotification;
     private bool AllProductsSelected
     {
         get => FilteredProducts.Any() && selectedProductIds.Count == FilteredProducts.Count();
@@ -1028,6 +1106,108 @@
         catch (Exception ex)
         {
             ToastService.ShowToast($"Error applying custom prices: {ex.Message}", "error");
+        }
+    }
+
+    private void ShowProductNotificationDialog(string productId)
+    {
+        var product = FilteredProducts.FirstOrDefault(p => p.Id == productId);
+        if (product != null)
+        {
+            selectedProductIdForNotification = productId;
+            notificationTitle = $"New update for {product.Name}";
+            notificationMessage = "";
+            scheduleNotification = false;
+            scheduleDateTime = DateTime.Now.AddHours(1);
+            showNotificationDialog = true;
+            StateHasChanged();
+        }
+    }
+
+    // Add this method to close the notification dialog
+    private void CloseNotificationDialog()
+    {
+        showNotificationDialog = false;
+        StateHasChanged();
+    }
+
+    // Add this method to send the notification
+    private async Task SendNotificationToAllCustomers()
+    {
+        if (string.IsNullOrWhiteSpace(notificationTitle) || string.IsNullOrWhiteSpace(notificationMessage))
+        {
+            ToastService.ShowToast("Please enter both title and message", "warning");
+            return;
+        }
+        try
+        {
+            isSendingNotification = true;
+            StateHasChanged();
+
+            // Get all customer Firebase tokens
+            var customersResponse = await CustomerService.GetCustomersAsync(1, 10000); 
+            List<CustomerViewModel> customers = new List<CustomerViewModel>();
+
+            if (customersResponse.Success && customersResponse.Data != null)
+            {
+                // Filter customers with non-null Firebase tokens
+                customers = customersResponse.Data
+                    .Where(c => !string.IsNullOrEmpty(c.FirebaseToken))
+                    .ToList();
+            }
+
+            if (customers.Count == 0)
+            {
+                ToastService.ShowToast("No customers with valid Firebase tokens found", "warning");
+                return;
+            }
+
+            if (scheduleNotification)
+            {
+                // Create scheduled notification request
+                var scheduledRequest = new ScheduledNotificationRequestViewModel
+                    {
+                        Title = notificationTitle,
+                        Body = notificationMessage,
+                        FirebaseTokens = customers.Select(token => token.FirebaseToken).ToList(),
+                        employeeNotification = false,
+                        ScheduleTime = scheduleDateTime,
+                    };
+
+                await NotificationService.ScheduleNotificationAsync(scheduledRequest);
+                ToastService.ShowToast($"Notification scheduled for {scheduleDateTime:g} to {customers.Count} customers", "success");
+            }
+            else
+            {
+                // Create immediate notification request
+                var request = new NotificationRequest
+                    {
+                        Title = notificationTitle,
+                        Message = notificationMessage,
+                        Description = notificationMessage,
+                        Type = "ProductNotification",
+                        UserIdAndTokenList = customers.Select(token => new UserIdAndToken
+                        {
+                            Id = token.Id.ToString(),
+                            FirebaseToken = token.FirebaseToken
+                        }).ToList(),
+                        ScheduleTime = null
+                    };
+
+                await NotificationService.SendNotificationAsync(request);
+                ToastService.ShowToast($"Notification sent to {customers.Count} customers successfully", "success");
+            }
+
+            CloseNotificationDialog();
+        }
+        catch (Exception ex)
+        {
+            ToastService.ShowToast($"Error sending notification: {ex.Message}", "danger");
+        }
+        finally
+        {
+            isSendingNotification = false;
+            StateHasChanged();
         }
     }
 }

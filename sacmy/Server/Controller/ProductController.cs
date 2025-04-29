@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using OfficeOpenXml;
 using sacmy.Server.DatabaseContext;
 using sacmy.Server.Models;
 using sacmy.Server.Service;
@@ -716,6 +717,99 @@ namespace sacmy.Server.Controller
                 });
             }
         }
+
+        [HttpPost("ImportFromExcelFile")]
+        public async Task<IActionResult> ImportFromExcelFile()
+        {
+            var products = new List<sacmy.Server.Models.Product>();
+            var skippedDuplicates = new List<string>();
+
+            try
+            {
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "assets", "nude.xlsx");
+
+                if (!System.IO.File.Exists(filePath))
+                    return BadRequest("Excel file not found at: " + filePath);
+
+                using var package = new ExcelPackage(new FileInfo(filePath));
+                var worksheet = package.Workbook.Worksheets[0];
+                int rowCount = worksheet.Dimension.Rows;
+
+                // Fetch existing SKUs once to avoid querying in the loop
+                var existingSkus = _context.Products
+                    .Select(p => p.Sku.ToLower().Trim())
+                    .ToHashSet();
+
+                for (int row = 2; row <= rowCount; row++) // Skip header
+                {
+                    var brandIdStr = worksheet.Cells[row, 1].Text.Trim();
+                    var materialIdStr = worksheet.Cells[row, 2].Text.Trim();
+                    var patternNumber = worksheet.Cells[row, 3].Text.Trim();
+                    var sku = worksheet.Cells[row, 4].Text.Trim();
+                    var name = worksheet.Cells[row, 5].Text.Trim();
+                    var description = worksheet.Cells[row, 6].Text.Trim();
+
+                    if (!Guid.TryParse(brandIdStr, out var brandId) ||
+                        string.IsNullOrWhiteSpace(sku) ||
+                        string.IsNullOrWhiteSpace(name))
+                    {
+                        continue; // Skip invalid row
+                    }
+
+                    if (existingSkus.Contains(sku.ToLower()))
+                    {
+                        skippedDuplicates.Add(sku);
+                        continue; // Skip duplicate
+                    }
+
+                    var product = new sacmy.Server.Models.Product
+                    {
+                        Id = Guid.NewGuid(),
+                        BrandId = brandId,
+                        MaterialId = Guid.Parse("D492B410-04A6-414E-89F3-4874F09EAB34"),
+                        PatternNumber = patternNumber,
+                        Sku = sku,
+                        Name = name,
+                        Decription = description,
+                        Weight = TryParseDouble(worksheet.Cells[row, 7].Text),
+                        Price = TryParseDouble(worksheet.Cells[row, 8].Text) ?? 0,
+                        Quantity = TryParseInt(worksheet.Cells[row, 9].Text),
+                        InnerTypeCount = TryParseInt(worksheet.Cells[row, 13].Text) ?? 0,
+                        OuterTypeCount = TryParseInt(worksheet.Cells[row, 14].Text) ?? 0,
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    products.Add(product);
+                }
+
+                _context.Products.AddRange(products);
+                await _context.SaveChangesAsync();
+
+                return Ok(new ApiResponse
+                {
+                    Success = true,
+                    Message = $"{products.Count} products imported successfully. {skippedDuplicates.Count} duplicates were skipped.",
+                    Data = skippedDuplicates // Optional: return skipped SKUs for review
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Import failed: {ex.Message}");
+                return StatusCode(500, $"An error occurred: {ex.Message}");
+            }
+        }
+
+        private int? TryParseInt(string input)
+        {
+            return int.TryParse(input, out var result) ? result : null;
+        }
+
+        private double? TryParseDouble(string input)
+        {
+            return double.TryParse(input, out var result) ? result : null;
+        }
+
+
     }
 
 }
