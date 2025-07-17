@@ -408,7 +408,7 @@
                             </td>
 
                             <td @onclick="() => OpenOrderDetails(order.OrderId, order.CustomerId, order.CostumerFirebaseToken)">
-                                @order.CreatedDate.ToString("MM/dd/yyyy HH:mm")
+                                @order.CreatedDate.ToString("dd MM yyyy - hh : mm", CultureInfo.InvariantCulture)
                             </td>
 
                             @if (selectedStageId == Guid.Parse("3EA54A69-1168-4641-B8CE-AC6E40D0556D")) // order loaded into vehicle

@@ -491,7 +491,7 @@
                                 doc.setFontSize(11);
                                 doc.setFont(undefined, 'bold');
                                 doc.setTextColor(0, 96, 57);  // Same green as header
-                                //const adjustedPrice = (parseFloat(product.price) + priceAdjustment).toFixed(2);
+                                const adjustedPrice = (parseFloat(product.price) + priceAdjustment).toFixed(2);
                                 doc.text(`$${adjustedPrice}`, textX, y + 34);
                                 doc.setTextColor(0, 0, 0);
                             }

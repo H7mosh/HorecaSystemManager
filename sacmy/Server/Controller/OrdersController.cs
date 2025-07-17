@@ -95,11 +95,16 @@ namespace sacmy.Server.Controller
                     query = query.Where(ot => ot.Order.CreatedDate <= filter.EndDate.Value.Date);
                 }
 
+                // Order by creation date (newest first) - ADD THIS LINE
+                query = query.OrderByDescending(ot => ot.Order.CreatedDate);
+
                 // Get total count for pagination
                 var totalCount = await query.CountAsync();
 
                 // Apply pagination and fetch data
                 var ordersData = await query
+                    .Skip((filter.PageNumber - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
                     .Select(ot => new OrderViewModel
                     {
                         OrderId = ot.Order.OrderId,
@@ -119,7 +124,7 @@ namespace sacmy.Server.Controller
                                 CustomerId = ot.Order.CustomerId.ToString(),
                                 CustomerFirebaseToken = ot.Order.Customer.FirebaseToken,
                                 CustomerAddress = oti.BuyFatora.Address,
-                                
+
                                 Date = oti.BuyFatora.Date,
                                 Payed = oti.BuyFatora.Payed,
                                 Remaing = oti.BuyFatora.Remaing,
@@ -135,7 +140,6 @@ namespace sacmy.Server.Controller
                     .Where(n => n.TableName == "Orders")
                     .OrderByDescending(n => n.CreatedDate)
                     .ToListAsync();
-
 
                 var orderIdStrings = ordersData.Select(o => o.OrderId.ToString()).ToList();
                 var stickyNotes = allOrderStickyNotes
