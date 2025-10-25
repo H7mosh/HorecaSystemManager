@@ -18,7 +18,7 @@ namespace sacmy.Shared.ViewModels.OrdersViewModel
         public int OrderId { get; set; }
         public string Sku { get; set; }
         public double? Qtty { get; set; }
-        public string Item { get; set; }
+        public string? Item { get; set; }
         public decimal? Price { get; set; }
     }
 
