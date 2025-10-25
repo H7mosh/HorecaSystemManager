@@ -104,9 +104,9 @@
                                         <div class="mb-3">
                                             <label for="constProfit" class="form-label">Static Profit Value</label>
                                             <InputNumber id="constProfit" class="@GetFieldClass(isPlusOneChecked)" 
-                                                        @bind-Value="customerModel.ConstProfit" 
+                                                        @bind-Value="customerModel.Profit" 
                                                         disabled="@(!isPlusOneChecked)" />
-                                            <ValidationMessage For="@(() => customerModel.ConstProfit)" />
+                                            <ValidationMessage For="@(() => customerModel.Profit)" />
                                             <small class="text-muted">Enter a fixed amount (e.g., 1, 2, 3, 0.5)</small>
                                         </div>
                                         
@@ -187,9 +187,9 @@
         if (isPlusOneChecked)
         {
             // If switching to static profit, initialize constant profit if needed
-            if (!customerModel.ConstProfit.HasValue)
+            if (!customerModel.Profit.HasValue)
             {
-                customerModel.ConstProfit = 0;
+                customerModel.Profit = 0;
             }
             
             // Keep the percentage values but they won't be used
@@ -245,7 +245,7 @@
                 UserName = Customer.UserName,
                 Password = Customer.Password,
                 IsPlusOneChecked = Customer.IsPlusOneChecked,
-                ConstProfit = Customer.ConstProfit,
+                Profit = Customer.Profit,
                 ProfitPercentage = Customer.ProfitPercentage,
                 ExtraProfitPercentage = Customer.ExtraProfitPercentage,
                 DeviceId = Customer.DeviceId,
@@ -265,7 +265,7 @@
                 IsPlusOneChecked = false,
                 ProfitPercentage = 0,
                 ExtraProfitPercentage = 0,
-                ConstProfit = 0
+                Profit = 0
             };
 
             activeValue = true;
@@ -292,7 +292,7 @@
             else
             {
                 // Server will ignore this, but we'll still send null to be clear
-                customerModel.ConstProfit = null;
+                customerModel.Profit = null;
             }
 
             ApiResponse<CustomerViewModel> response;

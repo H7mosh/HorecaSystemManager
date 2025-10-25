@@ -30,7 +30,7 @@ namespace sacmy.Shared.ViewModels.CustomerViewModel
 
         public bool? IsPlusOneChecked { get; set; }
 
-        public double? ConstProfit { get; set; }
+        public double? Profit { get; set; }
 
         public double? ProfitPercentage { get; set; }
 

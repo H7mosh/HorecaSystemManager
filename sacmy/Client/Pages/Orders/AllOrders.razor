@@ -342,6 +342,7 @@
                                             <i class="bi @(expandedOrders.Contains(order.OrderId) ? "bi-chevron-down" : "bi-chevron-right")"></i>
                                         </button>
                                     }
+                                
                                 </td>
                             }
 
@@ -405,6 +406,7 @@
                                         <i class="bi bi-plus-lg"></i>
                                     </div>
                                 }
+                            
                             </td>
 
                             <td @onclick="() => OpenOrderDetails(order.OrderId, order.CustomerId, order.CostumerFirebaseToken)">

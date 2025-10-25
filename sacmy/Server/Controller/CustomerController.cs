@@ -51,7 +51,7 @@ namespace sacmy.Server.Controller
                 CostType = e.CostType,
                 UserName = e.UserAcc,
                 Password = e.Password,
-                ConstProfit = e.PlusOne,
+                Profit = e.PlusOne,
                 ProfitPercentage = e.Nsba,
                 ExtraProfitPercentage = e.OtherNsba,
                 DeviceId = e.DeviceId,
@@ -71,7 +71,7 @@ namespace sacmy.Server.Controller
                 if (customerViewModel.IsPlusOneChecked.GetValueOrDefault())
                 {
                     // If PlusOne is checked, ensure PlusOne has a value and reset percentages
-                    if (!customerViewModel.ConstProfit.HasValue)
+                    if (!customerViewModel.Profit.HasValue)
                     {
                         return BadRequest(new ApiResponse<CustomerViewModel>
                         {
@@ -88,7 +88,7 @@ namespace sacmy.Server.Controller
                 else
                 {
                     // If using percentages, clear PlusOne
-                    customerViewModel.ConstProfit = null;
+                    customerViewModel.Profit = null;
 
                     // Ensure at least one percentage value is specified
                     if ((!customerViewModel.ProfitPercentage.HasValue || customerViewModel.ProfitPercentage.Value == 0) &&
@@ -110,7 +110,7 @@ namespace sacmy.Server.Controller
                     UserAcc = customerViewModel.UserName,
                     Password = customerViewModel.Password,
                     IsPlusOneChecked = customerViewModel.IsPlusOneChecked,
-                    PlusOne = customerViewModel.ConstProfit,
+                    PlusOne = customerViewModel.Profit,
                     Nsba = customerViewModel.ProfitPercentage,
                     OtherNsba = customerViewModel.ExtraProfitPercentage,
                     DeviceId = customerViewModel.DeviceId,
@@ -205,7 +205,7 @@ namespace sacmy.Server.Controller
                 CostType = e.CostType,
                 UserName = e.UserAcc,
                 Password = e.Password,
-                ConstProfit = e.PlusOne,
+                Profit = e.PlusOne,
                 ProfitPercentage = e.Nsba,
                 ExtraProfitPercentage = e.OtherNsba,
                 DeviceId = e.DeviceId,
@@ -371,7 +371,7 @@ namespace sacmy.Server.Controller
                     CostType = e.CostType,
                     UserName = e.UserAcc,
                     Password = e.Password,
-                    ConstProfit = e.PlusOne,
+                    Profit = e.PlusOne,
                     ProfitPercentage = e.Nsba,
                     ExtraProfitPercentage = e.OtherNsba,
                     DeviceId = e.DeviceId,
@@ -482,7 +482,7 @@ namespace sacmy.Server.Controller
                 if (customerViewModel.IsPlusOneChecked.GetValueOrDefault())
                 {
                     // If PlusOne is checked, ensure PlusOne has a value and reset percentages
-                    if (!customerViewModel.ConstProfit.HasValue)
+                    if (!customerViewModel.Profit.HasValue)
                     {
                         return BadRequest(new ApiResponse<CustomerViewModel>
                         {
@@ -499,7 +499,7 @@ namespace sacmy.Server.Controller
                 else
                 {
                     // If using percentages, clear PlusOne
-                    customerViewModel.ConstProfit = null;
+                    customerViewModel.Profit = null;
 
                     // Ensure at least one percentage value is specified
                     if ((!customerViewModel.ProfitPercentage.HasValue || customerViewModel.ProfitPercentage.Value == 0) &&
@@ -519,7 +519,7 @@ namespace sacmy.Server.Controller
                 customer.UserAcc = customerViewModel.UserName;
                 customer.Password = customerViewModel.Password;
                 customer.IsPlusOneChecked = customerViewModel.IsPlusOneChecked;
-                customer.PlusOne = customerViewModel.ConstProfit;
+                customer.PlusOne = customerViewModel.Profit;
                 customer.Nsba = customerViewModel.ProfitPercentage;
                 customer.OtherNsba = customerViewModel.ExtraProfitPercentage;
                 customer.DeviceId = customerViewModel.DeviceId;

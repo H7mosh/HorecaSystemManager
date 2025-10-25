@@ -9,6 +9,7 @@ using sacmy.Shared.ViewModels.EmployeeViewModel;
 using sacmy.Shared.ViewModels.InvoiceViewModel;
 using sacmy.Shared.ViewModels.OrdersViewModel;
 using sacmy.Shared.ViewModels.StickNoteViewModel;
+using System.Globalization;
 
 namespace sacmy.Server.Controller
 {
@@ -95,11 +96,16 @@ namespace sacmy.Server.Controller
                     query = query.Where(ot => ot.Order.CreatedDate <= filter.EndDate.Value.Date);
                 }
 
+                // Order by creation date (newest first) - ADD THIS LINE
+                query = query.OrderByDescending(ot => ot.Order.CreatedDate);
+
                 // Get total count for pagination
                 var totalCount = await query.CountAsync();
 
                 // Apply pagination and fetch data
                 var ordersData = await query
+                    .Skip((filter.PageNumber - 1) * filter.PageSize)
+                    .Take(filter.PageSize)
                     .Select(ot => new OrderViewModel
                     {
                         OrderId = ot.Order.OrderId,
@@ -119,7 +125,7 @@ namespace sacmy.Server.Controller
                                 CustomerId = ot.Order.CustomerId.ToString(),
                                 CustomerFirebaseToken = ot.Order.Customer.FirebaseToken,
                                 CustomerAddress = oti.BuyFatora.Address,
-                                
+
                                 Date = oti.BuyFatora.Date,
                                 Payed = oti.BuyFatora.Payed,
                                 Remaing = oti.BuyFatora.Remaing,
@@ -135,7 +141,6 @@ namespace sacmy.Server.Controller
                     .Where(n => n.TableName == "Orders")
                     .OrderByDescending(n => n.CreatedDate)
                     .ToListAsync();
-
 
                 var orderIdStrings = ordersData.Select(o => o.OrderId.ToString()).ToList();
                 var stickyNotes = allOrderStickyNotes
@@ -282,7 +287,7 @@ namespace sacmy.Server.Controller
                                 Sku = matchingItem.Cod,
                                 Quantity = quantityToUse,
                                 Cost = matchingItem.AvrgPrice.GetValueOrDefault().ToString(),
-                                Price = matchingItem.Prise.GetValueOrDefault().ToString(),
+                                Price = (item.Price ?? 0m).ToString(CultureInfo.InvariantCulture),
                                 Branch = matchingItem.Subb,
                                 IsAvailable = true
                             };
@@ -357,221 +362,227 @@ namespace sacmy.Server.Controller
         [HttpPost("createinvoice")]
         public async Task<IActionResult> PostFatora(InvoiceFromOrderViewModel fatoraViewModel)
         {
+            _logger.LogInformation("POST /createinvoice OrderId={OrderId} CustomerId={CustomerId}",
+                                   fatoraViewModel.OrderId, fatoraViewModel.CustomerId);
+
             try
             {
-                int total_points = 0;
-                BuyFatora buyFatora = new BuyFatora();
-                EventCostumer eventCostumer = new EventCostumer();
-                CustomerBillPoint customerBill = new CustomerBillPoint();
-                OnlineOrder online_order = await _context.OnlineOrders.FindAsync(fatoraViewModel.OrderId);
+                //------------------------------------------------------------------
+                // 0)  المتغيرات المبدئية
+                //------------------------------------------------------------------
+                int totalPoints = 0;
+                var buyFatora = new BuyFatora();
+                var eventCostumer = new EventCostumer();
 
-                foreach (var fatoraItem in fatoraViewModel.invoiceFromOrderItemsViewModel)
+                //------------------------------------------------------------------
+                // 1)  حساب النقاط
+                //------------------------------------------------------------------
+                var orderItems = fatoraViewModel.invoiceFromOrderItemsViewModel
+                                 ?? new System.Collections.ObjectModel.Collection<InvoiceFromOrderItemsViewModel>();
+
+                foreach (var fItem in orderItems)
                 {
-                    KpStore item1 = await _context.KpStores.FirstOrDefaultAsync(e => e.Sku == fatoraItem.Sku);
-                    if (item1 != null)
+                    var kpStoreItem = await _context.KpStores.FirstOrDefaultAsync(e => e.Sku == fItem.Sku);
+
+                    if (kpStoreItem is null)
                     {
-                        total_points += (int)item1.Points * (int)fatoraItem.Quantity;
+                        _logger.LogWarning("Sku {Sku} not found while calculating points.", fItem.Sku);
+                        continue;
                     }
+
+                    int itemPoints = kpStoreItem.Points ?? 0;
+                    int qty = Convert.ToInt32(fItem.Quantity);
+                    totalPoints += itemPoints * qty;
                 }
 
-                Customer customer = await _context.Customers.FindAsync(fatoraViewModel.CustomerId);
-
-                if (customer == null)
+                //------------------------------------------------------------------
+                // 2)  التأكد من الزبون
+                //------------------------------------------------------------------
+                var customer = await _context.Customers.FindAsync(fatoraViewModel.CustomerId);
+                if (customer is null)
                 {
+                    _logger.LogWarning("Customer {CustomerId} not found.", fatoraViewModel.CustomerId);
                     return NotFound($"Customer with ID {fatoraViewModel.CustomerId} not found.");
                 }
 
+                //------------------------------------------------------------------
+                // 3)  إعداد BuyFatora الأساسي
+                //------------------------------------------------------------------
+                int lastId = await _context.BuyFatoras.OrderByDescending(f => f.Id)
+                                                      .Select(f => f.Id)
+                                                      .FirstOrDefaultAsync();
 
-                int lastId = await _context.BuyFatoras.OrderByDescending(f => f.Id).Select(f => f.Id).FirstOrDefaultAsync();
                 buyFatora.Id = lastId + 10;
+                buyFatora.TotalPoints = totalPoints;
 
                 if (fatoraViewModel.Sub != "undefined")
                 {
-
                     buyFatora.Idd = 0;
                     buyFatora.Date = fatoraViewModel.FatoraDate;
                     buyFatora.Datee = fatoraViewModel.FatoraDate;
-                    buyFatora.Mob = null;
-                    buyFatora.Dolar = 0;
                     buyFatora.Now = fatoraViewModel.FatoraDate;
                     buyFatora.Treasurer = "Treasurer";
                     buyFatora.Uuser = fatoraViewModel.UserId;
-                    buyFatora.Discount = 0;
                     buyFatora.Mandob = string.Empty;
-                    buyFatora.ManCcount = 0;
-                    buyFatora.Ijraaa = 0;
-                    buyFatora.Ijraaa2 = 0;
-                    buyFatora.Driver = null;
-                    buyFatora.CarNo = null;
-                    buyFatora.DriverMob = null;
-                    buyFatora.EventId = "BU - " + buyFatora.Id;
+                    buyFatora.EventId = $"BU - {buyFatora.Id}";
                     buyFatora.CostType = "Normal";
                     buyFatora.Subb = fatoraViewModel.Sub;
                     buyFatora.Customer = customer.Customer1;
                     buyFatora.Address = customer.Address;
-                    buyFatora.Nsba = 0;
-                    buyFatora.Nsbaother = 0;
-                    buyFatora.TotalPoints = total_points;
-                    buyFatora.Payed = (decimal?)fatoraViewModel.Payed;
-                    buyFatora.Remaing = (decimal?)fatoraViewModel.Remain;
-                    buyFatora.Tootal = (decimal?)fatoraViewModel.Total;
                     buyFatora.Checkeed = true;
-                    buyFatora.Hamalya = (decimal?)fatoraViewModel.Hamalya;
+                    // تحويـلات آمنة للقيم الرقمية
+                    buyFatora.Payed = Convert.ToDecimal(fatoraViewModel.Payed);
+                    buyFatora.Remaing = Convert.ToDecimal(fatoraViewModel.Remain);
+                    buyFatora.Tootal = Convert.ToDecimal(fatoraViewModel.Total);
+                    buyFatora.Hamalya = Convert.ToDecimal(fatoraViewModel.Hamalya);
                     buyFatora.Notes = fatoraViewModel.Note;
-                    buyFatora.EditedDate = null;
-                    buyFatora.EditedUser = null;
-                    buyFatora.Hidee = false;
-                    buyFatora.NotifyMe = false;
-                    buyFatora.NoteOther = null;
-                    buyFatora.PaymentDate = null;
-                    buyFatora.Sender = null;
-                    buyFatora.Bankinfo = null;
 
                     _context.BuyFatoras.Add(buyFatora);
+                    _logger.LogDebug("BuyFatora prepared (Id={Id})", buyFatora.Id);
                 }
 
-                foreach (var fatoraItem in fatoraViewModel.invoiceFromOrderItemsViewModel)
+                //------------------------------------------------------------------
+                // 4)  الأصناف
+                //------------------------------------------------------------------
+                foreach (var fItem in orderItems)
                 {
-                    if (fatoraItem.Wajba == "undefined")
+                    // صنف غير متوفر
+                    if (fItem.Wajba == "undefined")
                     {
-                        Item1 item = await _context.Items1.FirstOrDefaultAsync(e => e.Sku == fatoraItem.Sku);
-                        if (item != null)
+                        var itm = await _context.Items1.FirstOrDefaultAsync(e => e.Sku == fItem.Sku);
+                        if (itm is null) continue;
+
+                        _context.UnavilableOrderedItems.Add(new UnavilableOrderedItem
                         {
-                            UnavilableOrderedItem unavilableOrderedItem = new UnavilableOrderedItem
-                            {
-                                Id = Guid.NewGuid(),
-                                Sku = fatoraItem.Sku,
-                                PattrenCode = item.PattrenNo,
-                                Quantity = (int)fatoraItem.Quantity,
-                                ItemId = fatoraItem.ItemId,
-                                Secode = fatoraItem.Secode,
-                                BillId = buyFatora.Id
-                            };
-                            _context.UnavilableOrderedItems.Add(unavilableOrderedItem);
-                        }
+                            Id = Guid.NewGuid(),
+                            Sku = fItem.Sku,
+                            PattrenCode = itm.PattrenNo,
+                            Quantity = Convert.ToInt32(fItem.Quantity),
+                            ItemId = fItem.ItemId,
+                            Secode = fItem.Secode,
+                            BillId = buyFatora.Id
+                        });
+
+                        continue;
                     }
 
-                    else
+                    // صنف متوفر
+                    var storeItem = await _context.KpStores.FirstOrDefaultAsync(e => e.Sku == fItem.Sku);
+                    if (storeItem is null)
                     {
-                        KpStore item = await _context.KpStores.FirstOrDefaultAsync(e => e.Sku == fatoraItem.Sku);
-                        if (item != null)
-                        {
-                            QqMaxzanFullItemProc qqMaxzanFullItemProc = await _context.QqMaxzanFullItemProcs.FirstOrDefaultAsync(e => e.Secode == fatoraItem.Secode);
-                            OnlineOrder onlineOrder = await _context.OnlineOrders.FindAsync(fatoraItem.OrderItemId);
-                            MmMaxzanByWajbaFullItem mmMaxzanByWajbaFullItem = await _context.MmMaxzanByWajbaFullItems.FirstOrDefaultAsync(e => e.Secode == fatoraItem.Secode && e.Wajba == fatoraItem.Wajba);
-
-                            BuyFatoraItem buyFatoraItem = new BuyFatoraItem
-                            {
-                                Id = buyFatora.Id,
-                                BuId = 0,
-                                Codd = item!.Sku,
-                                Typee = "زجاجيات",
-                                Factoryy = "Pasabhace",
-                                QiyasUnit = "كارتون",
-                                Countt = 0,
-                                Prise = (decimal)fatoraItem!.Price,
-                                CodIqd = item!.PatternNumber,
-                                BoxContain = item!.InnerTypeCount.ToString() + "*" + item.OuterTypeCount,
-                                Itemm = mmMaxzanByWajbaFullItem.Item,
-                                Secode = fatoraItem.Secode,
-                                Points = item!.Points,
-                                Quantity = fatoraItem.Quantity,
-                                Total = (decimal)(double.Parse(fatoraItem.Quantity.ToString()) * fatoraItem!.Price),
-                                Wajba = fatoraItem?.Wajba,
-                                Subb = fatoraItem?.Storage,
-                                PurchasePrise = (decimal)fatoraItem!.Cost,
-                                QttRemaining = 0,
-                                Rub7Karton = 0,
-                                Weznn = 0,
-                                IsDeleted = false,
-                                TtalPoints = (int)(item!.Points * fatoraItem.Quantity)
-                            };
-
-                            _context.BuyFatoraItems.Add(buyFatoraItem);
-
-                            if (onlineOrder != null)
-                            {
-                                onlineOrder.Checked = false;
-                            }
-                        }
+                        _logger.LogWarning("Sku {Sku} not found while adding BuyFatoraItem.", fItem.Sku);
+                        continue;
                     }
+
+                    var mmItem = await _context.MmMaxzanByWajbaFullItems
+                                               .FirstOrDefaultAsync(e => e.Secode == fItem.Secode &&
+                                                                         e.Wajba == fItem.Wajba);
+
+                    decimal price = Convert.ToDecimal(fItem.Price);
+                    int qty = Convert.ToInt32(fItem.Quantity);
+                    decimal total = price * qty;
+
+                    _context.BuyFatoraItems.Add(new BuyFatoraItem
+                    {
+                        Id = buyFatora.Id,
+                        BuId = 0,
+                        Codd = storeItem.Sku,
+                        Typee = "زجاجيات",
+                        Factoryy = "Pasabhace",
+                        QiyasUnit = "كارتون",
+                        Prise = price,
+                        CodIqd = storeItem.PatternNumber,
+                        BoxContain = $"{storeItem.InnerTypeCount}*{storeItem.OuterTypeCount}",
+                        Itemm = mmItem?.Item,
+                        Secode = fItem.Secode,
+                        Points = storeItem.Points ?? 0,
+                        Quantity = qty,
+                        Total = total,
+                        Wajba = fItem.Wajba,
+                        Subb = fItem.Storage,
+                        PurchasePrise = Convert.ToDecimal(fItem.Cost),
+                        TtalPoints = (storeItem.Points ?? 0) * qty
+                    });
                 }
 
-
+                //------------------------------------------------------------------
+                // 5)  حدث الزبون
+                //------------------------------------------------------------------
                 if (fatoraViewModel.Sub != "undefined")
                 {
                     eventCostumer.IdEvent = 0;
                     eventCostumer.Costumer = customer.Customer1;
-                    eventCostumer.EventId = "BU - " + buyFatora.Id;
+                    eventCostumer.EventId = $"BU - {buyFatora.Id}";
                     eventCostumer.Trans = 1;
                     eventCostumer.Ttttotal = buyFatora.Remaing;
                     eventCostumer.Datee = fatoraViewModel.FatoraDate;
                     eventCostumer.Typeevent = "فاتورة ألبيع";
                     eventCostumer.Noww = fatoraViewModel.FatoraDate;
-                    eventCostumer.Subb = fatoraViewModel.invoiceFromOrderItemsViewModel?[0].Storage;
+                    eventCostumer.Subb = orderItems.FirstOrDefault()?.Storage;
+
                     _context.EventCostumers.Add(eventCostumer);
                 }
 
-
+                //------------------------------------------------------------------
+                // 6)  الحفظ الأول
+                //------------------------------------------------------------------
                 await _context.SaveChangesAsync();
+                _logger.LogInformation("Invoice {Id} saved.", buyFatora.Id);
 
+                //------------------------------------------------------------------
+                // 7)  تتبّع الطلب (Order Tracking)
+                //------------------------------------------------------------------
                 if (fatoraViewModel.Sub != "undefined")
                 {
-                    int orderId = fatoraViewModel.OrderId;
-                    int invoiceId = buyFatora.Id;
+                    Guid stageGuid = Guid.Parse("480140e5-35db-4887-b8f9-1eb5ba2977e9");
 
+                    var orderTrack = await _context.OrderTrackings
+                                                   .FirstOrDefaultAsync(o => o.OrderId == fatoraViewModel.OrderId)
+                                                   ?? new OrderTracking
+                                                   {
+                                                       Id = Guid.NewGuid(),
+                                                       OrderId = fatoraViewModel.OrderId,
+                                                       CreatedDate = DateTime.UtcNow
+                                                   };
 
-                    var existingOrderTracking = await _context.OrderTrackings
-                        .FirstOrDefaultAsync(ot => ot.OrderId == orderId);
+                    orderTrack.StageId = stageGuid;
+                    orderTrack.IsCompleted = false;
 
-                    Guid invoiceFinalizedandSentGuid = Guid.Parse("480140e5-35db-4887-b8f9-1eb5ba2977e9");
-                    if (existingOrderTracking == null)
+                    if (_context.Entry(orderTrack).State == EntityState.Detached)
+                        _context.OrderTrackings.Add(orderTrack);
+
+                    var existingLink = await _context.OrderTrackingInvoices
+                                                     .FirstOrDefaultAsync(l => l.OrderTrackingId == orderTrack.Id &&
+                                                                               l.BuyFatoraId == buyFatora.Id);
+
+                    if (existingLink is null)
                     {
-                        existingOrderTracking = new OrderTracking
+                        _context.OrderTrackingInvoices.Add(new OrderTrackingInvoice
                         {
                             Id = Guid.NewGuid(),
-                            OrderId = orderId,
-                            StageId = invoiceFinalizedandSentGuid,
-                            IsCompleted = false,
+                            OrderTrackingId = orderTrack.Id,
+                            BuyFatoraId = buyFatora.Id,
                             CreatedDate = DateTime.UtcNow
-                        };
-
-                        _context.OrderTrackings.Add(existingOrderTracking);
+                        });
                     }
 
-                    existingOrderTracking.StageId = invoiceFinalizedandSentGuid;
-
                     await _context.SaveChangesAsync();
-
-                    var existingOrderTrackingInvoice = await _context.OrderTrackingInvoices
-                        .FirstOrDefaultAsync(oti => oti.OrderTrackingId == existingOrderTracking.Id && oti.BuyFatoraId == invoiceId);
-
-                    if (existingOrderTrackingInvoice == null)
-                    {
-                        OrderTrackingInvoice orderTrackingInvoice = new OrderTrackingInvoice
-                        {
-                            Id = Guid.NewGuid(),
-                            OrderTrackingId = existingOrderTracking.Id,
-                            BuyFatoraId = invoiceId,
-                            CreatedDate = DateTime.UtcNow
-                        };
-
-                        _context.OrderTrackingInvoices.Add(orderTrackingInvoice);
-                    }
-
-
-                    await _context.SaveChangesAsync();
+                    _logger.LogInformation("Order tracking updated for OrderId={OrderId}", fatoraViewModel.OrderId);
                 }
 
+                //------------------------------------------------------------------
                 return Ok(fatoraViewModel);
-
             }
             catch (Exception ex)
             {
-                // Log the exception details and return an internal server error message
-                return StatusCode(500, "An error occurred while processing your request: " + ex.Message);
+                _logger.LogError(ex,
+                    "Unhandled error while creating invoice. OrderId={OrderId} CustomerId={CustomerId}",
+                    fatoraViewModel.OrderId, fatoraViewModel.CustomerId);
+
+                return StatusCode(500, "An error occurred while processing your request.");
             }
         }
+
 
         [HttpPost("update-order-stage")]
         public async Task<IActionResult> UpdateOrderStage(int orderId, Guid stageId, int invoiceId, bool isItTheMainInvoice)
